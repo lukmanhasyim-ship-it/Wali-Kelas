@@ -1,89 +1,76 @@
-# Wali Kelas - Sistem Manajemen Kelas
+# Siswa.Hub - Sistem Manajemen Kelas Digital
 
-Aplikasi web untuk manajemen kelas sekolah yang mencakup:
-- ✅ Manajemen data siswa
-- ✅ Pencatatan absensi pagi dan siang
-- ✅ Manajemen keuangan kas kelas
-- ✅ Sistem panggilan orang tua
-- ✅ Role-based access control (Wali Kelas, Ketua Kelas, Sekretaris, Bendahara)
+Siswa.Hub adalah sebuah platform perampingan kinerja Wali Kelas berkonsep Serverless yang memodernisasi cara sekolah mengelola administrasi muridnya secara digital. Aplikasi web interaktif ini didesain mengutamakan Pengalaman Pengguna (UX) premium dengan tampilan antarmuka mutakhir (UI) sekaligus kemudahan implementasi tanpa harus memelihara server database tradisional.
 
-## Setup Environment
+## ✨ Fitur-Fitur Utama
 
-### 1. Clone Repository
+*   **👥 Manajemen Data Terpusat:** Pengelolaan master data profil & lokasi siswa yang akurat dan dapat disesuaikan.
+*   **⏰ Presensi Terpisah (Pagi & Siang):** Pencatatan absensi dua tahap secara proaktif pada awal jam pelajaran dan akhir jam pelajaran.
+*   **💰 Modul Finansial:** Manajemen buku Kas Kelas dengan pelaporan otomatis untuk pemasukan, pengeluaran komprehensif, serta kalkulasi Tanggungan Beban KAS.
+*   **📞 Log Pemanggilan Orang Tua:** Pemantauan dan pencatatan komprehensif kunjungan rumah (*Home Visit*) maupun Pemanggilan Wali dari berbagai kategori indisipliner (seperti 3x Alfa, 6x Bolos).
+*   **🔔 Live Notification System:** Sistem manajemen notisfikasif terintegrasi untuk perayaan pembaruan absensi maupun pelunasan biaya.
+*   **🔐 Role-Based Access Control (RBAC):** Login terverifikasi melalui autentikasi akun Google tunggal yang akan menyesuaikan menu navigasi bergantung porsi tugas penggunanya:
+    *   **Wali Kelas / Admin**: Memiliki kendali dan akses global penuh di seluruh platform.
+    *   **Bendahara**: Mengawasi pencatatan pembukuan, transaksi "KAS Kelas", dan "Tanggungan KAS".
+    *   **Sekretaris**: Menguasai entri "Presensi Pagi" dan "Presensi Siang".
+    *   **Ketua Kelas**: Dapat melakukan monitor baca (View-only) untuk log presensi dan rekam kelasnya.
+    *   **Siswa**: Meninjau pembaruan profil serta absensi/keuangannya secara transparan.
+
+## 📱 Keunggulan PWA & Antarmuka (Aesthetics)
+*   **Progressive Web App (PWA):** Mendukung instalasi di perangkat seluler melalui fitur *"Add to Home Screen"* agar berfungsi sebagai native mobile app.
+*   **Premium Shimmer Loading:** Kecepatan yang dirasakan secara empiris jauh lebih baik dengan animasi skeleton loader saat pengambilan data berlangsung.
+*   **Interactive Empty States:** Arahan visual indah ketika suatu modul belum memiliki data. 
+*   **Smooth Fade-In:** Setiap sub-halaman dilengapi efek pergantian menu *(transition in)* yang berkelas tinggi.
+
+---
+
+## 🛠️ Tech Stack & Ekosistem Pendukung
+
+*   **Frontend**: React 19 + ESModules Vite 8.
+*   **Styling**: Vanilla-like Tailwind CSS 3.4 (dengan konfigurasi design-token).
+*   **State Management & Routing**: React Router v7.
+*   **Autentikasi**: Google OAuth 2.0 (GSI).
+*   **Backend & DB Tersebar (Serverless)**: Google Apps Script API + Google Sheets Storage.
+*   **Fungsional Dokumen**: HTML2Canvas + jsPDF (Auto-Print Laporan Final).
+
+---
+
+## 🚀 Panduan Instalasi (Development)
+
+### 1. Kloning Source Code
 ```bash
 git clone <repository-url>
 cd wali-kelas
-npm install
+npm install  # (Atau npm install --legacy-peer-deps jika ada konflik versi vite)
 ```
 
-### 2. Setup Google Apps Script API
+### 2. Setup Google Apps Script (Backend)
+1.  **Siapkan Database**: Buat file *Spreadsheet* baru di Akun Google Anda dan sisipkan Sheet berikut:
+    *   `Master_Siswa`, `Presensi`, `Keuangan`, `Log_Panggilan`, `Profil_Wali_Kelas`, `Queue_Chat`, `Catatan_Siswa`, `Lokasi`, `Notifikasi`. *(Atau cukup jalankan fungsi opsional `setupSpreadsheet()`).*
+2.  **Siapkan API Endpoint**: Di Spreadsheet tersebut, klik menu **Ekstensi > Apps Script**.
+3.  Salin seluruh kode dari file `/gas/Code.gs` ke antarmuka script di sana.
+4.  Lakukan Deployment: Klik **Terapkan (Deploy) > Deployment Baru**, pilih jenis "Aplikasi Web", Eksekusi Sebagai: "Saya", dan Yang Memiliki Akses: "Siapa saja (Anyone)".
+5.  Salin URL API *Web App* yang dihasilkan.
 
-**Wajib**: Aplikasi ini menggunakan Google Apps Script sebagai backend. Ikuti langkah berikut:
+### 3. Setup Google OAuth (Login)
+1.  Masuk ke [Google Cloud Console](https://console.cloud.google.com/).
+2.  Buat/Gunakan proyek yang sama, masuk ke "APIs & Services" > "Credentials".
+3.  Buat **OAuth 2.0 Client ID**, atur tipe aplikasinya ke **Web Application**.
+4.  Tambahkan Authorized JavaScript origins & redirect URIs: `http://localhost:5173` (untuk Environment *development*).
+5.  Salin **Client ID** yang dihasilkan.
 
-1. **Buat Google Spreadsheet** dengan sheet berikut:
-   - `Master_Siswa`
-   - `Presensi`
-   - `Keuangan`
-   - `Log_Panggilan`
+### 4. Konfigurasi Sistem Internal
+Buat sebuah file berektensi `.env` (atau lakukan salin `.env.example` jika ada) pada root folder instalasi dan cocokkan kunci berikut:
+```env
+VITE_GOOGLE_CLIENT_ID="[Paste Client ID Anda di sini]"
+VITE_GAS_API_URL="[Paste Web App URL API Anda di sini]"
+```
 
-2. **Deploy Google Apps Script**:
-   - Buat script di Google Apps Script
-   - Copy kode dari folder `gas/`
-   - Deploy sebagai Web App dengan akses "Anyone"
-
-3. **Konfigurasi Environment**:
-   ```bash
-   # Copy .env dan isi dengan URL GAS API
-   cp .env .env.local
-   ```
-
-   Edit `.env`:
-   ```env
-   VITE_GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
-   VITE_GAS_API_URL=https://script.google.com/macros/s/your-script-id/exec
-   ```
-
-### 3. Setup Google OAuth
-
-1. Buat project di [Google Cloud Console](https://console.cloud.google.com/)
-2. Enable Google+ API
-3. Buat OAuth 2.0 Client ID
-4. Tambahkan authorized redirect URIs: `http://localhost:5173` (development)
-
-## Menjalankan Aplikasi
-
+### 5. Start The App!
 ```bash
 npm run dev
 ```
+Buka browser dan segera mulai pengelolaan murid yang revolusioner dari `http://localhost:5173`!
 
-Aplikasi akan berjalan di `http://localhost:5173`
-
-## Fitur Utama
-
-### Role-based Access
-- **Wali Kelas**: Full access semua fitur
-- **Ketua Kelas**: View presensi & keuangan
-- **Sekretaris**: CRUD presensi pagi & siang
-- **Bendahara**: CRUD keuangan
-
-### Absensi Terpisah
-- **Presensi Pagi**: Pencatatan kehadiran pagi
-- **Presensi Siang**: Pencatatan kehadiran siang dengan referensi pagi
-
-### Manajemen Keuangan
-- Pembulatan otomatis jumlah transaksi
-- Tracking saldo kas kelas real-time
-
-## Tech Stack
-
-- **Frontend**: React 19 + Vite
-- **Styling**: Tailwind CSS
-- **Backend**: Google Apps Script
-- **Database**: Google Sheets
-- **Auth**: Google OAuth 2.0
-
-## Development Notes
-
-- Aplikasi **tidak menggunakan mock data** - semua data berasal dari Google Sheets
-- Pastikan `VITE_GAS_API_URL` sudah dikonfigurasi dengan benar
-- CORS issues dapat diatasi dengan deploy GAS sebagai "Anyone"
+---
+> Siswa.Hub © 2026. *Penyelerasan presisi digital administrasi pendidikan oleh Wali Kelas Moden.*
