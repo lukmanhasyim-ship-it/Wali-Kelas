@@ -1,0 +1,159 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --brand-hue: 156;
+    --brand-saturation: 100%;
+    --brand-lightness: 26%;
+
+    --brand: hsl(var(--brand-hue), var(--brand-saturation), var(--brand-lightness));
+    --brand-hover: hsl(var(--brand-hue), var(--brand-saturation), calc(var(--brand-lightness) - 5%));
+    --brand-soft: hsl(var(--brand-hue), var(--brand-saturation), 96%);
+
+    --accent-gold: hsl(45, 100%, 50%);
+
+    --success: 142 71% 45%;
+    --warning: 45 100% 50%;
+    --error: 0 84% 60%;
+
+    --surface: 0 0% 100%;
+    --background: 210 40% 98%;
+    --foreground: 222 47% 11%;
+  }
+
+  body {
+    @apply bg-slate-50 text-slate-900 selection:bg-indigo-100 selection:text-indigo-900;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: 'Outfit', sans-serif;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-white p-6 rounded-[2rem] shadow-soft border border-slate-100/50 transition-all duration-300;
+  }
+
+  .card-glass {
+    @apply bg-white/70 backdrop-blur-xl border border-white/20 shadow-xl;
+  }
+
+  .btn-primary {
+    @apply bg-[#005a30] text-white px-6 py-2.5 rounded-2xl font-semibold shadow-lg shadow-emerald-100 hover:bg-[#004a28] hover:shadow-emerald-200 hover:-translate-y-0.5 transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:pointer-events-none;
+  }
+
+  .btn-secondary {
+    @apply bg-white text-slate-700 px-6 py-2.5 rounded-2xl font-semibold border border-slate-200 hover:bg-slate-50 hover:border-[#008647] transition-all active:scale-95;
+  }
+
+  .btn-ghost {
+    @apply px-4 py-2 rounded-xl text-slate-600 font-medium hover:bg-slate-100 transition-all active:scale-95;
+  }
+
+  .input-field {
+    @apply w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-600 outline-none transition-all duration-200;
+  }
+
+  .status-badge {
+    @apply px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border;
+  }
+
+  /* Table Customization */
+  .table-container {
+    @apply card p-0 overflow-x-auto;
+  }
+
+  .modern-table {
+    @apply w-full text-left border-collapse;
+  }
+
+  .modern-table th {
+    @apply px-6 py-4 bg-slate-50/50 text-slate-500 font-bold text-[11px] uppercase tracking-widest border-b border-slate-100;
+  }
+
+  .modern-table td {
+    @apply px-6 py-4 border-b border-slate-50 text-sm align-middle;
+  }
+
+  .modern-table tr:last-child td {
+    @apply border-b-0;
+  }
+
+  .modern-table tr:hover td {
+    @apply bg-slate-50/30;
+  }
+}
+
+/* Custom Animations */
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(90deg, #f1f5f9 25%, #f8fafc 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite linear;
+}
+
+.gradient-text {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-[#008647] to-[#fdb813] font-bold;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-slate-50;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-200 rounded-full hover:bg-slate-300 transition-colors;
+}
+
+/* Remove spinners from number inputs */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none !important;
+  display: none !important;
+  margin: 0 !important;
+}
+
+input[type=number] {
+  -moz-appearance: textfield !important;
+  appearance: none !important;
+}
