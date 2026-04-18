@@ -1,4 +1,4 @@
-# Wali Kelas - Sistem Manajemen Kelas
+# Siswa.Hub - Sistem Manajemen Kelas
 
 Aplikasi web untuk manajemen kelas sekolah yang mencakup:
 - ✅ Manajemen data siswa
