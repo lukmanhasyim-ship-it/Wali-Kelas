@@ -3,9 +3,6 @@
  * Deploy as Web App, set "Execute as: Me" and "Who has access: Anyone".
  */
 
-var GEMINI_API_KEY = 'AIzaSyDNCp01lTDXXW3Clyh_66zFPUq1FZyu19k';
-var GEMINI_MODEL = 'gemini-1.5-flash';
-var GEMINI_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/' + GEMINI_MODEL + ':generateContent?key=' + GEMINI_API_KEY;
 
 function formatDateValue(value, header) {
   if (value instanceof Date) {
@@ -82,15 +79,7 @@ function handleResponse(e) {
       GET_PROFILE_WALI: function() {
         return { status: 'success', data: getProfileWali(payload && payload.email) };
       },
-      CREATE_QUEUE_CHAT: function() {
-        return { status: 'success', data: createQueueChat(payload) };
-      },
-      PROCESS_QUEUE: function() {
-        return { status: 'success', data: processQueue() };
-      },
-      SAVE_CATATAN_SISWA: function() {
-        return { status: 'success', data: appendData('Catatan_Siswa', payload && payload.data) };
-      },
+
       GET_NOTIFICATIONS: function() {
         return { status: 'success', data: getNotifications(payload && payload.role, payload && payload.email) };
       },
@@ -365,53 +354,7 @@ function getProfileWali(email) {
   return loginWali(email);
 }
 
-function createQueueChat(payload) {
-  if (!payload || !payload.email || !payload.query || !payload.student) {
-    throw new Error('Payload chat tidak lengkap. Pastikan email, query, dan student tersedia.');
-  }
-  var row = {
-    ID_Queue: new Date().getTime().toString(),
-    Email: payload.email,
-    Student_NISN: payload.student.NISN || '',
-    Student_Name: payload.student.Nama_Siswa || '',
-    Query: payload.query,
-    Attendance_Detail: JSON.stringify(payload.attendance || []),
-    Summary: JSON.stringify(payload.summary || {}),
-    Status: 'pending',
-    Response: '',
-    Created_At: new Date(),
-    Processed_At: ''
-  };
-  appendData('Queue_Chat', row);
-  return row;
-}
 
-function processQueue() {
-  var now = new Date().getTime();
-  var props = PropertiesService.getScriptProperties();
-  var lastRun = Number(props.getProperty('LAST_QUEUE_PROCESS_AT') || 0);
-  if (now - lastRun < 12000) {
-    return { status: 'throttled', message: 'Terlalu cepat memproses queue, coba lagi nanti.' };
-  }
-
-  var queueItems = readData('Queue_Chat');
-  var nextItem = queueItems.find(function(item) {
-    return item.Status === 'pending';
-  });
-
-  if (!nextItem) {
-    return { status: 'empty', message: 'Tidak ada item queue yang menunggu.' };
-  }
-
-  var response = generateAIResponse(nextItem);
-  updateData('Queue_Chat', nextItem.ID_Queue, {
-    Status: 'done',
-    Response: response,
-    Processed_At: new Date()
-  });
-  props.setProperty('LAST_QUEUE_PROCESS_AT', now.toString());
-  return { status: 'done', queue: nextItem.ID_Queue, response: response };
-}
 
 function getNotifications(role, email) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -472,78 +415,7 @@ function deleteNotification(id) {
   return false;
 }
 
-function generateAIResponse(item) {
-  var attendance = [];
-  try {
-    attendance = JSON.parse(item.Attendance_Detail || '[]');
-  } catch (e) {
-    attendance = [];
-  }
 
-  var counts = { H: 0, S: 0, I: 0, A: 0, B: 0 };
-  attendance.forEach(function(row) {
-    if (row.Status_Pagi) counts[row.Status_Pagi] = (counts[row.Status_Pagi] || 0) + 1;
-    if (row.Status_Siang) counts[row.Status_Siang] = (counts[row.Status_Siang] || 0) + 1;
-  });
-
-  var lines = attendance.map(function(row) {
-    return 'Tanggal ' + row.Tanggal + ': Pagi ' + (row.Status_Pagi || '-') + ' (' + (row.Timestamp_Pagi || '-') + '), Siang ' + (row.Status_Siang || '-') + ' (' + (row.Timestamp_Siang || '-') + '), Keterangan: ' + (row.Keterangan || '-');
-  }).slice(-5);
-
-  var systemPrompt = 'Kamu adalah asisten Konsultasi siswa yang hangat, ramah, dan mudah dimengerti. Jawaban harus menggunakan bahasa Indonesia sehari-hari, tidak kaku, dan fokus membantu siswa memahami langkah nyata agar kehadiran dan semangat belajar semakin baik.';
-  var userPrompt = 'Baca data absensi berikut dan berikan saran personal yang bersahabat. Jika perlu, ajak siswa berpikir tentang langkah kecil yang bisa dilakukan. Gunakan bahasa yang penuh empati.';
-
-  var attendanceText = lines.length ? lines.join('\n') : 'Tidak ada riwayat absensi terdaftar.';
-  var promptText = userPrompt + '\n\n' +
-    'Data absensi: \n' + attendanceText + '\n\n' +
-    'Ringkasan absensi: Hadir ' + counts.H + ', Sakit ' + counts.S + ', Izin ' + counts.I + ', Alfa ' + counts.A + ', Bolos ' + counts.B + '.\n\n' +
-    'Pertanyaan siswa: "' + (item.Query || '') + '"';
-
-  var payload = {
-    contents: [
-      {
-        role: 'user',
-        parts: [
-          { text: systemPrompt + '\n\n' + promptText }
-        ]
-      }
-    ],
-    generationConfig: {
-      temperature: 0.7,
-      maxOutputTokens: 1024,
-      topP: 0.95
-    }
-  };
-
-  var options = {
-    method: 'post',
-    contentType: 'application/json',
-    payload: JSON.stringify(payload),
-    muteHttpExceptions: true
-  };
-
-  var responseText = 'Maaf, saya tidak bisa memberikan jawaban saat ini. Coba lagi nanti.';
-  try {
-    var response = UrlFetchApp.fetch(GEMINI_ENDPOINT, options);
-    var result = JSON.parse(response.getContentText());
-
-    if (result.candidates && result.candidates.length > 0) {
-      var candidate = result.candidates[0];
-      if (candidate.content && candidate.content.parts && candidate.content.parts.length > 0) {
-        responseText = candidate.content.parts[0].text || responseText;
-      }
-    }
-    if (!responseText && result.error) {
-      Logger.log('Gemini API Error: ' + JSON.stringify(result.error));
-      responseText = 'Maaf, ada kesalahan saat memproses konsultasi. Silakan coba lagi.';
-    }
-  } catch (error) {
-    Logger.log('Gemini API Error: ' + error.toString());
-    responseText = 'Maaf, gagal menghubungi layanan. Pastikan API key dan koneksi internet baik.';
-  }
-
-  return responseText;
-}
 
 function setupSpreadsheet() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
