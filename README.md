@@ -1,76 +1,60 @@
-# Siswa.Hub - Sistem Manajemen Kelas Digital
+# Siswa.Hub - Ekosistem Manajemen Kelas Digital Premium
 
-Siswa.Hub adalah sebuah platform perampingan kinerja Wali Kelas berkonsep Serverless yang memodernisasi cara sekolah mengelola administrasi muridnya secara digital. Aplikasi web interaktif ini didesain mengutamakan Pengalaman Pengguna (UX) premium dengan tampilan antarmuka mutakhir (UI) sekaligus kemudahan implementasi tanpa harus memelihara server database tradisional.
-
-## ✨ Fitur-Fitur Utama
-
-*   **👥 Manajemen Data Terpusat:** Pengelolaan master data profil & lokasi siswa yang akurat dan dapat disesuaikan.
-*   **⏰ Presensi Terpisah (Pagi & Siang):** Pencatatan absensi dua tahap secara proaktif pada awal jam pelajaran dan akhir jam pelajaran.
-*   **💰 Modul Finansial:** Manajemen buku Kas Kelas dengan pelaporan otomatis untuk pemasukan, pengeluaran komprehensif, serta kalkulasi Tanggungan Beban KAS.
-*   **📞 Log Pemanggilan Orang Tua:** Pemantauan dan pencatatan komprehensif kunjungan rumah (*Home Visit*) maupun Pemanggilan Wali dari berbagai kategori indisipliner (seperti 3x Alfa, 6x Bolos).
-*   **🔔 Live Notification System:** Sistem manajemen notisfikasif terintegrasi untuk perayaan pembaruan absensi maupun pelunasan biaya.
-*   **🔐 Role-Based Access Control (RBAC):** Login terverifikasi melalui autentikasi akun Google tunggal yang akan menyesuaikan menu navigasi bergantung porsi tugas penggunanya:
-    *   **Wali Kelas / Admin**: Memiliki kendali dan akses global penuh di seluruh platform.
-    *   **Bendahara**: Mengawasi pencatatan pembukuan, transaksi "KAS Kelas", dan "Tanggungan KAS".
-    *   **Sekretaris**: Menguasai entri "Presensi Pagi" dan "Presensi Siang".
-    *   **Ketua Kelas**: Dapat melakukan monitor baca (View-only) untuk log presensi dan rekam kelasnya.
-    *   **Siswa**: Meninjau pembaruan profil serta absensi/keuangannya secara transparan.
-
-## 📱 Keunggulan PWA & Antarmuka (Aesthetics)
-*   **Progressive Web App (PWA):** Mendukung instalasi di perangkat seluler melalui fitur *"Add to Home Screen"* agar berfungsi sebagai native mobile app.
-*   **Premium Shimmer Loading:** Kecepatan yang dirasakan secara empiris jauh lebih baik dengan animasi skeleton loader saat pengambilan data berlangsung.
-*   **Interactive Empty States:** Arahan visual indah ketika suatu modul belum memiliki data. 
-*   **Smooth Fade-In:** Setiap sub-halaman dilengapi efek pergantian menu *(transition in)* yang berkelas tinggi.
+Siswa.Hub adalah platform revolusioner berbasis **Serverless** yang dirancang khusus untuk memodernisasi kinerja Wali Kelas dan sekolah dalam mengelola administrasi siswa. Mengusung konsep *Human-Centric Design*, aplikasi ini memadukan estetika antarmuka (UI) mutakhir dengan logika sistem yang peduli, transparan, dan efisien.
 
 ---
 
-## 🛠️ Tech Stack & Ekosistem Pendukung
+## ✨ Fitur Unggulan Terbaru
 
-*   **Frontend**: React 19 + ESModules Vite 8.
-*   **Styling**: Vanilla-like Tailwind CSS 3.4 (dengan konfigurasi design-token).
-*   **State Management & Routing**: React Router v7.
-*   **Autentikasi**: Google OAuth 2.0 (GSI).
-*   **Backend & DB Tersebar (Serverless)**: Google Apps Script API + Google Sheets Storage.
-*   **Fungsional Dokumen**: HTML2Canvas + jsPDF (Auto-Print Laporan Final).
+### 📚 Daftar Kumpulan Nilai (DKN) & Akademik
+*   **Input Nilai Dinamis**: Kelola nilai Akademik (Umum) dan Produktif secara fleksibel sesuai jenjang dan semester.
+*   **Excel Integration**: Dukungan penuh untuk **Ekspor DKN** dan **Impor Nilai** secara massal menggunakan template Excel yang cerdas.
+*   **Buku Klaper Digital**: Rekam jejak historis siswa yang tertata rapi untuk kebutuhan arsip jangka panjang.
+
+### 💰 Manajemen Finansial & Tanggungan
+*   **Smart KAS Monitoring**: Pencatatan pemasukan dan pengeluaran kas kelas dengan pelaporan otomatis per periode (Minggu/Bulan/Tahun).
+*   **Kalkulasi Tanggungan**: Deteksi otomatis siswa yang masih memiliki tunggakan iuran secara real-time.
+*   **Humanist Payment Alerts**: Notifikasi pembayaran yang mengapresiasi siswa ("Terima kasih sudah mencicil!") alih-alih sekadar menagih.
+
+### ⏰ Presensi & Alert Kedisiplinan
+*   **Dual-Session Attendance**: Pencatatan presensi sesi Pagi dan Siang untuk akurasi data kehadiran yang lebih tinggi.
+*   **Interactive Alerts**: Deteksi dini siswa bermasalah (Contoh: **3x Alfa Kumulatif** atau **6x Bolos**) yang akan memicu peringatan "Siap Panggil" di Dashboard Wali Kelas.
+
+### 📞 Komunikasi & Pendampingan Siswa
+*   **Digital Call Logging**: Pencatatan log Panggilan Wali dan *Home Visit* secara komprehensif.
+*   **Caring Notifications**: Sistem notifikasi otomatis ke Siswa dan Pengurus Kelas dengan gaya bahasa yang hangat, memotivasi, dan tidak menyudutkan.
+
+---
+
+## 🎨 Estetika & Pengalaman Pengguna (UX)
+
+*   **Premium Loader & Quotes**: Menunggu data dimuat menjadi pengalaman yang menyenangkan dengan animasi loader *radial-gradient* khusus dan kutipan inspiratif yang acak setiap saat.
+*   **Role-Based Experience**: Antarmuka yang beradaptasi secara cerdas sesuai peran pengguna (**Wali Kelas, Ketua Kelas, Sekretaris, Bendahara, atau Siswa**).
+*   **Progressive Web App (PWA)**: Akses super cepat dan dapat diinstal langsung ke layar utama smartphone seperti aplikasi native.
+*   **Responsive Design**: Tampilan yang tajam dan nyaman digunakan baik di monitor PC maupun layar ponsel.
 
 ---
 
-## 🚀 Panduan Instalasi (Development)
+## 🛠️ Tech Stack Modern
 
-### 1. Kloning Source Code
-```bash
-git clone <repository-url>
-cd wali-kelas
-npm install  # (Atau npm install --legacy-peer-deps jika ada konflik versi vite)
-```
-
-### 2. Setup Google Apps Script (Backend)
-1.  **Siapkan Database**: Buat file *Spreadsheet* baru di Akun Google Anda dan sisipkan Sheet berikut:
-    *   `Master_Siswa`, `Presensi`, `Keuangan`, `Log_Panggilan`, `Profil_Wali_Kelas`, `Queue_Chat`, `Catatan_Siswa`, `Lokasi`, `Notifikasi`. *(Atau cukup jalankan fungsi opsional `setupSpreadsheet()`).*
-2.  **Siapkan API Endpoint**: Di Spreadsheet tersebut, klik menu **Ekstensi > Apps Script**.
-3.  Salin seluruh kode dari file `/gas/Code.gs` ke antarmuka script di sana.
-4.  Lakukan Deployment: Klik **Terapkan (Deploy) > Deployment Baru**, pilih jenis "Aplikasi Web", Eksekusi Sebagai: "Saya", dan Yang Memiliki Akses: "Siapa saja (Anyone)".
-5.  Salin URL API *Web App* yang dihasilkan.
-
-### 3. Setup Google OAuth (Login)
-1.  Masuk ke [Google Cloud Console](https://console.cloud.google.com/).
-2.  Buat/Gunakan proyek yang sama, masuk ke "APIs & Services" > "Credentials".
-3.  Buat **OAuth 2.0 Client ID**, atur tipe aplikasinya ke **Web Application**.
-4.  Tambahkan Authorized JavaScript origins & redirect URIs: `http://localhost:5173` (untuk Environment *development*).
-5.  Salin **Client ID** yang dihasilkan.
-
-### 4. Konfigurasi Sistem Internal
-Buat sebuah file berektensi `.env` (atau lakukan salin `.env.example` jika ada) pada root folder instalasi dan cocokkan kunci berikut:
-```env
-VITE_GOOGLE_CLIENT_ID="[Paste Client ID Anda di sini]"
-VITE_GAS_API_URL="[Paste Web App URL API Anda di sini]"
-```
-
-### 5. Start The App!
-```bash
-npm run dev
-```
-Buka browser dan segera mulai pengelolaan murid yang revolusioner dari `http://localhost:5173`!
+*   **Core**: React 19 + Vite 6
+*   **Styling**: Vanilla-style CSS with Glossy Effects & Tailwind Design Tokens
+*   **Backend**: Google Apps Script (High Performance Web App)
+*   **Database**: Google Sheets (Spreadsheet-as-a-DB)
+*   **Integration**: Google OAuth 2.0 & SheetJS (Excel Engine)
 
 ---
-> Siswa.Hub © 2026. *Penyelerasan presisi digital administrasi pendidikan oleh Wali Kelas Moden.*
+
+## 🚀 Persiapan Backend (Spreadsheet Headers)
+
+Pastikan spreadsheet Anda memiliki sheet berikut dengan nama kolom yang sesuai:
+*   `Master_Siswa`: ID_Siswa, NISN, Nama_Siswa, Email, Jabatan, Status_Aktif, ...
+*   `Keuangan`: ID_Transaksi, Tanggal, ID_Siswa, NISN, Tipe, Jumlah, Keterangan
+*   `Daftar_Nilai`: ID_Siswa, NISN, Jenjang, Semester, Kategori_Mapel, Nama_Mapel, Topik, Nilai
+*   `Log_Panggilan`: ID_Panggilan, Tanggal, NISN, Kategori, Alasan, Status_Selesai
+*   `Notifikasi`: ID, Message, Type, Timestamp, Role, Email, Is_Read
+
+---
+
+> **Siswa.Hub © 2026.**  
+> *Didesain dengan presisi dan kepedulian oleh Mohamad Lukman Nurhasyim, S.Kom, Gr.*

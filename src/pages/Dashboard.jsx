@@ -4,7 +4,7 @@ import { format } from 'date-fns';
 import { fetchGAS } from '../utils/gasClient';
 import { calculateDisciplineStatus, formatIDR } from '../utils/logic';
 import StudentCard from '../components/StudentCard';
-import { Users, Wallet, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Users, Wallet, AlertTriangle, CheckCircle2, Bell, ChevronRight } from 'lucide-react';
 import Loading from '../components/Loading';
 import Skeleton, { SkeletonStats } from '../components/Skeleton';
 import EmptyState from '../components/EmptyState';
@@ -28,7 +28,11 @@ export default function Dashboard() {
           fetchGAS('GET_ALL', { sheet: 'Keuangan' })
         ]);
 
-        setData({ siswa: s.data || [], presensi: p.data || [], keuangan: k.data || [] });
+        setData({
+          siswa: (s.data || []).filter(st => st.Status_Aktif === 'Aktif'),
+          presensi: p.data || [],
+          keuangan: k.data || []
+        });
       } catch (error) {
         console.error('Dashboard load error:', error);
       } finally {
@@ -64,7 +68,7 @@ export default function Dashboard() {
     const result = [];
     data.siswa.forEach(student => {
       const studentRecords = data.presensi
-        .filter(p => p.NISN === student.NISN)
+        .filter(p => p.ID_Siswa === student.ID_Siswa)
         .sort((a, b) => new Date(a.Tanggal) - new Date(b.Tanggal));
 
       const statusArray = studentRecords.map(r => getEffectiveStatus(r));
@@ -85,23 +89,7 @@ export default function Dashboard() {
     window.open(url, '_blank');
   }, []);
 
-  if (loading) return (
-    <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="space-y-2">
-        <Skeleton className="h-8 w-48" />
-        <Skeleton className="h-4 w-64" />
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Skeleton className="h-32 rounded-[2rem]" />
-        <Skeleton className="h-32 rounded-[2rem]" />
-      </div>
-      <div className="space-y-3">
-        <Skeleton className="h-10 w-48" />
-        <Skeleton className="h-24 rounded-[2rem] w-full" />
-        <Skeleton className="h-24 rounded-[2rem] w-full" />
-      </div>
-    </div>
-  );
+  if (loading) return <Loading message="Menyiapkan ringkasan dashboard..." />;
 
   return (
     <div className="space-y-6 animate-fade-in">

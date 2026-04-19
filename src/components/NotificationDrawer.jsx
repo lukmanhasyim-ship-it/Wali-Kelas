@@ -66,9 +66,21 @@ export default function NotificationDrawer({ isOpen, onClose, notifications, onM
                       {n.message}
                     </p>
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2 flex items-center gap-2">
-                       {format(new Date(n.timestamp), 'HH:mm', { locale: id })} 
+                       {(() => {
+                         try {
+                           const d = new Date(n.timestamp);
+                           if (isNaN(d.getTime())) return 'Baru saja';
+                           return format(d, 'HH:mm', { locale: id });
+                         } catch (e) { return '--:--'; }
+                       })()} 
                        <span className="w-1 h-1 bg-slate-300 rounded-full" />
-                       {format(new Date(n.timestamp), 'dd MMM yyyy', { locale: id })}
+                       {(() => {
+                         try {
+                           const d = new Date(n.timestamp);
+                           if (isNaN(d.getTime())) return '';
+                           return format(d, 'dd MMM yyyy', { locale: id });
+                         } catch (e) { return ''; }
+                       })()}
                     </p>
                   </div>
                   {!n.isRead && (

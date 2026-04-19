@@ -17,6 +17,7 @@ import {
   Info
 } from 'lucide-react';
 import Loading from '../components/Loading';
+import { sendNotification } from '../utils/notifications';
 
 export default function Panggilan() {
   const { user } = useAuth();
@@ -69,6 +70,20 @@ export default function Panggilan() {
 
     try {
       await fetchGAS('CREATE', { sheet: 'Log_Panggilan', data: newRow });
+
+      // Notify Student and Officers via Centralized Utility
+      const calledStudentName = siswa.find(s => String(s.NISN) === String(nisn))?.Nama_Siswa || nisn;
+      
+      await sendNotification(siswa, {
+        subjectId: nisn,
+        targetRoles: ['Ketua Kelas', 'Sekretaris', 'Bendahara', 'Wali Kelas'],
+        message: `Halo Pengurus Kelas! Sekadar info, Wali Kelas sedang mendampingi ${calledStudentName} terkait ${kategori}. Tetap semangat ya menjadi teladan di kelas!`,
+        selfMessage: `Halo! Wali Kelas ingin mengobrol sebentar terkait ${kategori} (${finalAlasan}). Yuk, sempatkan waktu untuk diskusi santai bersama, kami peduli dengan prosesmu!`,
+        includeSelf: true,
+        type: 'info',
+        waliEmail: user?.email
+      });
+
       setLog(prev => [newRow, ...prev]);
       showToast('Surat panggilan berhasil dibuat.', 'success');
       setNisn('');
@@ -174,6 +189,7 @@ export default function Panggilan() {
                 <select className="input-field" value={kategori} onChange={e => setKategori(e.target.value)}>
                   <option value="Panggilan Wali">Panggilan Wali</option>
                   <option value="Home Visit">Home Visit</option>
+                  <option value="Teguran">Teguran</option>
                 </select>
               </div>
 
@@ -251,7 +267,7 @@ export default function Panggilan() {
                       </td>
                     </tr>
                   ) : log.map(item => {
-                    const s = siswa.find(s => s.NISN === item.NISN);
+                    const s = siswa.find(s => String(s.NISN) === String(item.NISN));
                     const isSelesai = item.Status_Selesai === 'Selesai';
                     return (
                       <tr key={item.ID_Panggilan} className="group hover:bg-slate-50 transition-colors">
@@ -286,8 +302,8 @@ export default function Panggilan() {
                           <button
                             onClick={() => handleUpdateStatus(item.ID_Panggilan, isSelesai ? 'Pending' : 'Selesai')}
                             className={`inline-flex items-center gap-2 pl-4 pr-3 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl border transition-all ${isSelesai
-                                ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
-                                : 'bg-rose-50 text-rose-600 border-rose-100 hover:bg-rose-100'
+                              ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
+                              : 'bg-rose-50 text-rose-600 border-rose-100 hover:bg-rose-100'
                               }`}
                           >
                             <div className={`w-1.5 h-1.5 rounded-full ${isSelesai ? 'bg-emerald-600' : 'bg-rose-600'}`} />

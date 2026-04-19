@@ -35,11 +35,16 @@ import {
   Wallet,
   ChevronRight,
   Filter,
-  CalendarDays
+  CalendarDays,
+  FileDown,
+  AlertTriangle,
+  UserCheck,
+  DollarSign
 } from 'lucide-react';
 import Loading from '../components/Loading';
 import Skeleton, { SkeletonStats, SkeletonTable } from '../components/Skeleton';
 import EmptyState from '../components/EmptyState';
+import PageGuide from '../components/PageGuide';
 
 const COLORS = ['#10b981', '#f59e0b', '#3b82f6', '#ef4444', '#8b5cf6', '#64748b'];
 
@@ -70,7 +75,8 @@ export default function Laporan() {
           fetchGAS('GET_ALL', { sheet: 'Log_Panggilan' })
         ]);
 
-        setSiswa(s.data || []);
+        const allSiswa = s.data || [];
+        setSiswa(allSiswa.filter(st => st.Status_Aktif === 'Aktif'));
         setPresensi(p.data || []);
         setKeuangan(k.data || []);
         setPanggilan(pg.data || []);
@@ -191,10 +197,10 @@ export default function Laporan() {
     return filteredPresensi
       .filter(p => isNotPresent(p.Status_Pagi) || isNotPresent(p.Status_Siang) || isNotPresent(p.Status))
       .map(p => {
-        const s = siswa.find(item => item.NISN === p.NISN);
+        const s = siswa.find(item => item.ID_Siswa === p.ID_Siswa);
         return {
           ...p,
-          Nama: s?.Nama_Siswa || p.NISN
+          Nama: s?.Nama_Siswa || p.ID_Siswa
         };
       })
       .sort((a, b) => new Date(b.Tanggal) - new Date(a.Tanggal));
@@ -204,8 +210,8 @@ export default function Laporan() {
   const studentAbsenceTotals = useMemo(() => {
     const totals = {};
     filteredPresensi.forEach(p => {
-      const nisn = p.NISN;
-      if (!totals[nisn]) totals[nisn] = { S: 0, I: 0, A: 0, B: 0 };
+      const idSiswa = p.ID_Siswa;
+      if (!totals[idSiswa]) totals[idSiswa] = { S: 0, I: 0, A: 0, B: 0 };
 
       const dayStatuses = new Set();
       if (['S', 'I', 'A', 'B'].includes(p.Status_Pagi)) dayStatuses.add(p.Status_Pagi);
@@ -217,7 +223,7 @@ export default function Laporan() {
       }
 
       dayStatuses.forEach(st => {
-        if (totals[nisn][st] !== undefined) totals[nisn][st]++;
+        if (totals[idSiswa][st] !== undefined) totals[idSiswa][st]++;
       });
     });
     return totals;
@@ -310,40 +316,7 @@ export default function Laporan() {
     }
   };
 
-  if (loading) return (
-    <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-        <div className="space-y-4">
-          <Skeleton className="h-4 w-32" />
-          <Skeleton className="h-10 w-96 rounded-lg" />
-          <Skeleton className="h-4 w-48" />
-        </div>
-        <div className="flex gap-3">
-          <Skeleton className="h-10 w-48 rounded-xl" />
-          <Skeleton className="h-10 w-32 rounded-xl" />
-          <Skeleton className="h-10 w-12 rounded-xl" />
-        </div>
-      </div>
-      <div className="bg-white p-12 rounded-[2rem] border border-slate-100 shadow-xl space-y-12">
-        <div className="flex justify-between items-end border-b-2 border-slate-100 pb-4">
-          <div className="space-y-2">
-            <Skeleton className="h-8 w-64" />
-            <Skeleton className="h-3 w-48" />
-          </div>
-          <div className="space-y-2 align-right">
-            <Skeleton className="h-3 w-16" />
-            <Skeleton className="h-6 w-24" />
-          </div>
-        </div>
-        <SkeletonStats />
-        <div className="grid grid-cols-2 gap-8 h-[240px]">
-          <Skeleton className="rounded-3xl" />
-          <Skeleton className="rounded-3xl" />
-        </div>
-        <SkeletonTable rows={10} />
-      </div>
-    </div>
-  );
+  if (loading) return <Loading message="Menganalisis data laporan..." />;
 
   return (
     <div className="space-y-8 pb-12 animate-fade-in">
@@ -462,6 +435,16 @@ export default function Laporan() {
           </div>
         </div>
       </div>
+
+      <PageGuide 
+        title="Panduan Laporan:"
+        steps={[
+          'Pilih periode laporan menggunakan fitur filter tanggal atau bulan.',
+          'Grafik statistik akan berubah secara dinamis menyesuaikan data yang difilter.',
+          'Gunakan tombol <span class="font-black text-emerald-700">Ekspor Laporan</span> untuk mengunduh versi Cetak/PDF.',
+          'Laporan ini mencakup ringkasan kehadiran, akumulasi iuran kas, dan catatan kedisiplinan siswa.'
+        ]}
+      />
 
       <div ref={reportRef} id="printable-report" className="bg-white p-8 md:p-12 rounded-[2rem] border border-slate-100 shadow-xl space-y-12">
         {/* Simple Title */}
@@ -586,7 +569,7 @@ export default function Laporan() {
                   <tr key={i} className="hover:bg-slate-50 transition-colors text-center">
                     <td className="px-6 py-4 text-left border-r border-slate-50">
                       <p className="font-extrabold text-slate-800 leading-none">{p.Nama}</p>
-                      <p className="text-[8px] text-slate-400 font-black mt-1 uppercase leading-none">{p.NISN}</p>
+                      <p className="text-[8px] text-slate-400 font-black mt-1 uppercase leading-none">{p.ID_Siswa} | {p.NISN || '-'}</p>
                     </td>
                     <td className="px-4 py-4 text-slate-500 font-black border-r border-slate-50">{format(parseISO(p.Tanggal), 'dd/MM')}</td>
                     <td className="px-4 py-4 border-r border-slate-50">
@@ -604,7 +587,7 @@ export default function Laporan() {
                     <td className="px-6 py-4 border-r border-slate-50">
                       <div className="flex items-center justify-center gap-1">
                         {['S', 'I', 'A', 'B'].map(st => {
-                          const count = studentAbsenceTotals[p.NISN][st];
+                          const count = (studentAbsenceTotals[p.ID_Siswa] || {})[st] || 0;
                           return (
                             <div key={st} className={`flex items-center gap-0.5 px-1 py-1 rounded-md border text-[8px] font-black ${count > 0 ? 'bg-slate-50 border-slate-200 text-slate-900' : 'text-slate-200 border-transparent opacity-30'}`}>
                               <span>{st}</span>
@@ -659,11 +642,11 @@ export default function Laporan() {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {filteredKeuangan.map((k, i) => {
-                  const s = siswa.find(item => item.NISN === k.NISN);
+                  const s = siswa.find(item => item.ID_Siswa === k.ID_Siswa);
                   return (
                     <tr key={i} className="hover:bg-slate-50 transition-colors font-bold">
                       <td className="px-6 py-4 text-slate-400">{format(parseISO(k.Tanggal), 'dd/MM/yy')}</td>
-                      <td className="px-6 py-4 text-slate-800">{s?.Nama_Siswa || k.NISN || 'Umum'}</td>
+                      <td className="px-6 py-4 text-slate-800">{s?.Nama_Siswa || k.ID_Siswa || 'Umum'}</td>
                       <td className="px-6 py-4 text-slate-400 italic font-medium">{k.Keterangan || '-'}</td>
                       <td className={`px-6 py-4 text-right font-black ${k.Tipe === 'Masuk' ? 'text-emerald-600' : 'text-rose-600'}`}>
                         {k.Tipe === 'Masuk' ? '+' : '-'} Rp {Number(k.Jumlah).toLocaleString('id-ID')}
@@ -709,12 +692,12 @@ export default function Laporan() {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {filteredPanggilan.length > 0 ? filteredPanggilan.map((pg, i) => {
-                  const s = siswa.find(item => item.NISN === pg.NISN);
+                  const s = siswa.find(item => item.ID_Siswa === pg.ID_Siswa);
                   return (
                     <tr key={i} className="hover:bg-slate-50 transition-colors text-center font-bold">
                       <td className="px-6 py-4 text-left border-r border-slate-50">
-                        <p className="text-slate-800">{s?.Nama_Siswa || pg.NISN}</p>
-                        <p className="text-[8px] text-slate-400 font-black mt-0.5">{pg.NISN}</p>
+                        <p className="text-slate-800">{s?.Nama_Siswa || pg.ID_Siswa}</p>
+                        <p className="text-[8px] text-slate-400 font-black mt-0.5">{pg.ID_Siswa}</p>
                       </td>
                       <td className="px-4 py-4 text-slate-500 border-r border-slate-50">{format(parseISO(pg.Tanggal), 'dd/MM/yy')}</td>
                       <td className="px-4 py-4 border-r border-slate-50">

@@ -1,7 +1,7 @@
 import React, { memo } from 'react';
-import { Phone, AlertTriangle, Edit3, MapPin } from 'lucide-react';
+import { Phone, AlertTriangle, Edit3, MapPin, Trash2 } from 'lucide-react';
 
-function StudentCard({ student, disciplineStatus, onWaClick, onEdit }) {
+function StudentCard({ student, disciplineStatus, onWaClick, onEdit, onDelete }) {
   const getAvatarColor = (gender) => {
     return gender === 'P' ? 'bg-pink-100 text-pink-700' : 'bg-blue-100 text-blue-700';
   };
@@ -24,40 +24,54 @@ function StudentCard({ student, disciplineStatus, onWaClick, onEdit }) {
              </span>
           )}
         </div>
-        <p className="text-xs text-slate-500 mt-1">NISN: {student.NISN}</p>
-        <p className="text-xs text-slate-500 mt-1">Jabatan: {student.Jabatan || 'Siswa'}</p>
+        <p className="text-[10px] text-emerald-600 font-mono font-bold">{student.ID_Siswa}</p>
+        <p className="text-xs text-slate-500 mt-0.5">NISN: {student.NISN || '-'}</p>
         <p className="text-xs text-slate-500 truncate">Wali: {student.Nama_Wali}</p>
       </div>
 
       {/* Quick Action */}
       <div className="flex-shrink-0 flex items-center gap-2">
-        {onEdit && (
+        <div className="flex flex-col gap-1">
+          {onEdit && (
+            <button
+              onClick={() => onEdit(student)}
+              className="p-1.5 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors"
+              title="Edit Data Siswa"
+            >
+              <Edit3 className="w-4 h-4" />
+            </button>
+          )}
+          {onDelete && (
+            <button
+              onClick={() => onDelete(student.ID_Siswa)}
+              className="p-1.5 bg-red-50 text-red-500 rounded-lg hover:bg-red-100 transition-colors"
+              title="Hapus Siswa"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+        
+        <div className="flex flex-col gap-1">
+          {student.Latitude && student.Longitude && (
+            <a
+              href={`https://www.google.com/maps?q=${student.Latitude},${student.Longitude}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-1.5 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
+              title="Lihat Lokasi"
+            >
+              <MapPin className="w-4 h-4" />
+            </a>
+          )}
           <button
-            onClick={() => onEdit(student)}
-            className="p-2 bg-slate-100 text-slate-700 rounded-full hover:bg-slate-200 transition-colors"
-            title="Edit Data Siswa"
+            onClick={() => onWaClick(student)}
+            className="p-1.5 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors"
+            title="WhatsApp Wali"
           >
-            <Edit3 className="w-5 h-5" />
+            <Phone className="w-4 h-4" />
           </button>
-        )}
-        {student.Latitude && student.Longitude && (
-          <a
-            href={`https://www.google.com/maps?q=${student.Latitude},${student.Longitude}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="p-2 bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200 transition-colors"
-            title="Lihat Lokasi di Google Maps"
-          >
-            <MapPin className="w-5 h-5" />
-          </a>
-        )}
-        <button
-          onClick={() => onWaClick(student)}
-          className="p-2 bg-green-100 text-green-700 rounded-full hover:bg-green-200 transition-colors"
-          title="WhatsApp Wali"
-        >
-          <Phone className="w-5 h-5" />
-        </button>
+        </div>
       </div>
     </div>
   );

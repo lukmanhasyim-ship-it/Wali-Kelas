@@ -133,10 +133,34 @@ export default function Tanggungan() {
 
   const stats = useMemo(() => {
     const total = periodReport.length || 1;
-    const lunasCount = periodReport.filter(p => p.totalBayar >= nominalIuran).length;
-    const kurangCount = periodReport.filter(p => p.totalBayar > 0 && p.totalBayar < nominalIuran).length;
-    const belumCount = periodReport.filter(p => p.totalBayar === 0).length;
     const totalUang = periodReport.reduce((sum, p) => sum + p.totalBayar, 0);
+
+    let lunasCount = 0;
+    let kurangCount = 0;
+    let belumCount = 0;
+
+    periodReport.forEach(p => {
+      let target = nominalIuran;
+      if (periodType === 'month') {
+        const baseDate = new Date(selectedDate);
+        const start = startOfMonth(baseDate);
+        const end = endOfMonth(baseDate);
+        const daysInMonth = differenceInDays(end, start) + 1;
+        const weeksInMonth = Math.ceil(daysInMonth / 7);
+        target = nominalIuran * weeksInMonth;
+      } else if (periodType === 'all' && keuangan.length > 0) {
+        const validDates = keuangan.map(k => new Date(k.Tanggal)).filter(d => !isNaN(d.getTime()));
+        if (validDates.length > 0) {
+          const oldest = new Date(Math.min(...validDates));
+          const weeks = Math.max(1, Math.floor(differenceInDays(new Date(), oldest) / 7) + 1);
+          target = nominalIuran * weeks;
+        }
+      }
+
+      if (p.totalBayar >= target) lunasCount++;
+      else if (p.totalBayar > 0) kurangCount++;
+      else belumCount++;
+    });
 
     return {
       lunas: lunasCount,
@@ -145,20 +169,25 @@ export default function Tanggungan() {
       totalTerkumpul: totalUang,
       persenLunas: ((lunasCount / total) * 100).toFixed(0)
     };
-  }, [periodReport, nominalIuran]);
+  }, [periodReport, nominalIuran, periodType, selectedDate, keuangan]);
 
   const seharusnyaKas = useMemo(() => {
-    const baseTarget = activeStudents.length * nominalIuran;
+    let multiplier = 1;
     if (periodType === 'month') {
       const baseDate = new Date(selectedDate);
       const start = startOfMonth(baseDate);
       const end = endOfMonth(baseDate);
       const daysInMonth = differenceInDays(end, start) + 1;
-      const weeksInMonth = Math.ceil(daysInMonth / 7);
-      return baseTarget * weeksInMonth;
+      multiplier = Math.ceil(daysInMonth / 7);
+    } else if (periodType === 'all' && keuangan.length > 0) {
+      const validDates = keuangan.map(k => new Date(k.Tanggal)).filter(d => !isNaN(d.getTime()));
+      if (validDates.length > 0) {
+        const oldest = new Date(Math.min(...validDates));
+        multiplier = Math.max(1, Math.floor(differenceInDays(new Date(), oldest) / 7) + 1);
+      }
     }
-    return baseTarget;
-  }, [activeStudents.length, nominalIuran, periodType, selectedDate]);
+    return activeStudents.length * (nominalIuran * multiplier);
+  }, [activeStudents.length, nominalIuran, periodType, selectedDate, keuangan]);
 
   if (loading) return <Loading message="Memperbarui tagihan siswa..." />;
 
@@ -187,8 +216,8 @@ export default function Tanggungan() {
                   key={t.id}
                   onClick={() => setPeriodType(t.id)}
                   className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${periodType === t.id
-                      ? 'bg-white text-emerald-600 shadow-sm'
-                      : 'text-slate-500 hover:text-slate-700'
+                    ? 'bg-white text-emerald-600 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700'
                     }`}
                 >
                   {t.label}
@@ -318,9 +347,28 @@ export default function Tanggungan() {
                   </td>
                 </tr>
               ) : periodReport.map((item) => {
-                const sisaTanggungan = Math.max(0, nominalIuran - item.totalBayar);
-                const isPaid = item.totalBayar >= nominalIuran;
-                const isPartial = item.totalBayar > 0 && item.totalBayar < nominalIuran;
+                // Kalkulasi target individu sesuai filter periode
+                let targetIndividu = nominalIuran;
+                if (periodType === 'month') {
+                  const baseDate = new Date(selectedDate);
+                  const start = startOfMonth(baseDate);
+                  const end = endOfMonth(baseDate);
+                  const daysInMonth = differenceInDays(end, start) + 1;
+                  const weeksInMonth = Math.ceil(daysInMonth / 7);
+                  targetIndividu = nominalIuran * weeksInMonth;
+                } else if (periodType === 'all' && keuangan.length > 0) {
+                  // Hitung total minggu sejak transaksi pertama sampai sekarang
+                  const validDates = keuangan.map(k => new Date(k.Tanggal)).filter(d => !isNaN(d.getTime()));
+                  if (validDates.length > 0) {
+                    const oldest = new Date(Math.min(...validDates));
+                    const weeks = Math.max(1, Math.floor(differenceInDays(new Date(), oldest) / 7) + 1);
+                    targetIndividu = nominalIuran * weeks;
+                  }
+                }
+
+                const sisaTanggungan = Math.max(0, targetIndividu - item.totalBayar);
+                const isPaid = item.totalBayar >= targetIndividu;
+                const isPartial = item.totalBayar > 0 && item.totalBayar < targetIndividu;
 
                 return (
                   <tr key={item.siswa.NISN} className="group hover:bg-slate-50 transition-colors">
@@ -355,8 +403,8 @@ export default function Tanggungan() {
                     </td>
                     <td className="px-8 py-6 text-right">
                       <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest ${isPaid ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' :
-                          isPartial ? 'bg-amber-50 text-amber-600 border border-amber-100' :
-                            'bg-rose-50 text-rose-600 border border-rose-100'
+                        isPartial ? 'bg-amber-50 text-amber-600 border border-amber-100' :
+                          'bg-rose-50 text-rose-600 border border-rose-100'
                         }`}>
                         <div className={`w-1.5 h-1.5 rounded-full ${isPaid ? 'bg-emerald-600' : isPartial ? 'bg-amber-600' : 'bg-rose-600'}`} />
                         {isPaid ? 'Lunas' : isPartial ? 'Kurang' : 'Belum'}

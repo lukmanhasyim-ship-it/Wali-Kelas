@@ -73,6 +73,12 @@ function handleResponse(e) {
       BULK_UPDATE_PRESENSI: function() {
         return { status: 'success', data: bulkUpdatePresensi(payload && payload.data) };
       },
+      BULK_UPDATE_NILAI: function() {
+        return { status: 'success', data: bulkUpdateNilai(payload && payload.data) };
+      },
+      BULK_UPDATE_MASTER_HISTORY: function() {
+        return { status: 'success', data: bulkUpdateMasterHistory(payload && payload.data) };
+      },
       LOGIN_WALI: function() {
         return { status: 'success', data: loginWali(payload && payload.email) };
       },
@@ -88,6 +94,18 @@ function handleResponse(e) {
       },
       DELETE_NOTIF: function() {
         return { status: 'success', data: deleteNotification(payload && payload.id) };
+      },
+      BULK_CREATE: function() {
+        var results = [];
+        if (payload && payload.data && Array.isArray(payload.data)) {
+          payload.data.forEach(function(item) {
+            results.push(appendData(payload.sheet, item));
+          });
+        }
+        return { status: 'success', data: results };
+      },
+      DELETE: function() {
+        return { status: 'success', data: deleteData(payload && payload.sheet, payload && payload.id) };
       }
     };
 
@@ -223,6 +241,28 @@ function updateData(sheetName, id, updateObj) {
   return false;
 }
 
+
+function deleteData(sheetName, id) {
+  sheetName = (sheetName || '').toString();
+  if (!sheetName || id === undefined || id === null) return false;
+
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
+  if (!sheet) return false;
+
+  var data = sheet.getDataRange().getValues();
+  if (data.length <= 1) return false;
+
+  var pkIndex = 0; // PK is usually first column
+
+  for (var i = 1; i < data.length; i++) {
+    if (data[i][pkIndex].toString() === id.toString()) {
+      sheet.deleteRow(i + 1);
+      return true;
+    }
+  }
+  return false;
+}
+
 function bulkUpdatePresensi(dataList) {
   if (!dataList || !Array.isArray(dataList)) throw new Error('Data harus berupa array.');
   
@@ -238,14 +278,15 @@ function bulkUpdatePresensi(dataList) {
   var headers = fullData[0];
   var headerMap = buildHeaderIndex(headers);
   var dateIdx = headerMap['Tanggal'];
-  var nisnIdx = headerMap['NISN'];
+  var idSiswaIdx = headerMap['ID_Siswa'] !== undefined ? headerMap['ID_Siswa'] : headerMap['NISN'];
+  if (idSiswaIdx === undefined) throw new Error('Kolom identitas (ID_Siswa/NISN) tidak ditemukan di sheet Presensi.');
 
-  // Map to find row by composite key (Tanggal + NISN)
+  // Map to find row by composite key (Tanggal + ID)
   var keyToRowMap = {};
   for (var i = 1; i < fullData.length; i++) {
     var dateVal = formatDateValue(fullData[i][dateIdx], 'Tanggal');
-    var nisnVal = fullData[i][nisnIdx].toString();
-    keyToRowMap[dateVal + '_' + nisnVal] = i;
+    var idVal = (fullData[i][idSiswaIdx] || '').toString();
+    if (idVal) keyToRowMap[dateVal + '_' + idVal] = i;
   }
 
   var now = new Date();
@@ -253,8 +294,9 @@ function bulkUpdatePresensi(dataList) {
 
   dataList.forEach(function(item) {
     var itemDate = formatDateValue(item.Tanggal, 'Tanggal');
-    var itemNisn = item.NISN.toString();
-    var key = itemDate + '_' + itemNisn;
+    var itemId = (item.ID_Siswa || item.NISN || '').toString();
+    if (!itemId) return;
+    var key = itemDate + '_' + itemId;
     var rowIdx = keyToRowMap[key];
 
     if (rowIdx !== undefined) {
@@ -297,7 +339,7 @@ function bulkUpdatePresensi(dataList) {
     // --- INTEGRASI NOTIFIKASI ---
     try {
       var student = studentsData.find(function(s) { 
-        return s.NISN.toString() === item.NISN.toString(); 
+        return s.ID_Siswa.toString() === item.ID_Siswa.toString(); 
       });
       
       if (student && student.Email) {
@@ -337,6 +379,131 @@ function bulkUpdatePresensi(dataList) {
   if (newRows.length > 0) {
     sheet.getRange(sheet.getLastRow() + 1, 1, newRows.length, headers.length).setValues(newRows);
   }
+
+  return true;
+}
+
+function bulkUpdateNilai(dataList) {
+  if (!dataList || !Array.isArray(dataList)) throw new Error('Data harus berupa array.');
+  
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('Daftar_Nilai');
+  if (!sheet) {
+    sheet = ss.insertSheet('Daftar_Nilai');
+    sheet.appendRow(['ID_Nilai', 'ID_Siswa', 'Jenjang', 'Semester', 'Kategori_Mapel', 'Nama_Mapel', 'Topik', 'Nilai', 'Timestamp']);
+  }
+
+  var fullData = sheet.getDataRange().getValues();
+  var headers = fullData[0];
+  var headerMap = buildHeaderIndex(headers);
+  var idSiIdx = headerMap['ID_Siswa'] !== undefined ? headerMap['ID_Siswa'] : headerMap['NISN'];
+  if (idSiIdx === undefined) throw new Error('Kolom identitas (ID_Siswa/NISN) tidak ditemukan di sheet Daftar_Nilai.');
+
+  var semesterIdx = headerMap['Semester'];
+  var mapelIdx = headerMap['Nama_Mapel'];
+  var topikIdx = headerMap['Topik'];
+
+  // Map to find row by composite key
+  var keyToRowMap = {};
+  for (var i = 1; i < fullData.length; i++) {
+    var idVal = (fullData[i][idSiIdx] || '').toString();
+    if (!idVal) continue;
+    var semVal = (fullData[i][semesterIdx] || '').toString();
+    var mapelVal = (fullData[i][mapelIdx] || '').toString();
+    var topikVal = (fullData[i][topikIdx] || '').toString();
+    keyToRowMap[idVal + '_' + semVal + '_' + mapelVal + '_' + topikVal] = i;
+  }
+
+  var now = new Date();
+  var newRows = [];
+
+  dataList.forEach(function(item) {
+    var idVal = (item.ID_Siswa || item.NISN || '').toString();
+    if (!idVal) return;
+    var semVal = (item.Semester || '').toString();
+    var mapelVal = (item.Nama_Mapel || '').toString();
+    var topikVal = (item.Topik || '').toString();
+    var key = idVal + '_' + semVal + '_' + mapelVal + '_' + topikVal;
+    
+    // Skip if no grade
+    if (item.Nilai === undefined || item.Nilai === null || item.Nilai === '') return;
+    
+    var rowIdx = keyToRowMap[key];
+
+    if (rowIdx !== undefined) {
+      // Update existing
+      for (var keyAttr in item) {
+        if (item.hasOwnProperty(keyAttr) && headerMap.hasOwnProperty(keyAttr)) {
+          var colIdx = headerMap[keyAttr];
+          fullData[rowIdx][colIdx] = formatDateValue(item[keyAttr], keyAttr);
+        }
+      }
+      if (headerMap.hasOwnProperty('Timestamp')) {
+          fullData[rowIdx][headerMap['Timestamp']] = formatDateValue(now, 'Timestamp');
+      }
+    } else {
+      // Prepare new row
+      var newRow = headers.map(function(h) { return ''; });
+      for (var keyAttr in item) {
+        if (item.hasOwnProperty(keyAttr) && headerMap.hasOwnProperty(keyAttr)) {
+          newRow[headerMap[keyAttr]] = formatDateValue(item[keyAttr], keyAttr);
+        }
+      }
+      if (headerMap.hasOwnProperty('Timestamp')) {
+          newRow[headerMap['Timestamp']] = formatDateValue(now, 'Timestamp');
+      }
+      if (headerMap.hasOwnProperty('ID_Nilai') && !newRow[headerMap['ID_Nilai']]) {
+          newRow[headerMap['ID_Nilai']] = 'N' + new Date().getTime() + Math.random().toString(36).substr(2, 5);
+      }
+      newRows.push(newRow);
+    }
+  });
+
+  if (fullData.length > 1) {
+    sheet.getRange(1, 1, fullData.length, headers.length).setValues(fullData);
+  }
+  
+  if (newRows.length > 0) {
+    sheet.getRange(sheet.getLastRow() + 1, 1, newRows.length, headers.length).setValues(newRows);
+  }
+
+  return true;
+}
+
+function bulkUpdateMasterHistory(dataList) {
+  if (!dataList || !Array.isArray(dataList)) throw new Error('Data harus berupa array.');
+  
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('Master_Siswa');
+  if (!sheet) return false;
+
+  var fullData = sheet.getDataRange().getValues();
+  var headers = fullData[0];
+  var headerMap = buildHeaderIndex(headers);
+  var idIdx = headerMap['ID_Siswa'] !== undefined ? headerMap['ID_Siswa'] : headerMap['NISN'];
+  if (idIdx === undefined) throw new Error('Kolom identitas (ID_Siswa/NISN) tidak ditemukan di sheet Master_Siswa.');
+
+  // Map to find row by identity column
+  var idToRowMap = {};
+  for (var i = 1; i < fullData.length; i++) {
+    var idVal = (fullData[i][idIdx] || '').toString();
+    if (idVal) idToRowMap[idVal] = i;
+  }
+
+  dataList.forEach(function(item) {
+    var idVal = (item.ID_Siswa || item.NISN || '').toString();
+    if (!idVal) return;
+    var rowIdx = idToRowMap[idVal];
+
+    if (rowIdx !== undefined) {
+      for (var keyAttr in item) {
+        if (item.hasOwnProperty(keyAttr) && headerMap.hasOwnProperty(keyAttr) && keyAttr !== 'ID_Siswa' && keyAttr !== 'NISN') {
+          var colIdx = headerMap[keyAttr];
+          sheet.getRange(rowIdx + 1, colIdx + 1).setValue(formatDateValue(item[keyAttr], keyAttr));
+        }
+      }
+    }
+  });
 
   return true;
 }
@@ -420,25 +587,28 @@ function deleteNotification(id) {
 function setupSpreadsheet() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var master = ss.insertSheet('Master_Siswa');
-  master.appendRow(['NISN', 'Nama_Siswa', 'L/P', 'Email', 'Jabatan', 'No_WA_Siswa', 'Nama_Wali', 'No_WA_Wali', 'Alamat', 'Latitude', 'Longitude', 'Lokasi', 'Status_Aktif']);
+  master.appendRow(['ID_Siswa', 'NISN', 'NIS', 'Nama_Siswa', 'L/P', 'Tempat_Lahir', 'Tanggal_Lahir', 'Email', 'Jabatan', 'No_WA_Siswa', 'Nama_Wali', 'No_WA_Wali', 'Alamat', 'Latitude', 'Longitude', 'Lokasi', 'Status_Aktif', 'Keterangan', 'Tanggal_Masuk_X', 'Tanggal_Naik_XI', 'Tanggal_Naik_XII', 'Tanggal_Tamat_Sekolah']);
   
   var presensi = ss.insertSheet('Presensi');
-  presensi.appendRow(['ID_Presensi', 'Tanggal', 'NISN', 'Status_Pagi', 'Status_Siang', 'Keterangan', 'Timestamp_Pagi', 'Timestamp_Siang']);
+  presensi.appendRow(['ID_Presensi', 'Tanggal', 'ID_Siswa', 'Status_Pagi', 'Status_Siang', 'Keterangan', 'Timestamp_Pagi', 'Timestamp_Siang']);
   
   var keuangan = ss.insertSheet('Keuangan');
-  keuangan.appendRow(['ID_Transaksi', 'Tanggal', 'NISN', 'Tipe', 'Jumlah', 'Keterangan']);
+  keuangan.appendRow(['ID_Transaksi', 'Tanggal', 'ID_Siswa', 'Tipe', 'Jumlah', 'Keterangan', 'Timestamp']);
+
+  var daftarNilai = ss.insertSheet('Daftar_Nilai');
+  daftarNilai.appendRow(['ID_Nilai', 'ID_Siswa', 'Jenjang', 'Semester', 'Kategori_Mapel', 'Nama_Mapel', 'Topik', 'Nilai', 'Timestamp']);
   
   var panggilan = ss.insertSheet('Log_Panggilan');
-  panggilan.appendRow(['ID_Panggilan', 'Tanggal', 'NISN', 'Kategori', 'Alasan', 'Hasil_Pertemuan', 'Status_Selesai']);
+  panggilan.appendRow(['ID_Panggilan', 'Tanggal', 'ID_Siswa', 'Kategori', 'Alasan', 'Hasil_Pertemuan', 'Status_Selesai']);
   
   var profil = ss.insertSheet('Profil_Wali_Kelas');
   profil.appendRow(['Id_Wali', 'Nama', 'Email', 'Kelas', 'Bio', 'Gaya_Ajar', 'Kontak', 'Created_At']);
   
   var queue = ss.insertSheet('Queue_Chat');
-  queue.appendRow(['ID_Queue', 'Email', 'Student_NISN', 'Student_Name', 'Query', 'Attendance_Detail', 'Summary', 'Status', 'Response', 'Created_At', 'Processed_At']);
+  queue.appendRow(['ID_Queue', 'Email', 'ID_Siswa', 'Student_Name', 'Query', 'Attendance_Detail', 'Summary', 'Status', 'Response', 'Created_At', 'Processed_At']);
   
   var catatan = ss.insertSheet('Catatan_Siswa');
-  catatan.appendRow(['NISN', 'Nama_Siswa', 'Tanggal', 'Ringkasan_AI', 'Tindak_Lanjut', 'Created_By']);
+  catatan.appendRow(['ID_Siswa', 'Nama_Siswa', 'Tanggal', 'Ringkasan_AI', 'Tindak_Lanjut', 'Created_By']);
 
   var lokasi = ss.insertSheet('Lokasi');
   lokasi.appendRow(['ID_Lokasi', 'Nama_Lokasi', 'Deskripsi', 'Alamat', 'Latitude', 'Longitude', 'Lokasi', 'Created_By', 'Created_By_Email', 'Created_At']);

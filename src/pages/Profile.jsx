@@ -5,6 +5,7 @@ import { useToast } from '../context/ToastContext';
 import { fetchGAS } from '../utils/gasClient';
 import Loading from '../components/Loading';
 import Skeleton from '../components/Skeleton';
+import PageGuide from '../components/PageGuide';
 
 export default function Profile() {
   const { user } = useAuth();
@@ -32,7 +33,7 @@ export default function Profile() {
   const isWaliKelas = role === 'Wali Kelas';
   const isSiswaRole = ['Siswa', 'Ketua Kelas', 'Sekretaris', 'Bendahara'].includes(role);
   const sheetName = isSiswaRole ? 'Master_Siswa' : 'Profil_Wali_Kelas';
-  const idField = isSiswaRole ? 'NISN' : 'Id_Wali';
+  const idField = isSiswaRole ? 'ID_Siswa' : 'Id_Wali';
 
   useEffect(() => {
     async function loadProfile() {
@@ -286,7 +287,7 @@ export default function Profile() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Nama Wali</label>
+                <label className="block text-xs font-medium text-slate-700 mb-1">Orang Tua</label>
                 <input
                   className="input-field"
                   value={namaWali}
@@ -358,66 +359,68 @@ export default function Profile() {
             </div>
           )}
 
-          <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
-            <h4 className="text-sm font-semibold text-slate-800 mb-3">Lokasi GPS</h4>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Latitude</label>
-                <input
-                  className="input-field"
-                  value={latitude}
-                  onChange={(e) => {
-                    const formatted = formatCoordinateInput(e.target.value, true);
-                    setLatitude(formatted);
-                    if (formatted && longitude) {
-                      setLokasi(createMapsLink(formatted, longitude));
-                    }
-                  }}
-                  placeholder="-6.2088"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Longitude</label>
-                <input
-                  className="input-field"
-                  value={longitude}
-                  onChange={(e) => {
-                    const formatted = formatCoordinateInput(e.target.value, false);
-                    setLongitude(formatted);
-                    if (latitude && formatted) {
-                      setLokasi(createMapsLink(latitude, formatted));
-                    }
-                  }}
-                  placeholder="106.8456"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Link Google Maps</label>
-                <input
-                  className="input-field"
-                  value={lokasi}
-                  readOnly
-                  placeholder="Latitude dan longitude akan membuat link otomatis"
-                />
-              </div>
-            </div>
-            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <button type="button" onClick={handleGetGPS} className="btn-secondary">
-                Dapatkan Lokasi GPS
-              </button>
-              {latitude && longitude && (
-                <a
-                  href={`https://www.google.com/maps?q=${latitude},${longitude}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn-secondary"
-                >
-                  Lihat di Google Maps
-                </a>
-              )}
-            </div>
-          </div>
 
+          {isSiswaRole && (
+            <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+              <h4 className="text-sm font-semibold text-slate-800 mb-3">Lokasi GPS</h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">Latitude</label>
+                  <input
+                    className="input-field"
+                    value={latitude}
+                    onChange={(e) => {
+                      const formatted = formatCoordinateInput(e.target.value, true);
+                      setLatitude(formatted);
+                      if (formatted && longitude) {
+                        setLokasi(createMapsLink(formatted, longitude));
+                      }
+                    }}
+                    placeholder="-6.2088"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">Longitude</label>
+                  <input
+                    className="input-field"
+                    value={longitude}
+                    onChange={(e) => {
+                      const formatted = formatCoordinateInput(e.target.value, false);
+                      setLongitude(formatted);
+                      if (latitude && formatted) {
+                        setLokasi(createMapsLink(latitude, formatted));
+                      }
+                    }}
+                    placeholder="106.8456"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">Link Google Maps</label>
+                  <input
+                    className="input-field"
+                    value={lokasi}
+                    readOnly
+                    placeholder="Latitude dan longitude akan membuat link otomatis"
+                  />
+                </div>
+              </div>
+              <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <button type="button" onClick={handleGetGPS} className="btn-secondary">
+                  Dapatkan Lokasi GPS
+                </button>
+                {latitude && longitude && (
+                  <a
+                    href={`https://www.google.com/maps?q=${latitude},${longitude}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn-secondary"
+                  >
+                    Lihat di Google Maps
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
           <div className="flex flex-wrap gap-3 justify-end">
             <button type="submit" className="btn-primary min-w-[160px]" disabled={saving}>
               {saving ? 'Menyimpan...' : 'Simpan Profil'}

@@ -7,6 +7,7 @@ import { fetchGAS } from '../utils/gasClient';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import Loading from '../components/Loading';
+import PageGuide from '../components/PageGuide';
 
 export default function Notifications() {
   const { user } = useAuth();
@@ -68,11 +69,32 @@ export default function Notifications() {
   };
 
 
+  const handleDeleteAll = async () => {
+    if (notifications.length === 0) return;
+    if (!window.confirm('Apakah Anda yakin ingin menghapus seluruh riwayat notifikasi? Tindakan ini tidak dapat dibatalkan.')) return;
+    
+    try {
+      setLoading(true);
+      showToast('Membersihkan riwayat...', 'info');
+      // Batch delete current notifications
+      await Promise.all(notifications.map(n => fetchGAS('DELETE_NOTIF', { id: n.id })));
+      setNotifications([]);
+      showToast('Seluruh riwayat berhasil dibersihkan.', 'success');
+    } catch (err) {
+      console.error('Delete all failed:', err);
+      showToast('Gagal membersihkan riwayat.', 'error');
+      loadNotifs();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
   if (loading) return <Loading message="Memuat notifikasi..." />;
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <button
             onClick={() => navigate(-1)}
@@ -86,15 +108,35 @@ export default function Notifications() {
           </div>
         </div>
 
-        <button
-          onClick={handleMarkAllRead}
-          disabled={!notifications.some(n => !n.isRead)}
-          className="btn-secondary flex items-center gap-2 group disabled:opacity-50"
-        >
-          <CheckCheck className="w-4 h-4 text-emerald-600" />
-          <span className="text-[11px] font-black uppercase tracking-widest">Tandai Semua Dibaca</span>
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={handleMarkAllRead}
+            disabled={!notifications.some(n => !n.isRead)}
+            className="btn-secondary flex items-center gap-2 group disabled:opacity-50 !py-2.5"
+          >
+            <CheckCheck className="w-4 h-4 text-emerald-600" />
+            <span className="text-[10px] font-black uppercase tracking-widest">Tandai Dibaca</span>
+          </button>
+          
+          <button
+            onClick={handleDeleteAll}
+            disabled={notifications.length === 0}
+            className="btn-secondary flex items-center gap-2 group hover:!bg-rose-50 hover:!text-rose-600 hover:!border-rose-100 disabled:opacity-50 !py-2.5"
+          >
+            <Trash2 className="w-4 h-4 text-rose-500" />
+            <span className="text-[10px] font-black uppercase tracking-widest">Hapus Semua</span>
+          </button>
+        </div>
       </div>
+
+      <PageGuide 
+        title="Pusat Notifikasi:"
+        steps={[
+          'Pantau seluruh aktivitas transaksi kas dan absensi secara real-time.',
+          'Notifikasi yang muncul disesuaikan dengan peran (Role) Anda di kelas.',
+          'Gunakan filter riwayat untuk mencari notifikasi pada periode tertentu.'
+        ]}
+      />
 
       <div className="space-y-4">
         {notifications.length === 0 ? (

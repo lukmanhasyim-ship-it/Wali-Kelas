@@ -30,6 +30,14 @@ export default function Login() {
         );
 
         if (matchingUser) {
+          // Check if status is Aktif
+          const status = (matchingUser.Status_Aktif || '').toString().trim();
+          if (status !== 'Aktif') {
+            setError(`Akun Anda terdaftar namun status saat ini adalah "${status || 'Tidak Aktif'}". Silakan hubungi Wali Kelas.`);
+            setLoading(false);
+            return;
+          }
+
           // If student, try to get class info from Profil_Wali_Kelas sheet
           let studentClass = '';
           try {
@@ -51,19 +59,24 @@ export default function Login() {
           return;
         }
 
+        // Check if user is Wali Kelas
         try {
           const waliResponse = await fetchGAS('LOGIN_WALI', { email: userInfo.email });
-          const waliProfile = waliResponse.data;
-          login({
-            token: tokenResponse.access_token,
-            name: waliProfile.Nama || userInfo.name,
-            email: userInfo.email,
-            picture: userInfo.picture,
-            managedClass: waliProfile.Kelas || ''
-          }, waliProfile.Jabatan || 'Wali Kelas');
+          if (waliResponse.status === 'success' && waliResponse.data) {
+            const waliProfile = waliResponse.data;
+            login({
+              token: tokenResponse.access_token,
+              name: waliProfile.Nama || userInfo.name,
+              email: userInfo.email,
+              picture: userInfo.picture,
+              managedClass: waliProfile.Kelas || ''
+            }, waliProfile.Jabatan || 'Wali Kelas');
+          } else {
+            setError(`Email ${userInfo.email} tidak terdaftar di sistem Master Siswa maupun Profil Wali Kelas.`);
+          }
         } catch (waliError) {
           console.error('Login Wali Kelas Error:', waliError);
-          setError(`Email ${userInfo.email} tidak terdaftar. Silakan hubungi Admin.`);
+          setError(`Email ${userInfo.email} tidak dikenali oleh sistem. Pastikan Email Anda sudah didaftarkan oleh Admin.`);
         }
       } catch (err) {
         console.error('Login Error:', err);

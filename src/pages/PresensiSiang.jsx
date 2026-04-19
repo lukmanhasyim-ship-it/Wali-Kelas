@@ -37,7 +37,8 @@ export default function PresensiSiang() {
           fetchGAS('GET_ALL', { sheet: 'Master_Siswa' }),
           fetchGAS('GET_ALL', { sheet: 'Presensi' })
         ]);
-        setSiswa(s.data || []);
+        const allSiswa = s.data || [];
+        setSiswa(allSiswa.filter(st => st.Status_Aktif === 'Aktif'));
         const presensiData = (p.data || []).map(item => ({
           ...item,
           Tanggal: normalizeDateString(item.Tanggal)
@@ -54,8 +55,8 @@ export default function PresensiSiang() {
     load();
   }, [showToast, date]);
 
-  const buildPresensiId = (dateValue, nisn) => {
-    return `P${dateValue.replace(/-/g, '')}_${nisn}`;
+  const buildPresensiId = (dateValue, idSiswa) => {
+    return `P${dateValue.replace(/-/g, '')}_${idSiswa}`;
   };
 
   const isPresensiChanged = (current = {}, original = {}) => {
@@ -64,32 +65,32 @@ export default function PresensiSiang() {
 
   const hasChanges = useMemo(() => {
     return siswa.some(student => {
-      const current = presensi.find(p => p.Tanggal === date && p.NISN === student.NISN);
-      const original = originalPresensi.find(p => p.Tanggal === date && p.NISN === student.NISN);
-      const record = presensi.find(p => p.Tanggal === date && p.NISN === student.NISN);
-      const currentKeterangan = keterangan[student.NISN] || record?.Keterangan || '';
+      const current = presensi.find(p => p.Tanggal === date && p.ID_Siswa === student.ID_Siswa);
+      const original = originalPresensi.find(p => p.Tanggal === date && p.ID_Siswa === student.ID_Siswa);
+      const record = presensi.find(p => p.Tanggal === date && p.ID_Siswa === student.ID_Siswa);
+      const currentKeterangan = keterangan[student.ID_Siswa] || record?.Keterangan || '';
       const originalKeterangan = original?.Keterangan || '';
 
       return isPresensiChanged(current, original) || currentKeterangan !== originalKeterangan;
     });
   }, [date, originalPresensi, presensi, siswa, keterangan]);
 
-  const handleStatusChange = useCallback((nisn, newStatus) => {
+  const handleStatusChange = useCallback((idSiswa, newStatus) => {
     if (!canEdit) return;
 
     setPresensi(prev => {
-      const existing = prev.find(p => p.Tanggal === date && p.NISN === nisn);
+      const existing = prev.find(p => p.Tanggal === date && p.ID_Siswa === idSiswa);
       if (existing) {
         const finalStatus = existing.Status_Siang === newStatus ? '' : newStatus;
         return prev.map(p =>
-          p.Tanggal === date && p.NISN === nisn ? { ...p, Status_Siang: finalStatus } : p
+          p.Tanggal === date && p.ID_Siswa === idSiswa ? { ...p, Status_Siang: finalStatus } : p
         );
       }
 
       const newRecord = {
-        ID_Presensi: buildPresensiId(date, nisn),
+        ID_Presensi: buildPresensiId(date, idSiswa),
         Tanggal: date,
-        NISN: nisn,
+        ID_Siswa: idSiswa,
         Status_Pagi: '',
         Status_Siang: newStatus,
         Keterangan: ''
@@ -98,8 +99,8 @@ export default function PresensiSiang() {
     });
   }, [canEdit, date]);
 
-  const handleKeteranganChange = useCallback((nisn, value) => {
-    setKeterangan(prev => ({ ...prev, [nisn]: value }));
+  const handleKeteranganChange = useCallback((idSiswa, value) => {
+    setKeterangan(prev => ({ ...prev, [idSiswa]: value }));
   }, []);
 
   const handleCopyMorningAttendance = useCallback(() => {
@@ -108,7 +109,7 @@ export default function PresensiSiang() {
     setPresensi(prev => {
       const nextPresensi = [...prev];
       siswa.forEach(student => {
-        const idx = nextPresensi.findIndex(p => p.Tanggal === date && p.NISN === student.NISN);
+        const idx = nextPresensi.findIndex(p => p.Tanggal === date && p.ID_Siswa === student.ID_Siswa);
         if (idx >= 0) {
           // Salin status pagi ke siang, jika kosong default ke 'H'
           nextPresensi[idx] = {
@@ -117,9 +118,9 @@ export default function PresensiSiang() {
           };
         } else {
           nextPresensi.push({
-            ID_Presensi: buildPresensiId(date, student.NISN),
+            ID_Presensi: buildPresensiId(date, student.ID_Siswa),
             Tanggal: date,
-            NISN: student.NISN,
+            ID_Siswa: student.ID_Siswa,
             Status_Pagi: '',
             Status_Siang: 'H',
             Keterangan: ''
@@ -138,23 +139,23 @@ export default function PresensiSiang() {
 
     try {
       const originalMap = new Map(
-        originalPresensi.filter(p => p.Tanggal === date).map(p => [p.NISN, p])
+        originalPresensi.filter(p => p.Tanggal === date).map(p => [p.ID_Siswa, p])
       );
 
       const itemsToSave = presensi
         .filter(p => p.Tanggal === date)
         .map(record => {
-          const original = originalMap.get(record.NISN);
-          const currentKeterangan = keterangan[record.NISN] || record.Keterangan || '';
+          const original = originalMap.get(record.ID_Siswa);
+          const currentKeterangan = keterangan[record.ID_Siswa] || record.Keterangan || '';
           const hasStatusChanged = isPresensiChanged(record, original);
           const hasKeteranganChanged = currentKeterangan !== (original?.Keterangan || '');
 
           if (!hasStatusChanged && !hasKeteranganChanged) return null;
 
           return {
-            ID_Presensi: original?.ID_Presensi || buildPresensiId(date, record.NISN),
+            ID_Presensi: original?.ID_Presensi || buildPresensiId(date, record.ID_Siswa),
             Tanggal: date,
-            NISN: record.NISN,
+            ID_Siswa: record.ID_Siswa,
             Status_Pagi: record.Status_Pagi || '',
             Status_Siang: record.Status_Siang || '',
             Keterangan: currentKeterangan
@@ -176,11 +177,11 @@ export default function PresensiSiang() {
           .filter(p => p.Tanggal === date)
           .map(p => ({
             ...p,
-            Keterangan: keterangan[p.NISN] !== undefined ? keterangan[p.NISN] : p.Keterangan || ''
+            Keterangan: keterangan[p.ID_Siswa] !== undefined ? keterangan[p.ID_Siswa] : p.Keterangan || ''
           }));
 
         const uniqueTodayRecords = todayRecords.reduce((acc, record) => {
-          const existingIndex = acc.findIndex(r => r.NISN === record.NISN);
+          const existingIndex = acc.findIndex(r => r.ID_Siswa === record.ID_Siswa);
           if (existingIndex >= 0) acc[existingIndex] = record;
           else acc.push(record);
           return acc;
@@ -210,24 +211,7 @@ export default function PresensiSiang() {
     return colors[s] || 'bg-slate-50 text-slate-400';
   };
 
-  if (loading) return (
-    <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
-        <div className="space-y-4">
-          <Skeleton className="h-6 w-32 rounded-full" />
-          <Skeleton className="h-10 w-72" />
-          <Skeleton className="h-4 w-96" />
-        </div>
-        <div className="flex gap-3">
-          <Skeleton className="h-12 w-40 rounded-2xl" />
-          <Skeleton className="h-12 w-32 rounded-2xl" />
-          <Skeleton className="h-12 w-40 rounded-2xl" />
-        </div>
-      </div>
-      <SkeletonStats />
-      <SkeletonTable rows={10} />
-    </div>
-  );
+  if (loading) return <Loading message="Membuka buku absen siang..." />;
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -316,17 +300,17 @@ export default function PresensiSiang() {
                 </td>
               </tr>
             ) : siswa.map((student, idx) => {
-              const record = presensi.find(p => p.Tanggal === date && p.NISN === student.NISN);
+              const record = presensi.find(p => p.Tanggal === date && p.ID_Siswa === student.ID_Siswa);
               const statusPagi = record ? (record.Status_Pagi || '') : '';
               const statusSiang = record ? (record.Status_Siang || '') : '';
-              const currentKeterangan = keterangan[student.NISN] || record?.Keterangan || '';
+              const currentKeterangan = keterangan[student.ID_Siswa] || record?.Keterangan || '';
 
               return (
-                <tr key={student.NISN} className="group hover:bg-slate-50/50 transition-all">
+                <tr key={student.ID_Siswa} className="group hover:bg-slate-50/50 transition-all">
                   <td className="text-center font-bold text-slate-300 group-hover:text-indigo-600">{idx + 1}</td>
                   <td>
                     <p className="font-black text-slate-800 tracking-tight">{student.Nama_Siswa}</p>
-                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{student.NISN}</p>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{student.ID_Siswa} | {student.NISN || '-'}</p>
                   </td>
                   <td className="text-center">
                     <span className={`inline-flex w-7 h-7 items-center justify-center rounded-lg text-[10px] font-black border ${getStatusColor(statusPagi)}`}>
@@ -355,7 +339,7 @@ export default function PresensiSiang() {
                         return (
                           <button
                             key={s}
-                            onClick={() => handleStatusChange(student.NISN, s)}
+                            onClick={() => handleStatusChange(student.ID_Siswa, s)}
                             disabled={!canEdit}
                             className={`w-8 h-8 md:w-9 md:h-9 rounded-xl flex items-center justify-center font-black text-[10px] md:text-xs border transition-all duration-300 ${isActive ? activeStyles[s] : colors[s]} ${!canEdit ? 'opacity-30 cursor-not-allowed' : 'hover:-translate-y-1'}`}
                             title={s === 'B' ? 'Bolos' : s}
@@ -370,7 +354,7 @@ export default function PresensiSiang() {
                     <input
                       type="text"
                       value={currentKeterangan}
-                      onChange={(e) => handleKeteranganChange(student.NISN, e.target.value)}
+                      onChange={(e) => handleKeteranganChange(student.ID_Siswa, e.target.value)}
                       disabled={!canEdit}
                       placeholder="Catatan..."
                       className="w-full px-4 py-2 text-xs font-semibold rounded-xl bg-slate-50 border-transparent border focus:bg-white focus:border-indigo-100 focus:ring-0 outline-none transition-all"

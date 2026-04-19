@@ -5,14 +5,15 @@
 @layer base {
   :root {
     --brand-hue: 156;
-    --brand-saturation: 100%;
-    --brand-lightness: 26%;
+    --brand-saturation: 84%;
+    --brand-lightness: 24%;
 
     --brand: hsl(var(--brand-hue), var(--brand-saturation), var(--brand-lightness));
-    --brand-hover: hsl(var(--brand-hue), var(--brand-saturation), calc(var(--brand-lightness) - 5%));
-    --brand-soft: hsl(var(--brand-hue), var(--brand-saturation), 96%);
+    --brand-hover: hsl(var(--brand-hue), var(--brand-saturation), 18%);
+    --brand-soft: hsl(var(--brand-hue), var(--brand-saturation), 97%);
 
-    --accent-gold: hsl(45, 100%, 50%);
+    --accent: 43 96% 56%;
+    --accent-gold: hsl(var(--accent));
 
     --success: 142 71% 45%;
     --warning: 45 100% 50%;
@@ -24,7 +25,7 @@
   }
 
   body {
-    @apply bg-slate-50 text-slate-900 selection:bg-indigo-100 selection:text-indigo-900;
+    @apply bg-slate-50 text-slate-900 selection:bg-emerald-100 selection:text-emerald-900;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
   }
 
@@ -48,19 +49,19 @@
   }
 
   .btn-primary {
-    @apply bg-[#005a30] text-white px-6 py-2.5 rounded-2xl font-semibold shadow-lg shadow-emerald-100 hover:bg-[#004a28] hover:shadow-emerald-200 hover:-translate-y-0.5 transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:pointer-events-none;
+    @apply bg-emerald-800 text-white px-6 py-2.5 rounded-2xl font-bold shadow-lg shadow-emerald-200/50 hover:bg-emerald-900 hover:shadow-emerald-300/50 hover:-translate-y-0.5 transition-all duration-300 active:scale-95 disabled:opacity-50 disabled:pointer-events-none uppercase text-[11px] tracking-widest;
   }
 
   .btn-secondary {
-    @apply bg-white text-slate-700 px-6 py-2.5 rounded-2xl font-semibold border border-slate-200 hover:bg-slate-50 hover:border-[#008647] transition-all active:scale-95;
+    @apply bg-white text-slate-700 px-6 py-2.5 rounded-2xl font-bold border border-slate-200 shadow-sm hover:bg-slate-50 hover:border-emerald-600 hover:text-emerald-700 transition-all active:scale-95 uppercase text-[11px] tracking-widest;
   }
 
   .btn-ghost {
-    @apply px-4 py-2 rounded-xl text-slate-600 font-medium hover:bg-slate-100 transition-all active:scale-95;
+    @apply px-4 py-2 rounded-xl text-slate-600 font-bold hover:bg-slate-100 transition-all active:scale-95 uppercase text-[10px] tracking-wider;
   }
 
   .input-field {
-    @apply w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-600 outline-none transition-all duration-200;
+    @apply w-full px-5 py-3 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-600 outline-none transition-all duration-300 shadow-sm;
   }
 
   .status-badge {
@@ -129,8 +130,10 @@
 }
 
 .gradient-text {
-  @apply bg-clip-text text-transparent bg-gradient-to-r from-[#008647] to-[#fdb813] font-bold;
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-emerald-600 to-amber-500 font-black;
 }
+
+
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar {

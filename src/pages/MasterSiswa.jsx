@@ -7,7 +7,9 @@ import StudentCard from '../components/StudentCard';
 import Loading from '../components/Loading';
 import Skeleton, { SkeletonStats, SkeletonTable } from '../components/Skeleton';
 import EmptyState from '../components/EmptyState';
-import { UserPlus } from 'lucide-react';
+import PageGuide from '../components/PageGuide';
+import { UserPlus, FileUp, Download, FileDown } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 export default function MasterSiswa() {
   const { user } = useAuth();
@@ -21,6 +23,13 @@ export default function MasterSiswa() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
   const [nisn, setNisn] = useState('');
+  const [nis, setNis] = useState('');
+  const [tempatLahir, setTempatLahir] = useState('');
+  const [tanggalLahir, setTanggalLahir] = useState('');
+  const [tglMasukX, setTglMasukX] = useState('');
+  const [tglNaikXI, setTglNaikXI] = useState('');
+  const [tglNaikXII, setTglNaikXII] = useState('');
+  const [tglTamat, setTglTamat] = useState('');
   const [nama, setNama] = useState('');
   const [email, setEmail] = useState('');
   const [wali, setWali] = useState('');
@@ -32,13 +41,23 @@ export default function MasterSiswa() {
   const [jk, setJk] = useState('L');
   const [jabatan, setJabatan] = useState('Siswa');
   const [statusAktif, setStatusAktif] = useState('Aktif');
+  const [keterangan, setKeterangan] = useState('');
   const [error, setError] = useState('');
+
+  const [isBulkOpen, setIsBulkOpen] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const [bulkTglMasukX, setBulkTglMasukX] = useState('');
+  const [bulkTglNaikXI, setBulkTglNaikXI] = useState('');
+  const [bulkTglNaikXII, setBulkTglNaikXII] = useState('');
+  const [bulkTglTamat, setBulkTglTamat] = useState('');
+  const [isSavingBulk, setIsSavingBulk] = useState(false);
 
   useEffect(() => {
     async function load() {
       try {
         const s = await fetchGAS('GET_ALL', { sheet: 'Master_Siswa' });
-        setSiswa(s.data || []);
+        const allStudents = s.data || [];
+        setSiswa(allStudents.filter(st => st.Status_Aktif === 'Aktif'));
       } catch (error) {
         console.error('MasterSiswa load error:', error);
         showToast('Gagal memuat data siswa.', 'error');
@@ -49,10 +68,112 @@ export default function MasterSiswa() {
     load();
   }, [showToast]);
 
+  const handleDownloadTemplate = () => {
+    try {
+      const wb = XLSX.utils.book_new();
+      const headers = [
+        ['ID_Siswa', 'NIS', 'NISN', 'Nama_Siswa', 'JK', 'Email', 'Nama_Wali', 'No_WA_Wali', 'Alamat', 'Jabatan', 'Status_Aktif'],
+        ['SISWA001', '12345', '0012345678', 'Nama Lengkap', 'L/P', 'siswa@email.com', 'Nama Orang Tua', '081234567890', 'Alamat Lengkap', 'Siswa/Ketua Kelas/Sekretaris/Bendahara', 'Aktif']
+      ];
+      const ws = XLSX.utils.aoa_to_sheet(headers);
+      XLSX.utils.book_append_sheet(wb, ws, 'Template Siswa');
+      XLSX.writeFile(wb, 'Template_Master_Siswa.xlsx');
+      showToast('Template berhasil diunduh.', 'success');
+    } catch (e) {
+      showToast('Gagal membuat template.', 'error');
+    }
+  };
+
+  const handleImportExcel = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        setIsImporting(true);
+        const data = new Uint8Array(event.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const jsonData = XLSX.utils.sheet_to_json(sheet);
+
+        if (jsonData.length === 0) throw new Error('File kosong');
+
+        // Map and validate
+        const mappedData = jsonData.map(row => ({
+          ID_Siswa: row.ID_Siswa || `S${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+          NIS: row.NIS?.toString() || '',
+          NISN: row.NISN?.toString() || '',
+          Nama_Siswa: row.Nama_Siswa || '',
+          JK: row.JK || 'L',
+          Email: row.Email || '',
+          Nama_Wali: row.Nama_Wali || '',
+          No_WA_Wali: row.No_WA_Wali?.toString() || '',
+          Alamat: row.Alamat || '',
+          Jabatan: row.Jabatan || 'Siswa',
+          Status_Aktif: row.Status_Aktif || 'Aktif',
+          Created_At: new Date().toISOString()
+        }));
+
+        const res = await fetchGAS('BULK_CREATE', {
+          sheet: 'Master_Siswa',
+          data: mappedData
+        });
+
+        if (res.status === 'success') {
+          showToast(`Berhasil mengimpor ${mappedData.length} siswa.`, 'success');
+          // Reload
+          const s = await fetchGAS('GET_ALL', { sheet: 'Master_Siswa' });
+          setSiswa((s.data || []).filter(st => st.Status_Aktif === 'Aktif'));
+        }
+      } catch (err) {
+        console.error('Import error:', err);
+        showToast('Gagal mengimpor data. Pastikan format benar.', 'error');
+      } finally {
+        setIsImporting(false);
+      }
+    };
+    reader.readAsArrayBuffer(file);
+    e.target.value = '';
+  };
+
+  const handleExportData = async () => {
+    try {
+      showToast('Menyiapkan data export...', 'info');
+      // Ambil seluruh data dari GAS (termasuk yang tidak aktif untuk export lengkap)
+      const res = await fetchGAS('GET_ALL', { sheet: 'Master_Siswa' });
+      const allSiswa = res.data || [];
+
+      if (allSiswa.length === 0) {
+        showToast('Tidak ada data untuk diekspor.', 'warning');
+        return;
+      }
+
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(allSiswa);
+      XLSX.utils.book_append_sheet(wb, ws, 'Data Master Siswa');
+      
+      const timestamp = new Date().getTime();
+      XLSX.writeFile(wb, `Master_Siswa_Lengkap_${timestamp}.xlsx`);
+      
+      showToast('Berhasil mengekspor data.', 'success');
+    } catch (e) {
+      console.error('Export error:', e);
+      showToast('Gagal mengekspor data.', 'error');
+    }
+  };
+
   const clearForm = () => {
     setEditingStudent(null);
     setIsFormOpen(false);
     setNisn('');
+    setNis('');
+    setTempatLahir('');
+    setTanggalLahir('');
+    setTglMasukX('');
+    setTglNaikXI('');
+    setTglNaikXII('');
+    setTglTamat('');
     setNama('');
     setEmail('');
     setWali('');
@@ -64,20 +185,28 @@ export default function MasterSiswa() {
     setJk('L');
     setJabatan('Siswa');
     setStatusAktif('Aktif');
+    setKeterangan('');
     setError('');
   };
 
   const handleCreateOrUpdateStudent = useCallback(async (e) => {
     e.preventDefault();
-    if (!nisn || !nama) {
-      setError('NISN dan Nama Siswa harus diisi.');
+    if (!nama) {
+      setError('Nama Siswa harus diisi.');
       return;
     }
 
     const studentData = {
       NISN: nisn,
+      NIS: nis,
       Nama_Siswa: nama,
       'L/P': jk,
+      Tempat_Lahir: tempatLahir,
+      Tanggal_Lahir: tanggalLahir,
+      Tanggal_Masuk_X: tglMasukX,
+      Tanggal_Naik_XI: tglNaikXI,
+      Tanggal_Naik_XII: tglNaikXII,
+      Tanggal_Tamat_Sekolah: tglTamat,
       Email: email,
       Jabatan: jabatan,
       No_WA_Siswa: '',
@@ -87,13 +216,14 @@ export default function MasterSiswa() {
       Latitude: latitude,
       Longitude: longitude,
       Lokasi: latitude && longitude ? createMapsLink(latitude, longitude) : lokasi,
-      Status_Aktif: statusAktif
+      Status_Aktif: statusAktif,
+      Keterangan: keterangan
     };
 
     try {
       if (editingStudent) {
-        setSiswa(prev => prev.map(item => item.NISN === nisn ? { ...item, ...studentData } : item));
-        await fetchGAS('UPDATE', { sheet: 'Master_Siswa', id: nisn, data: studentData });
+        setSiswa(prev => prev.map(item => item.ID_Siswa === editingStudent.ID_Siswa ? { ...item, ...studentData } : item));
+        await fetchGAS('UPDATE', { sheet: 'Master_Siswa', id: editingStudent.ID_Siswa, data: studentData });
         showToast('Data siswa berhasil diperbarui.', 'success');
       } else {
         const newStudent = {
@@ -110,12 +240,30 @@ export default function MasterSiswa() {
       setError('Gagal menyimpan data siswa. Silakan coba lagi.');
       showToast('Gagal menyimpan data siswa.', 'error');
     }
-  }, [nisn, nama, email, wali, wa, alamat, latitude, longitude, lokasi, jk, statusAktif, editingStudent, showToast]);
+  }, [nisn, nis, nama, jk, tempatLahir, tanggalLahir, tglMasukX, tglNaikXI, tglNaikXII, tglTamat, email, jabatan, wali, wa, alamat, latitude, longitude, lokasi, statusAktif, keterangan, editingStudent, showToast]);
+
+  const handleDeleteStudent = async (idSiswa) => {
+    if (!window.confirm('Apakah Anda yakin ingin menghapus data siswa ini?')) return;
+    try {
+      setSiswa(prev => prev.filter(s => s.ID_Siswa !== idSiswa));
+      await fetchGAS('DELETE', { sheet: 'Master_Siswa', id: idSiswa });
+      showToast('Siswa berhasil dihapus.', 'success');
+    } catch (err) {
+      showToast('Gagal menghapus siswa.', 'error');
+    }
+  };
 
   const handleEditStudent = useCallback((student) => {
     setEditingStudent(student);
     setIsFormOpen(true);
     setNisn(student.NISN || '');
+    setNis(student.NIS || '');
+    setTempatLahir(student.Tempat_Lahir || '');
+    setTanggalLahir(student.Tanggal_Lahir || '');
+    setTglMasukX(student.Tanggal_Masuk_X || '');
+    setTglNaikXI(student.Tanggal_Naik_XI || '');
+    setTglNaikXII(student.Tanggal_Naik_XII || '');
+    setTglTamat(student.Tanggal_Tamat_Sekolah || '');
     setNama(student.Nama_Siswa || '');
     setJk(student['L/P'] || 'L');
     setEmail(student.Email || '');
@@ -127,6 +275,7 @@ export default function MasterSiswa() {
     setLokasi(student.Lokasi || '');
     setJabatan(student.Jabatan || 'Siswa');
     setStatusAktif(student.Status_Aktif || 'Aktif');
+    setKeterangan(student.Keterangan || '');
     setError('');
   }, []);
 
@@ -198,7 +347,7 @@ export default function MasterSiswa() {
 
   const handleGetGPS = useCallback(() => {
     if (!canChangeLocation) {
-      setError('Role Wali Kelas tidak dapat mengubah lokasi.');
+      setError('Wali Kelas tidak dapat mengubah lokasi.');
       return;
     }
 
@@ -225,40 +374,152 @@ export default function MasterSiswa() {
     }
   }, [showToast, canChangeLocation]);
 
-  if (loading) return (
-    <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="space-y-2">
-          <Skeleton className="h-8 w-48" />
-          <Skeleton className="h-4 w-64" />
-        </div>
-        <Skeleton className="h-10 w-32 rounded-lg" />
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {[...Array(6)].map((_, i) => (
-          <Skeleton key={i} className="h-48 rounded-[2rem]" />
-        ))}
-      </div>
-    </div>
-  );
+  const handleBulkUpdateHistory = async (e) => {
+    e.preventDefault();
+    if (!bulkTglMasukX && !bulkTglNaikXI && !bulkTglNaikXII && !bulkTglTamat) {
+      showToast('Setidaknya satu tanggal harus diisi untuk update massal.', 'error');
+      return;
+    }
+
+    if (!window.confirm('Apakah Anda yakin ingin menerapkan tanggal ini ke SELURUH siswa yang tampil di daftar?')) {
+      return;
+    }
+
+    setIsSavingBulk(true);
+    const updates = siswa.map(s => ({
+      NISN: s.NISN,
+      ...(bulkTglMasukX && { Tanggal_Masuk_X: bulkTglMasukX }),
+      ...(bulkTglNaikXI && { Tanggal_Naik_XI: bulkTglNaikXI }),
+      ...(bulkTglNaikXII && { Tanggal_Naik_XII: bulkTglNaikXII }),
+      ...(bulkTglTamat && { Tanggal_Tamat_Sekolah: bulkTglTamat })
+    }));
+
+    try {
+      const res = await fetchGAS('BULK_UPDATE_MASTER_HISTORY', { data: updates });
+      if (res.status === 'success') {
+        setSiswa(prev => prev.map(s => {
+          const up = updates.find(u => u.NISN === s.NISN);
+          return up ? { ...s, ...up } : s;
+        }));
+        showToast('Histori kls berhasil diterapkan ke semua siswa.', 'success');
+        setIsBulkOpen(false);
+        setBulkTglMasukX('');
+        setBulkTglNaikXI('');
+        setBulkTglNaikXII('');
+        setBulkTglTamat('');
+      }
+    } catch (err) {
+      console.error('Bulk update histori error:', err);
+      showToast('Gagal menerapkan update massal.', 'error');
+    } finally {
+      setIsSavingBulk(false);
+    }
+  };
+
+  if (loading) return <Loading message="Menyiapkan data induk siswa..." />;
 
 
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800">Master Siswa</h2>
-          <p className="text-sm text-slate-500">Daftar seluruh siswa di spreadsheet ini.</p>
+          <h2 className="text-2xl font-bold text-slate-800">Master Data Siswa</h2>
+          <p className="text-sm text-slate-500">Kelola informasi profil dan status keaktifan siswa.</p>
         </div>
-        {canAddStudent && (
+
+        <div className="flex flex-wrap items-center gap-2">
+          {canAddStudent && (
+            <>
+              <div className="flex items-center gap-1 p-1 bg-white rounded-xl border border-slate-200 shadow-sm">
+                <button onClick={handleDownloadTemplate} className="flex items-center gap-2 px-3 py-2 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all" title="Unduh Template Excel">
+                  <Download className="w-4 h-4" />
+                  <span className="text-[10px] font-bold uppercase tracking-tight">Template</span>
+                </button>
+
+                <div className="relative group">
+                  <input type="file" accept=".xlsx, .xls" onChange={handleImportExcel} className="absolute inset-0 opacity-0 cursor-pointer z-10" title="Impor Siswa dari Excel" />
+                  <button className="flex items-center gap-2 px-3 py-2 text-slate-600 group-hover:text-emerald-600 group-hover:bg-emerald-50 rounded-lg transition-all">
+                    <FileUp className="w-4 h-4" />
+                    <span className="text-[10px] font-bold uppercase tracking-tight">{isImporting ? 'Memproses...' : 'Impor Siswa'}</span>
+                  </button>
+                </div>
+
+                <button onClick={handleExportData} className="flex items-center gap-2 px-3 py-2 text-slate-600 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all" title="Ekspor Seluruh Data Siswa">
+                  <FileDown className="w-4 h-4" />
+                  <span className="text-[10px] font-bold uppercase tracking-tight">Ekspor</span>
+                </button>
+              </div>
+
+              <button
+                onClick={() => {
+                  const newBulkOpen = !isBulkOpen;
+                  setIsBulkOpen(newBulkOpen);
+                  if (newBulkOpen) {
+                    setIsFormOpen(false);
+                    if (siswa.length > 0) {
+                      setBulkTglMasukX(siswa[0].Tanggal_Masuk_X || '');
+                      setBulkTglNaikXI(siswa[0].Tanggal_Naik_XI || '');
+                      setBulkTglNaikXII(siswa[0].Tanggal_Naik_XII || '');
+                      setBulkTglTamat(siswa[0].Tanggal_Tamat_Sekolah || '');
+                    }
+                  }
+                }}
+                className="btn-secondary flex items-center gap-2"
+              >
+                {isBulkOpen ? 'Tutup Massal' : 'Update Massal'}
+              </button>
+            </>
+          )}
+
           <button
-            onClick={() => setIsFormOpen(!isFormOpen)}
-            className="btn-primary"
+            onClick={() => {
+              setEditingStudent(null);
+              clearForm();
+              setIsFormOpen(true);
+              setIsBulkOpen(false);
+            }}
+            className="btn-primary flex items-center gap-2"
           >
-            {isFormOpen ? 'Tutup Formulir' : 'Tambah Siswa'}
+            <UserPlus className="w-4 h-4" /> Tambah Siswa
           </button>
-        )}
+        </div>
       </div>
+
+      {canAddStudent && isBulkOpen && (
+        <div className="card p-6 border-2 border-emerald-100 bg-emerald-50/30">
+          <h3 className="text-lg font-semibold text-slate-800 mb-2">Update Massal Histori Kelas</h3>
+          <p className="text-xs text-slate-500 mb-4">Pilih tanggal yang ingin diterapkan ke SEMUA siswa saat ini.</p>
+          <form onSubmit={handleBulkUpdateHistory} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">Tgl Masuk X</label>
+                <input type="date" className="input-field" value={bulkTglMasukX} onChange={(e) => setBulkTglMasukX(e.target.value)} />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">Tgl Naik XI</label>
+                <input type="date" className="input-field" value={bulkTglNaikXI} onChange={(e) => setBulkTglNaikXI(e.target.value)} />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">Tgl Naik XII</label>
+                <input type="date" className="input-field" value={bulkTglNaikXII} onChange={(e) => setBulkTglNaikXII(e.target.value)} />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">Tgl Tamat Sekolah</label>
+                <input type="date" className="input-field" value={bulkTglTamat} onChange={(e) => setBulkTglTamat(e.target.value)} />
+              </div>
+            </div>
+            <div className="flex justify-end">
+              <button
+                type="submit"
+                disabled={isSavingBulk}
+                className="btn-primary !bg-emerald-600 hover:!bg-emerald-700 min-w-[150px]"
+              >
+                {isSavingBulk ? 'Memproses...' : 'Terapkan ke Semua'}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {canAddStudent && isFormOpen && (
         <div className="card p-6">
@@ -270,18 +531,24 @@ export default function MasterSiswa() {
             <div className="grid gap-4">
               <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
                 <h4 className="text-sm font-semibold text-slate-800 mb-3">Data Siswa</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium text-slate-700 mb-1">NIS</label>
+                    <input
+                      className="input-field"
+                      value={nis}
+                      onChange={(e) => setNis(e.target.value)}
+                    />
+                  </div>
                   <div>
                     <label className="block text-xs font-medium text-slate-700 mb-1">NISN</label>
                     <input
                       className="input-field"
                       value={nisn}
                       onChange={(e) => setNisn(e.target.value)}
-                      required
-                      disabled={Boolean(editingStudent)}
                     />
                   </div>
-                  <div>
+                  <div className="lg:col-span-2">
                     <label className="block text-xs font-medium text-slate-700 mb-1">Nama Siswa</label>
                     <input
                       className="input-field"
@@ -289,6 +556,48 @@ export default function MasterSiswa() {
                       onChange={(e) => setNama(e.target.value)}
                       required
                     />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  <div>
+                    <label className="block text-xs font-medium text-slate-700 mb-1">Tempat Lahir</label>
+                    <input
+                      className="input-field"
+                      value={tempatLahir}
+                      onChange={(e) => setTempatLahir(e.target.value)}
+                      disabled={role === 'Wali Kelas'}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-700 mb-1">Tanggal Lahir</label>
+                    <input
+                      type="date"
+                      className="input-field"
+                      value={tanggalLahir}
+                      onChange={(e) => setTanggalLahir(e.target.value)}
+                      disabled={role === 'Wali Kelas'}
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+                <h4 className="text-sm font-semibold text-slate-800 mb-3">Histori Kelas & Kelulusan</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium text-slate-700 mb-1">Tgl Masuk Kls X</label>
+                    <input type="date" className="input-field" value={tglMasukX} onChange={(e) => setTglMasukX(e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-700 mb-1">Tgl Naik Kls XI</label>
+                    <input type="date" className="input-field" value={tglNaikXI} onChange={(e) => setTglNaikXI(e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-700 mb-1">Tgl Naik Kls XII</label>
+                    <input type="date" className="input-field" value={tglNaikXII} onChange={(e) => setTglNaikXII(e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-700 mb-1">Tgl Tamat Sekolah</label>
+                    <input type="date" className="input-field" value={tglTamat} onChange={(e) => setTglTamat(e.target.value)} />
                   </div>
                 </div>
               </div>
@@ -313,12 +622,24 @@ export default function MasterSiswa() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1">Status Aktif</label>
+                    <label className="block text-xs font-medium text-slate-700 mb-1">Status</label>
                     <select className="input-field" value={statusAktif} onChange={(e) => setStatusAktif(e.target.value)}>
                       <option value="Aktif">Aktif</option>
-                      <option value="Tidak Aktif">Tidak Aktif</option>
+                      <option value="Keluar">Keluar</option>
+                      <option value="Lulus">Lulus</option>
                     </select>
                   </div>
+                  {statusAktif === 'Keluar' && (
+                    <div className="md:col-span-2">
+                      <label className="block text-xs font-medium text-slate-700 mb-1">Keterangan (Alasan Keluar)</label>
+                      <input
+                        className="input-field"
+                        value={keterangan}
+                        onChange={(e) => setKeterangan(e.target.value)}
+                        placeholder="Masukan alasan siswa keluar..."
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -335,11 +656,12 @@ export default function MasterSiswa() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1">Nama Wali</label>
+                    <label className="block text-xs font-medium text-slate-700 mb-1">Nama Orang Tua</label>
                     <input
                       className="input-field"
                       value={wali}
                       onChange={(e) => setWali(e.target.value)}
+                      disabled={role === 'Wali Kelas'}
                     />
                   </div>
                 </div>
@@ -358,6 +680,7 @@ export default function MasterSiswa() {
                       className="input-field"
                       value={alamat}
                       onChange={(e) => setAlamat(e.target.value)}
+                      disabled={role === 'Wali Kelas'}
                     />
                   </div>
                 </div>
@@ -426,12 +749,19 @@ export default function MasterSiswa() {
                   )}
                 </div>
                 {!canChangeLocation && (
-                  <p className="text-xs text-slate-500 mt-2">Role Wali Kelas tidak dapat mengubah lokasi.</p>
+                  <p className="text-xs text-slate-500 mt-2">Wali Kelas tidak dapat mengubah lokasi.</p>
                 )}
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-3 justify-end">
+            <div className="flex flex-wrap gap-3 justify-end items-center">
+              <button
+                type="button"
+                onClick={clearForm}
+                className="btn-secondary min-w-[120px]"
+              >
+                Batal
+              </button>
               <button type="submit" className="btn-primary min-w-[160px]">
                 {editingStudent ? 'Simpan Perubahan' : 'Simpan Siswa'}
               </button>
@@ -456,6 +786,7 @@ export default function MasterSiswa() {
               student={student}
               onWaClick={handleWA}
               onEdit={canAddStudent ? handleEditStudent : undefined}
+              onDelete={canAddStudent ? handleDeleteStudent : undefined}
             />
           ))
         )}

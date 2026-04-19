@@ -7,7 +7,10 @@ import { format, startOfWeek, endOfWeek, isWithinInterval } from 'date-fns';
 import Loading from '../components/Loading';
 import Skeleton, { SkeletonStats, SkeletonTable } from '../components/Skeleton';
 import EmptyState from '../components/EmptyState';
+import PageGuide from '../components/PageGuide';
 import { History, Users } from 'lucide-react';
+import { sendNotification } from '../utils/notifications';
+
 
 export default function Keuangan() {
   const { user } = useAuth();
@@ -23,7 +26,7 @@ export default function Keuangan() {
   const canEdit = ['Bendahara'].includes(role);
 
   // Form State
-  const [nisn, setNisn] = useState('');
+  const [idSiswa, setIdSiswa] = useState('');
   const [jumlahInput, setJumlahInput] = useState('');
   const [tipe, setTipe] = useState('Masuk');
   const [keterangan, setKeterangan] = useState('');
@@ -38,7 +41,8 @@ export default function Keuangan() {
       ]);
 
       setKeuangan((k.data || []).sort((a, b) => new Date(b.Tanggal) - new Date(a.Tanggal)));
-      setSiswa(s.data || []);
+      const allSiswa = s.data || [];
+      setSiswa(allSiswa.filter(st => st.Status_Aktif === 'Aktif'));
 
       // Ambil nominal iuran dari profil Wali Kelas (bisa dari user email atau yang pertama)
       if (profil.data && profil.data.length > 0) {
@@ -72,25 +76,25 @@ export default function Keuangan() {
       if (trx.Tipe !== 'Masuk') return;
       const date = new Date(trx.Tanggal);
       if (isWithinInterval(date, { start: currentWeekStart, end: currentWeekEnd })) {
-        paidSet.add(trx.NISN);
+        paidSet.add(trx.ID_Siswa);
       }
     });
     return paidSet;
   }, [keuangan, currentWeekStart, currentWeekEnd]);
 
   const activeStudents = useMemo(() => {
-    return siswa.filter((item) => item.NISN && item.Status_Aktif !== 'Tidak Aktif');
+    return siswa.filter((item) => item.ID_Siswa && item.Status_Aktif !== 'Tidak Aktif');
   }, [siswa]);
 
   const unpaidKasThisWeek = useMemo(() => {
-    return activeStudents.filter((item) => !paidThisWeek.has(item.NISN));
+    return activeStudents.filter((item) => !paidThisWeek.has(item.ID_Siswa));
   }, [activeStudents, paidThisWeek]);
 
   // Laporan Tanggungan: siswa dan total yang sudah bayar
   const tanggunganReport = useMemo(() => {
     const report = {};
     activeStudents.forEach((student) => {
-      report[student.NISN] = {
+      report[student.ID_Siswa] = {
         siswa: student,
         totalBayar: 0,
         transaksiCount: 0,
@@ -99,10 +103,10 @@ export default function Keuangan() {
     });
 
     keuangan.forEach((trx) => {
-      if (trx.Tipe === 'Masuk' && report[trx.NISN]) {
-        report[trx.NISN].totalBayar += Number(trx.Jumlah);
-        report[trx.NISN].transaksiCount += 1;
-        report[trx.NISN].transaksi.push(trx);
+      if (trx.Tipe === 'Masuk' && report[trx.ID_Siswa]) {
+        report[trx.ID_Siswa].totalBayar += Number(trx.Jumlah);
+        report[trx.ID_Siswa].transaksiCount += 1;
+        report[trx.ID_Siswa].transaksi.push(trx);
       }
     });
 
@@ -131,12 +135,15 @@ export default function Keuangan() {
 
   const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
-    if (!nisn || amountValue <= 0 || isAmountWarning) return;
+    if (!idSiswa || amountValue <= 0 || isAmountWarning) return;
 
+    const selectedStudent = activeStudents.find(s => String(s.ID_Siswa) === String(idSiswa));
+    
     const newTrx = {
       ID_Transaksi: 'K' + Date.now(),
       Tanggal: format(new Date(), 'yyyy-MM-dd'),
-      NISN: nisn,
+      ID_Siswa: idSiswa,
+      NISN: selectedStudent?.NISN || '', // Pastikan NISN ikut tersimpan
       Tipe: tipe,
       Jumlah: amountValue,
       Keterangan: keterangan
@@ -145,8 +152,29 @@ export default function Keuangan() {
     setSaving(true);
     try {
       await fetchGAS('CREATE', { sheet: 'Keuangan', data: newTrx });
+
+      // Notify relevant parties via utility
+      const payerName = activeStudents.find(s => String(s.ID_Siswa) === String(idSiswa))?.Nama_Siswa || idSiswa;
+      const isUnderpaid = tipe === 'Masuk' && amountValue < nominalIuran;
+
+      await sendNotification(activeStudents, {
+        subjectId: idSiswa,
+        targetRoles: ['Bendahara', 'Ketua Kelas', 'Wali Kelas'],
+        message: tipe === 'Masuk'
+          ? `Halo! Ada kontribusi KAS baru nih dari ${payerName} sebesar ${formatIDR(amountValue)}${isUnderpaid ? ' (Belum Lunas)' : ''}. Dompet kelas makin sehat!`
+          : `Info Pengeluaran: Ada dana kelas yang digunakan sebesar ${formatIDR(amountValue)} untuk ${keterangan || 'kebutuhan kelas'}.`,
+        selfMessage: tipe === 'Masuk'
+          ? (isUnderpaid 
+              ? `Terima kasih ya, ${payerName}! Kamu sudah mencicil KAS sebesar ${formatIDR(amountValue)}. Yuk semangat melunasi sisanya pelan-pelan!`
+              : `Terima kasih ya, ${payerName}! Partisipasi KAS sebesar ${formatIDR(amountValue)} sudah kami terima. Kontribusimu sangat berarti untuk kegiatan kelas kita!`)
+          : `Info Pengeluaran: Dana kelas digunakan sebesar ${formatIDR(amountValue)}.`,
+        includeSelf: tipe === 'Masuk',
+        type: isUnderpaid ? 'info' : 'success',
+        waliEmail: user?.email
+      });
+
       showToast('Transaksi berhasil disimpan.', 'success');
-      setNisn('');
+      setIdSiswa('');
       setJumlahInput('');
       setKeterangan('');
       setStudentSearch('');
@@ -157,21 +185,9 @@ export default function Keuangan() {
     } finally {
       setSaving(false);
     }
-  }, [nisn, amountValue, tipe, keterangan, showToast, loadKeuangan]);
+  }, [idSiswa, amountValue, tipe, keterangan, showToast, loadKeuangan]);
 
-  if (loading) return (
-    <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="space-y-2">
-          <Skeleton className="h-8 w-64" />
-          <Skeleton className="h-4 w-48" />
-        </div>
-        <Skeleton className="h-10 w-32 rounded-lg" />
-      </div>
-      <SkeletonStats />
-      <SkeletonTable rows={8} />
-    </div>
-  );
+  if (loading) return <Loading message="Menyatukan aliran dana kelas..." />;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -242,8 +258,8 @@ export default function Keuangan() {
                   </thead>
                   <tbody>
                     {unpaidKasThisWeek.map((item) => (
-                      <tr key={item.NISN} className="border-b last:border-0 hover:bg-slate-50">
-                        <td className="px-4 py-3 font-medium text-slate-800">{item.NISN}</td>
+                      <tr key={item.ID_Siswa} className="border-b last:border-0 hover:bg-slate-50">
+                        <td className="px-4 py-3 font-medium text-slate-800">{item.ID_Siswa} | {item.NISN || '-'}</td>
                         <td className="px-4 py-3">{item.Nama_Siswa}</td>
                         <td className="px-4 py-3">{item.Kelas || item.Jabatan || '-'}</td>
                         <td className="px-4 py-3 text-rose-700 font-semibold">Belum Bayar</td>
@@ -284,8 +300,8 @@ export default function Keuangan() {
                   ) : partialPayments.map((item) => {
                     const sisa = Math.max(0, nominalIuran - item.totalBayar);
                     return (
-                      <tr key={item.siswa.NISN} className="border-b last:border-0 hover:bg-slate-50">
-                        <td className="px-4 py-3 font-medium text-slate-800">{item.siswa.NISN}</td>
+                      <tr key={item.siswa.ID_Siswa} className="border-b last:border-0 hover:bg-slate-50">
+                        <td className="px-4 py-3 font-medium text-slate-800">{item.siswa.ID_Siswa} | {item.siswa.NISN || '-'}</td>
                         <td className="px-4 py-3">{item.siswa.Nama_Siswa}</td>
                         <td className="px-4 py-3 font-semibold text-slate-900">{formatIDR(item.totalBayar)}</td>
                         <td className="px-4 py-3 font-semibold text-yellow-700">{formatIDR(sisa)}</td>
@@ -299,6 +315,17 @@ export default function Keuangan() {
           </div>
         </div>
       </div>
+
+      <PageGuide 
+        title="Panduan Kas & Tabungan:"
+        steps={[
+          'Pilih nama siswa melalui fitur pencarian untuk mencatat transaksi.',
+          'Masukkan <span class="font-black">Nominal</span> dan pilih <span class="font-black text-emerald-700">Tipe Transaksi</span> (Masuk/Keluar).',
+          'Berikan <span class="font-black italic">Keterangan</span> singkat untuk setiap transaksi agar riwayat lebih jelas.',
+          'Saldo akhir siswa akan otomatis dihitung berdasarkan seluruh riwayat transaksi yang ada.',
+          'Gunakan tab <span class="font-black">Riwayat</span> untuk melihat daftar transaksi terbaru di kelas.'
+        ]}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Form Input */}
@@ -324,13 +351,13 @@ export default function Keuangan() {
                 <label className="block text-xs font-medium text-slate-700 mb-1">Siswa</label>
                 <select
                   className="input-field"
-                  value={nisn}
-                  onChange={(e) => setNisn(e.target.value)}
+                  value={idSiswa}
+                  onChange={(e) => setIdSiswa(e.target.value)}
                   required
                 >
                   <option value="">-- Pilih Siswa --</option>
                   {filteredStudents.map(s => (
-                    <option key={s.NISN} value={s.NISN}>{s.Nama_Siswa} ({s.NISN})</option>
+                    <option key={s.ID_Siswa} value={s.ID_Siswa}>{s.Nama_Siswa} ({s.ID_Siswa})</option>
                   ))}
                 </select>
               </div>
@@ -410,11 +437,11 @@ export default function Keuangan() {
                 </thead>
                 <tbody>
                   {keuangan.map(trx => {
-                    const s = siswa.find(s => s.NISN === trx.NISN);
+                    const s = siswa.find(s => s.ID_Siswa === trx.ID_Siswa);
                     return (
                       <tr key={trx.ID_Transaksi} className="border-b last:border-0 hover:bg-slate-50">
                         <td className="px-4 py-3">{typeof trx.Tanggal === 'string' ? trx.Tanggal : new Date(trx.Tanggal).toISOString().split('T')[0]}</td>
-                        <td className="px-4 py-3 font-medium text-slate-800">{trx.NISN}</td>
+                        <td className="px-4 py-3 font-medium text-slate-800">{trx.ID_Siswa}</td>
                         <td className="px-4 py-3">{s ? s.Nama_Siswa : '-'}</td>
                         <td className="px-4 py-3">
                           <span className={`px-2 py-1 rounded text-xs font-medium ${trx.Tipe === 'Masuk' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>

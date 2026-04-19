@@ -17,6 +17,8 @@ import Panggilan from './pages/Panggilan';
 import Profile from './pages/Profile';
 import Tanggungan from './pages/Tanggungan';
 import Notifications from './pages/Notifications';
+import BukuKlaper from './pages/BukuKlaper';
+import DKN from './pages/DKN';
 
 // Google OAuth Client ID dari .env
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
@@ -98,6 +100,22 @@ function App() {
                 } 
               />
               <Route 
+                path="buku-klaper" 
+                element={
+                  <RoleProtectedRoute allowedRoles={['Wali Kelas']}>
+                    <BukuKlaper />
+                  </RoleProtectedRoute>
+                } 
+              />
+              <Route 
+                path="dkn" 
+                element={
+                  <RoleProtectedRoute allowedRoles={['Wali Kelas']}>
+                    <DKN />
+                  </RoleProtectedRoute>
+                } 
+              />
+              <Route 
                 path="update-presensi" 
                 element={
                   <RoleProtectedRoute allowedRoles={[]}> 
@@ -106,7 +124,6 @@ function App() {
                 } 
               />
               <Route 
-
                 path="keuangan" 
                 element={
                   <RoleProtectedRoute allowedRoles={['Wali Kelas', 'Ketua Kelas', 'Bendahara']}>

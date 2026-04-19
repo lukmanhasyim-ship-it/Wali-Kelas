@@ -3,7 +3,7 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Users, ClipboardList, CalendarCheck,
   Wallet, PhoneCall, LogOut, Sun, Moon, FileText,
-  Edit3, User, Settings, Bell
+  Edit3, User, Settings, Bell, BookOpen, LibraryBig
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import Toast from './Toast';
@@ -16,9 +16,9 @@ function NavItem({ to, icon: Icon, label }) {
     <NavLink
       to={to}
       className={({ isActive }) =>
-        `flex flex-col md:flex-row items-center gap-1 md:gap-3 p-2 md:p-3 rounded-2xl transition-all duration-300 group ${isActive
-          ? 'bg-[#008647] text-white shadow-lg shadow-emerald-100 font-semibold md:translate-x-1'
-          : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
+        `flex flex-col md:flex-row items-center gap-1 md:gap-3 p-2 md:p-3 rounded-2xl transition-all duration-500 group relative ${isActive
+          ? 'bg-emerald-800 text-white shadow-xl shadow-emerald-200/50 font-bold md:translate-x-1'
+          : 'text-slate-500 hover:bg-emerald-50 hover:text-emerald-700'
         }`
       }
     >
@@ -113,6 +113,8 @@ export default function Layout() {
     dashboard: ['Wali Kelas', 'Ketua Kelas', 'Bendahara', 'Sekretaris', 'Siswa'].includes(role),
     siswa: ['Wali Kelas'].includes(role),
     laporan: ['Wali Kelas'].includes(role),
+    bukuKlaper: ['Wali Kelas'].includes(role),
+    dkn: ['Wali Kelas'].includes(role),
     presensiPagi: ['Wali Kelas', 'Ketua Kelas', 'Sekretaris'].includes(role),
     presensiSiang: ['Wali Kelas', 'Ketua Kelas', 'Sekretaris'].includes(role),
     keuangan: ['Wali Kelas', 'Ketua Kelas', 'Bendahara'].includes(role),
@@ -122,13 +124,13 @@ export default function Layout() {
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-slate-50 font-sans">
       {/* Sidebar for Desktop */}
-      <aside className="hidden md:flex flex-col bg-white border-r border-slate-100/50 shadow-sm z-30 sticky top-0 h-screen w-72 transition-all duration-500 ease-in-out">
+      <aside className="hidden md:flex flex-col bg-white border-r border-slate-100/50 shadow-sm z-30 sticky top-0 h-screen w-72 transition-all duration-500 ease-in-out print:hidden">
         <div className="p-4 md:p-6 mb-2">
           <div className="flex items-center gap-4 group transition-all duration-500">
             <div className="bg-white p-2 rounded-2xl shadow-sm border border-slate-50 transition-all duration-300 group-hover:shadow-md">
               <img src={appLogo} alt="Logo SMK" className="h-10 w-auto object-contain" />
             </div>
-            <div className="flex flex-col animate-in fade-in slide-in-from-left-2 duration-500">
+            <div className="flex flex-col animate-fade-in">
               <h1 className="text-xl font-black text-slate-900 tracking-tighter leading-none">
                 SISWA<span className="text-[#008647]">.HUB</span>
               </h1>
@@ -142,6 +144,8 @@ export default function Layout() {
         <nav className="flex-1 px-4 space-y-1 overflow-y-auto">
           {access.dashboard && <NavItem to="dashboard" icon={LayoutDashboard} label="Dashboard" />}
           {access.siswa && <NavItem to="master-siswa" icon={Users} label="Data Siswa" />}
+          {access.bukuKlaper && <NavItem to="buku-klaper" icon={BookOpen} label="Buku Klaper" />}
+          {access.dkn && <NavItem to="dkn" icon={LibraryBig} label="Daftar Nilai (DKN)" />}
           {access.keuangan && <NavItem to="tanggungan" icon={ClipboardList} label="Tanggungan KAS" />}
 
 
@@ -184,7 +188,7 @@ export default function Layout() {
       {/* Main Content */}
       <main className="flex-1 min-h-screen overflow-x-hidden">
         {/* Header Bar */}
-        <header className="bg-white/70 backdrop-blur-md sticky top-0 z-20 px-4 md:px-8 py-4 border-b border-slate-100 flex items-center justify-between">
+        <header className="bg-white/70 backdrop-blur-md sticky top-0 z-20 px-4 md:px-8 py-4 border-b border-slate-100 flex items-center justify-between print:hidden">
           <div className="flex items-center gap-4 text-slate-400">
             {/* Branding or Breadcrumbs can go here if needed */}
           </div>
@@ -240,10 +244,10 @@ export default function Layout() {
         </header>
 
         <div className="p-4 sm:p-8 pb-24 md:pb-8">
-          <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+          <div className="max-w-6xl mx-auto space-y-8 animate-slide-up">
             <Outlet />
 
-            <footer className="mt-20 pt-8 border-t border-slate-100">
+            <footer className="mt-20 pt-8 border-t border-slate-100 print:hidden">
               <div className="flex flex-col md:flex-row items-center justify-between gap-4 grayscale opacity-40 hover:grayscale-0 hover:opacity-100 transition-all duration-500">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Wali Kelas Digital Project &copy; 2026</p>
                 <p className="text-[10px] font-medium text-slate-500 italic">Designed with precision by Mohamad Lukman Nurhasyim, S.Kom, Gr.</p>
@@ -254,7 +258,7 @@ export default function Layout() {
       </main>
 
       {/* Bottom Nav for Mobile */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-2xl border-t border-slate-100 shadow-[0_-8px_30px_rgb(0,0,0,0.04)] flex justify-around items-center px-2 z-50">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-2xl border-t border-slate-100 shadow-[0_-8px_30px_rgb(0,0,0,0.04)] flex justify-around items-center px-2 z-50 print:hidden">
         {access.dashboard && <NavItem to="dashboard" icon={LayoutDashboard} label="Home" />}
         {access.presensiPagi && <NavItem to="presensi-pagi" icon={Sun} label="Pagi" />}
         {access.presensiSiang && <NavItem to="presensi-siang" icon={Moon} label="Siang" />}
