@@ -317,25 +317,17 @@ export default function Tanggungan() {
       </div>
 
       {/* Main Table Container */}
-      <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl overflow-hidden">
-        <div className="px-8 py-6 border-b border-slate-50 flex items-center justify-between bg-slate-50/50">
-          <h3 className="text-lg font-black text-slate-800">Daftar Tagihan Siswa</h3>
-          <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl border border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-            <Users className="w-3.5 h-3.5" />
-            Total {periodReport.length} Siswa
-          </div>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
-                <th className="px-8 py-5 border-b border-slate-50">Siswa</th>
-                <th className="px-8 py-5 border-b border-slate-50">Nominal Bayar</th>
-                <th className="px-8 py-5 border-b border-slate-50">Sisa Tanggungan</th>
-                <th className="px-8 py-5 border-b border-slate-50 text-center">Tipe/Kali</th>
-                <th className="px-8 py-5 border-b border-slate-50 text-right">Status</th>
-              </tr>
-            </thead>
+      <div className="table-container pt-8 shadow-xl">
+        <table className="modern-table">
+          <thead>
+            <tr>
+              <th className="text-left w-64">Siswa</th>
+              <th className="text-left">Nominal Bayar</th>
+              <th className="text-left">Sisa Tanggungan</th>
+              <th className="text-center">Tipe/Kali</th>
+              <th className="text-right">Status</th>
+            </tr>
+          </thead>
             <tbody className="divide-y divide-slate-50">
               {periodReport.length === 0 ? (
                 <tr>
@@ -417,6 +409,5 @@ export default function Tanggungan() {
           </table>
         </div>
       </div>
-    </div>
-  );
-}
+    );
+  }

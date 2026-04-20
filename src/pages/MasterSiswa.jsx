@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { fetchGAS } from '../utils/gasClient';
@@ -13,6 +14,7 @@ import * as XLSX from 'xlsx';
 
 export default function MasterSiswa() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { showToast } = useToast();
   const role = user?.role || 'Siswa';
   const canAddStudent = role === 'Wali Kelas';
@@ -32,8 +34,9 @@ export default function MasterSiswa() {
   const [tglTamat, setTglTamat] = useState('');
   const [nama, setNama] = useState('');
   const [email, setEmail] = useState('');
-  const [wali, setWali] = useState('');
   const [wa, setWa] = useState('');
+  const [waSiswa, setWaSiswa] = useState('');
+  const [wali, setWali] = useState('');
   const [alamat, setAlamat] = useState('');
   const [latitude, setLatitude] = useState('');
   const [longitude, setLongitude] = useState('');
@@ -176,8 +179,9 @@ export default function MasterSiswa() {
     setTglTamat('');
     setNama('');
     setEmail('');
-    setWali('');
     setWa('');
+    setWaSiswa('');
+    setWali('');
     setAlamat('');
     setLatitude('');
     setLongitude('');
@@ -209,7 +213,7 @@ export default function MasterSiswa() {
       Tanggal_Tamat_Sekolah: tglTamat,
       Email: email,
       Jabatan: jabatan,
-      No_WA_Siswa: '',
+      No_WA_Siswa: waSiswa,
       Nama_Wali: wali,
       No_WA_Wali: wa,
       Alamat: alamat,
@@ -240,7 +244,7 @@ export default function MasterSiswa() {
       setError('Gagal menyimpan data siswa. Silakan coba lagi.');
       showToast('Gagal menyimpan data siswa.', 'error');
     }
-  }, [nisn, nis, nama, jk, tempatLahir, tanggalLahir, tglMasukX, tglNaikXI, tglNaikXII, tglTamat, email, jabatan, wali, wa, alamat, latitude, longitude, lokasi, statusAktif, keterangan, editingStudent, showToast]);
+  }, [nisn, nis, nama, jk, tempatLahir, tanggalLahir, tglMasukX, tglNaikXI, tglNaikXII, tglTamat, email, jabatan, wali, wa, waSiswa, alamat, latitude, longitude, lokasi, statusAktif, keterangan, editingStudent, showToast]);
 
   const handleDeleteStudent = async (idSiswa) => {
     if (!window.confirm('Apakah Anda yakin ingin menghapus data siswa ini?')) return;
@@ -267,8 +271,9 @@ export default function MasterSiswa() {
     setNama(student.Nama_Siswa || '');
     setJk(student['L/P'] || 'L');
     setEmail(student.Email || '');
-    setWali(student.Nama_Wali || '');
     setWa(student.No_WA_Wali || '');
+    setWaSiswa(student.No_WA_Siswa || '');
+    setWali(student.Nama_Wali || '');
     setAlamat(student.Alamat || '');
     setLatitude(formatCoordinateInput(student.Latitude || '', true));
     setLongitude(formatCoordinateInput(student.Longitude || '', false));
@@ -282,6 +287,13 @@ export default function MasterSiswa() {
   const handleWA = useCallback((student) => {
     const message = encodeURIComponent(`Halo Bapak/Ibu ${student.Nama_Wali}, saya wali kelas dari ${student.Nama_Siswa}.`);
     const url = `https://wa.me/${student.No_WA_Wali}?text=${message}`;
+    window.open(url, '_blank');
+  }, []);
+
+  const handleWASiswa = useCallback((student) => {
+    const num = student.No_WA_Siswa || student.No_WA_Wali;
+    const message = encodeURIComponent(`Halo ${student.Nama_Siswa}, ini Wali Kelas. Ingin menyapa dan memastikan kabarmu hari ini. Tetap semangat belajarnya ya!`);
+    const url = `https://wa.me/${num}?text=${message}`;
     window.open(url, '_blank');
   }, []);
 
@@ -675,6 +687,14 @@ export default function MasterSiswa() {
                     />
                   </div>
                   <div>
+                    <label className="block text-xs font-medium text-slate-700 mb-1">No WA Siswa</label>
+                    <input
+                      className="input-field"
+                      value={waSiswa}
+                      onChange={(e) => setWaSiswa(e.target.value)}
+                    />
+                  </div>
+                  <div>
                     <label className="block text-xs font-medium text-slate-700 mb-1">Alamat</label>
                     <input
                       className="input-field"
@@ -784,9 +804,12 @@ export default function MasterSiswa() {
             <StudentCard
               key={student.NISN}
               student={student}
-              onWaClick={handleWA}
+              onWaClick={role === 'Wali Kelas' ? handleWA : undefined}
+              onWaStudentClick={role === 'Wali Kelas' ? handleWASiswa : undefined}
+              onContactClick={role === 'Wali Kelas' ? (s) => navigate('/panggilan', { state: { nisn: s.NISN || s.ID_Siswa } }) : undefined}
               onEdit={canAddStudent ? handleEditStudent : undefined}
               onDelete={canAddStudent ? handleDeleteStudent : undefined}
+              canSeeLocation={role === 'Wali Kelas'}
             />
           ))
         )}

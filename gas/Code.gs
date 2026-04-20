@@ -106,6 +106,12 @@ function handleResponse(e) {
       },
       DELETE: function() {
         return { status: 'success', data: deleteData(payload && payload.sheet, payload && payload.id) };
+      },
+      RUN_MANUAL_ARCHIVE: function() {
+        return { status: 'success', data: runMonthlyArchive(payload && payload.month) };
+      },
+      SETUP_TRIGGERS: function() {
+        return { status: 'success', data: setupArchiveTriggers() };
       }
     };
 
@@ -618,4 +624,218 @@ function setupSpreadsheet() {
   
   // Seed initial notification
   createNotification('Selamat datang di SISWA.HUB! Sistem manajemen kelas digital Anda sudah siap digunakan.', 'success', 'ALL');
+}
+
+/**
+ * LOGIKA PENGARSIPAN OTOMATIS & MUTASI KAS
+ */
+
+function setupArchiveTriggers() {
+  // Hapus trigger lama jika ada
+  var triggers = ScriptApp.getProjectTriggers();
+  for (var i = 0; i < triggers.length; i++) {
+    if (triggers[i].getHandlerFunction() === 'runMonthlyArchive') {
+      ScriptApp.deleteTrigger(triggers[i]);
+    }
+  }
+  
+  // Buat trigger baru setiap tanggal 1 jam 01:00 pagi (untuk mengarsip bulan sebelumnya)
+  ScriptApp.newTrigger('runMonthlyArchive')
+    .timeBased()
+    .onMonthDay(1)
+    .atHour(1)
+    .create();
+    
+  return "Trigger pengarsipan otomatis berhasil disetup untuk tanggal 1 setiap bulan.";
+}
+
+function runMonthlyArchive(targetMonth) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var now = new Date();
+  
+  // Jika tidak ada targetMonth, gunakan bulan sebelumnya
+  if (!targetMonth) {
+    var lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    targetMonth = Utilities.formatDate(lastMonthDate, Session.getScriptTimeZone(), "yyyy-MM");
+  }
+  
+  try {
+    ensureArchiveSheets(ss);
+    
+    var resAbsensi = archiveAbsensi(ss, targetMonth);
+    var resKeuangan = archiveKeuangan(ss, targetMonth);
+    
+    createNotification('Pengarsipan otomatis bulan ' + targetMonth + ' berhasil dilakukan.', 'success', 'Wali');
+    
+    return {
+      month: targetMonth,
+      absensi: resAbsensi,
+      keuangan: resKeuangan
+    };
+  } catch (e) {
+    createNotification('Gagal melakukan pengarsipan otomatis: ' + e.toString(), 'alert', 'Wali');
+    throw e;
+  }
+}
+
+function ensureArchiveSheets(ss) {
+  if (!ss.getSheetByName('Archive_Rekap_Absensi')) {
+    ss.insertSheet('Archive_Rekap_Absensi').appendRow(['ID_Siswa', 'Bulan', 'H', 'S', 'I', 'A', 'B']);
+  }
+  if (!ss.getSheetByName('Archive_Rekap_Keuangan')) {
+    ss.insertSheet('Archive_Rekap_Keuangan').appendRow(['Bulan', 'Saldo_Awal', 'Total_Masuk', 'Total_Keluar', 'Saldo_Akhir']);
+  }
+  if (!ss.getSheetByName('Archive_Detail_Absensi')) {
+    var template = ss.getSheetByName('Presensi');
+    var headers = template ? template.getRange(1, 1, 1, template.getLastColumn()).getValues()[0] : ['ID_Presensi', 'Tanggal', 'ID_Siswa', 'Status_Pagi', 'Status_Siang', 'Keterangan', 'Timestamp_Pagi', 'Timestamp_Siang'];
+    ss.insertSheet('Archive_Detail_Absensi').appendRow(headers);
+  }
+}
+
+function archiveAbsensi(ss, monthStr) {
+  var presensiSheet = ss.getSheetByName('Presensi');
+  var rekapSheet = ss.getSheetByName('Archive_Rekap_Absensi');
+  var detailSheet = ss.getSheetByName('Archive_Detail_Absensi');
+  
+  if (!presensiSheet) return 'Sheet Presensi tidak ditemukan.';
+  if (!rekapSheet || !detailSheet) return 'Sheet Archive belum siap.';
+  
+  var lastRow = presensiSheet.getLastRow();
+  if (lastRow <= 1) return 'Tidak ada data presensi untuk diarsip.';
+  
+  var data = presensiSheet.getRange(1, 1, lastRow, presensiSheet.getLastColumn()).getValues();
+  var headers = data[0];
+  var hMap = buildHeaderIndex(headers);
+  var dateIdx = hMap['Tanggal'];
+  var idIdx = hMap['ID_Siswa'] !== undefined ? hMap['ID_Siswa'] : hMap['NISN'];
+  
+  if (dateIdx === undefined) return 'Kolom Tanggal tidak ditemukan di sheet Presensi.';
+  if (idIdx === undefined) return 'Kolom ID_Siswa/NISN tidak ditemukan di sheet Presensi.';
+  
+  var rekapMap = {}; // { studentId: { H, S, I, A, B } }
+  var rowsToMove = [];
+  var rowsToDelete = [];
+  
+  for (var i = 1; i < data.length; i++) {
+    var rawDate = data[i][dateIdx];
+    var rowMonth = '';
+    if (rawDate instanceof Date) {
+      rowMonth = Utilities.formatDate(rawDate, Session.getScriptTimeZone(), 'yyyy-MM');
+    } else if (typeof rawDate === 'string' && rawDate.indexOf('-') > -1) {
+      rowMonth = rawDate.substring(0, 7);
+    }
+    
+    if (rowMonth !== monthStr) continue;
+    
+    var sId = (data[i][idIdx] || '').toString();
+    if (!sId) continue;
+    
+    if (!rekapMap[sId]) rekapMap[sId] = { H: 0, S: 0, I: 0, A: 0, B: 0 };
+    
+    var sp = (data[i][hMap['Status_Pagi']] || '').toString().trim();
+    var ssv = (data[i][hMap['Status_Siang']] || '').toString().trim();
+    var combinedStatus = {};
+    if (sp) combinedStatus[sp] = true;
+    if (ssv) combinedStatus[ssv] = true;
+    
+    for (var st in combinedStatus) {
+      if (rekapMap[sId][st] !== undefined) rekapMap[sId][st]++;
+    }
+    
+    // Jika ada status tidak hadir, simpan detail barisnya
+    if (combinedStatus['S'] || combinedStatus['I'] || combinedStatus['A'] || combinedStatus['B']) {
+      rowsToMove.push(data[i]);
+    }
+    
+    rowsToDelete.push(i + 1); // +1 karena row di Sheet adalah 1-indexed
+  }
+  
+  if (rowsToDelete.length === 0) return 'Tidak ada data bulan ' + monthStr + ' di sheet Presensi.';
+
+  // Simpan Rekap per siswa
+  for (var sid in rekapMap) {
+    rekapSheet.appendRow([
+      sid, monthStr,
+      rekapMap[sid].H, rekapMap[sid].S,
+      rekapMap[sid].I, rekapMap[sid].A, rekapMap[sid].B
+    ]);
+  }
+  
+  // Simpan Detail Non-Hadir
+  if (rowsToMove.length > 0) {
+    detailSheet.getRange(detailSheet.getLastRow() + 1, 1, rowsToMove.length, headers.length).setValues(rowsToMove);
+  }
+  
+  // Hapus dari sheet utama (dari bawah ke atas agar row index tidak bergeser)
+  for (var j = rowsToDelete.length - 1; j >= 0; j--) {
+    presensiSheet.deleteRow(rowsToDelete[j]);
+  }
+  
+  return 'Berhasil mengarsip ' + rowsToDelete.length + ' baris absensi bulan ' + monthStr + '.';
+}
+
+function archiveKeuangan(ss, monthStr) {
+  var keuanganSheet = ss.getSheetByName('Keuangan');
+  var rekapSheet = ss.getSheetByName('Archive_Rekap_Keuangan');
+  
+  if (!keuanganSheet) return 'Sheet Keuangan tidak ditemukan.';
+  if (!rekapSheet) return 'Sheet Archive_Rekap_Keuangan belum siap.';
+
+  var lastRow = keuanganSheet.getLastRow();
+  if (lastRow <= 1) {
+    // Tidak ada transaksi, tetap simpan rekap dengan nilai 0
+    var rekapDataEmpty = rekapSheet.getDataRange().getValues();
+    var saldoAwalEmpty = rekapDataEmpty.length > 1 ? (Number(rekapDataEmpty[rekapDataEmpty.length - 1][4]) || 0) : 0;
+    rekapSheet.appendRow([monthStr, saldoAwalEmpty, 0, 0, saldoAwalEmpty]);
+    return 'Tidak ada transaksi bulan ' + monthStr + '. Rekap saldo disimpan.';
+  }
+  
+  var data = keuanganSheet.getRange(1, 1, lastRow, keuanganSheet.getLastColumn()).getValues();
+  var headers = data[0];
+  var hMap = buildHeaderIndex(headers);
+
+  if (hMap['Tanggal'] === undefined) return 'Kolom Tanggal tidak ditemukan di sheet Keuangan.';
+  if (hMap['Tipe'] === undefined || hMap['Jumlah'] === undefined) return 'Kolom Tipe/Jumlah tidak ditemukan di sheet Keuangan.';
+  
+  var totalMasuk = 0;
+  var totalKeluar = 0;
+  var rowsToDelete = [];
+  
+  // Hitung Saldo Awal (Saldo Akhir dari rekap bulan terakhir)
+  var rekapData = rekapSheet.getDataRange().getValues();
+  var saldoAwal = 0;
+  if (rekapData.length > 1) {
+    saldoAwal = Number(rekapData[rekapData.length - 1][4]) || 0;
+  }
+  
+  for (var i = 1; i < data.length; i++) {
+    var rawDate = data[i][hMap['Tanggal']];
+    var rowMonth = '';
+    if (rawDate instanceof Date) {
+      rowMonth = Utilities.formatDate(rawDate, Session.getScriptTimeZone(), 'yyyy-MM');
+    } else if (typeof rawDate === 'string' && rawDate.indexOf('-') > -1) {
+      rowMonth = rawDate.substring(0, 7);
+    }
+    
+    if (rowMonth !== monthStr) continue;
+    
+    var tipe = (data[i][hMap['Tipe']] || '').toString().trim();
+    var jumlah = Number(data[i][hMap['Jumlah']]) || 0;
+    if (tipe === 'Masuk') totalMasuk += jumlah;
+    else if (tipe === 'Keluar') totalKeluar += jumlah;
+    
+    rowsToDelete.push(i + 1);
+  }
+  
+  var saldoAkhir = saldoAwal + totalMasuk - totalKeluar;
+  
+  // Simpan Rekap Mutasi
+  rekapSheet.appendRow([monthStr, saldoAwal, totalMasuk, totalKeluar, saldoAkhir]);
+  
+  // Hapus baris lama dari bawah ke atas
+  for (var k = rowsToDelete.length - 1; k >= 0; k--) {
+    keuanganSheet.deleteRow(rowsToDelete[k]);
+  }
+  
+  return 'Berhasil mutasi kas bulan ' + monthStr + '. Saldo Akhir: Rp ' + saldoAkhir.toLocaleString('id-ID');
 }

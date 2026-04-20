@@ -113,29 +113,29 @@ export default function BukuKlaper() {
             icon={Users}
           />
         ) : (
-          <div className="overflow-x-auto print:overflow-visible">
-            <table className="w-full text-left border-collapse text-[11px] print:text-[10px]">
+          <div className="table-container pt-8 shadow-xl">
+            <table className="modern-table min-w-full">
               <thead>
-                <tr className="bg-emerald-50 text-emerald-900 print:bg-white print:text-black text-center">
-                  <th colSpan={3} className="p-2 border border-slate-300 print:border-black font-semibold">Nomor</th>
-                  <th rowSpan={2} className="p-2 border border-slate-300 print:border-black font-semibold align-middle min-w-[120px]">Nama Siswa</th>
-                  <th rowSpan={2} className="p-2 border border-slate-300 print:border-black font-semibold align-middle w-8">L/P</th>
-                  <th colSpan={2} className="p-2 border border-slate-300 print:border-black font-semibold">Kelahiran</th>
-                  <th rowSpan={2} className="p-2 border border-slate-300 print:border-black font-semibold align-middle min-w-[120px]">Nama Orang Tua Kandung</th>
-                  <th colSpan={3} className="p-2 border border-slate-300 print:border-black font-semibold">Tanggal Naik / Masuk Kelas</th>
-                  <th rowSpan={2} className="p-2 border border-slate-300 print:border-black font-semibold align-middle w-20">Tanggal Tamat Sekolah / Mutasi Keluar</th>
-                  <th rowSpan={2} className="p-2 border border-slate-300 print:border-black font-semibold align-middle w-24">Status</th>
-                  <th rowSpan={2} className="p-2 border border-slate-300 print:border-black font-semibold align-middle min-w-[150px]">Keterangan</th>
+                <tr>
+                  <th colSpan={3} className="text-center">Nomor</th>
+                  <th rowSpan={2} className="min-w-[120px]">Nama Siswa</th>
+                  <th rowSpan={2} className="w-8">L/P</th>
+                  <th colSpan={2} className="text-center">Kelahiran</th>
+                  <th rowSpan={2} className="min-w-[120px]">Nama Orang Tua Kandung</th>
+                  <th colSpan={3} className="text-center">Tanggal Naik / Masuk Kelas</th>
+                  <th rowSpan={2} className="w-20">Tanggal Tamat Sekolah / Mutasi Keluar</th>
+                  <th rowSpan={2} className="w-24">Status</th>
+                  <th rowSpan={2} className="min-w-[150px]">Keterangan</th>
                 </tr>
-                <tr className="bg-emerald-50 text-emerald-900 print:bg-white print:text-black text-center">
-                  <th className="p-2 border border-slate-300 print:border-black font-semibold w-8">Urut</th>
-                  <th className="p-2 border border-slate-300 print:border-black font-semibold w-16">Induk(NIS)</th>
-                  <th className="p-2 border border-slate-300 print:border-black font-semibold w-20">NISN</th>
-                  <th className="p-2 border border-slate-300 print:border-black font-semibold w-20">Tempat</th>
-                  <th className="p-2 border border-slate-300 print:border-black font-semibold w-20">Tanggal</th>
-                  <th className="p-2 border border-slate-300 print:border-black font-semibold w-10">X</th>
-                  <th className="p-2 border border-slate-300 print:border-black font-semibold w-10">XI</th>
-                  <th className="p-2 border border-slate-300 print:border-black font-semibold w-10">XII</th>
+                <tr>
+                  <th className="w-8">Urut</th>
+                  <th className="w-16">Induk(NIS)</th>
+                  <th className="w-20">NISN</th>
+                  <th className="w-20">Tempat</th>
+                  <th className="w-20">Tanggal</th>
+                  <th className="w-10">X</th>
+                  <th className="w-10">XI</th>
+                  <th className="w-10">XII</th>
                 </tr>
               </thead>
               <tbody>

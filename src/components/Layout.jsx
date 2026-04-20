@@ -119,6 +119,7 @@ export default function Layout() {
     presensiSiang: ['Wali Kelas', 'Ketua Kelas', 'Sekretaris'].includes(role),
     keuangan: ['Wali Kelas', 'Ketua Kelas', 'Bendahara'].includes(role),
     panggilan: ['Wali Kelas'].includes(role),
+    laporanHarian: ['Wali Kelas'].includes(role),
   };
 
   return (
@@ -145,13 +146,14 @@ export default function Layout() {
           {access.dashboard && <NavItem to="dashboard" icon={LayoutDashboard} label="Dashboard" />}
           {access.siswa && <NavItem to="master-siswa" icon={Users} label="Data Siswa" />}
           {access.bukuKlaper && <NavItem to="buku-klaper" icon={BookOpen} label="Buku Klaper" />}
-          {access.dkn && <NavItem to="dkn" icon={LibraryBig} label="Daftar Nilai (DKN)" />}
+          {access.dkn && <NavItem to="dkn" icon={LibraryBig} label="Leger" />}
           {access.keuangan && <NavItem to="tanggungan" icon={ClipboardList} label="Tanggungan KAS" />}
 
 
           {access.presensiPagi && <NavItem to="presensi-pagi" icon={Sun} label="Presensi Pagi" />}
           {access.presensiSiang && <NavItem to="presensi-siang" icon={Moon} label="Presensi Siang" />}
           {access.laporan && <NavItem to="laporan" icon={FileText} label="Laporan Akhir" />}
+          {access.laporanHarian && <NavItem to="laporan-harian" icon={CalendarCheck} label="Laporan Harian" />}
           {access.keuangan && <NavItem to="keuangan" icon={Wallet} label="KAS Kelas" />}
           {access.panggilan && <NavItem to="panggilan" icon={PhoneCall} label="Log Panggilan" />}
         </nav>

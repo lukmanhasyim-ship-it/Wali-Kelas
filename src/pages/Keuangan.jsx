@@ -423,20 +423,20 @@ export default function Keuangan() {
               icon={History}
             />
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm text-slate-600">
-                <thead className="bg-slate-50 text-slate-700 uppercase text-xs">
+          <div className="table-container">
+              <table className="modern-table">
+                <thead>
                   <tr>
-                    <th className="px-4 py-3 border-b">Tanggal</th>
-                    <th className="px-4 py-3 border-b">NISN</th>
-                    <th className="px-4 py-3 border-b">Siswa</th>
-                    <th className="px-4 py-3 border-b">Tipe</th>
-                    <th className="px-4 py-3 border-b">Jumlah</th>
-                    <th className="px-4 py-3 border-b">Keterangan</th>
+                    <th>Tanggal</th>
+                    <th>ID Siswa</th>
+                    <th>Siswa</th>
+                    <th>Tipe</th>
+                    <th>Jumlah</th>
+                    <th>Keterangan</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {keuangan.map(trx => {
+                  {keuangan.slice(0, 10).map(trx => {
                     const s = siswa.find(s => s.ID_Siswa === trx.ID_Siswa);
                     return (
                       <tr key={trx.ID_Transaksi} className="border-b last:border-0 hover:bg-slate-50">
@@ -455,6 +455,13 @@ export default function Keuangan() {
                   })}
                 </tbody>
               </table>
+              {keuangan.length > 10 && (
+                <div className="px-4 py-3 border-t border-slate-100 text-center">
+                  <p className="text-xs text-slate-400 font-medium">
+                    + {keuangan.length - 10} transaksi lainnya tersimpan di Google Sheets
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </div>

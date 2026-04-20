@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import { fetchGAS } from '../utils/gasClient';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -22,6 +23,7 @@ import { sendNotification } from '../utils/notifications';
 export default function Panggilan() {
   const { user } = useAuth();
   const { showToast } = useToast();
+  const location = useLocation();
   const [log, setLog] = useState([]);
   const [siswa, setSiswa] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -31,6 +33,19 @@ export default function Panggilan() {
   const [kategori, setKategori] = useState('Panggilan Wali');
   const [alasan, setAlasan] = useState('Lainnya');
   const [keteranganLainnya, setKeteranganLainnya] = useState('');
+
+  // Handle incoming state (from dashboard alerts)
+  useEffect(() => {
+    if (location.state) {
+      const { nisn: passedNisn, alasan: passedAlasan } = location.state;
+      if (passedNisn) setNisn(passedNisn);
+      if (passedAlasan) {
+        setKategori('Panggilan Wali');
+        setAlasan('Lainnya');
+        setKeteranganLainnya(passedAlasan);
+      }
+    }
+  }, [location.state]);
 
   useEffect(() => {
     async function load() {
@@ -236,24 +251,14 @@ export default function Panggilan() {
 
         {/* History Table Container */}
         <div className="lg:col-span-2">
-          <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl overflow-hidden">
-            <div className="px-8 py-6 border-b border-slate-50 bg-slate-50/50 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <History className="w-5 h-5 text-slate-400" />
-                <h3 className="text-lg font-black text-slate-800">Riwayat Panggilan</h3>
-              </div>
-              <span className="bg-white px-4 py-1.5 rounded-xl border border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                Total {log.length} Records
-              </span>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left">
+            <div className="table-container pt-8 shadow-xl">
+              <table className="modern-table">
                 <thead>
-                  <tr className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
-                    <th className="px-8 py-5 border-b border-slate-50">Tanggal</th>
-                    <th className="px-8 py-5 border-b border-slate-50">Siswa</th>
-                    <th className="px-8 py-5 border-b border-slate-50">Detail Masalah</th>
-                    <th className="px-8 py-5 border-b border-slate-50 text-right">Aksi Status</th>
+                  <tr>
+                    <th className="text-left">Tanggal</th>
+                    <th className="text-left">Siswa</th>
+                    <th className="text-left">Detail Masalah</th>
+                    <th className="text-right">Aksi Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
@@ -320,6 +325,5 @@ export default function Panggilan() {
           </div>
         </div>
       </div>
-    </div>
-  );
-}
+    );
+  }

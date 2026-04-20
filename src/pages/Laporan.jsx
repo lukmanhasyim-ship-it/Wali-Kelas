@@ -55,6 +55,9 @@ export default function Laporan() {
   const [presensi, setPresensi] = useState([]);
   const [keuangan, setKeuangan] = useState([]);
   const [panggilan, setPanggilan] = useState([]);
+  const [archiveAbsensi, setArchiveAbsensi] = useState([]);
+  const [archiveKeuangan, setArchiveKeuangan] = useState([]);
+  const [archiveDetail, setArchiveDetail] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Filter States
@@ -68,18 +71,24 @@ export default function Laporan() {
     async function load() {
       try {
         setLoading(true);
-        const [s, p, k, pg] = await Promise.all([
+        const [s, p, k, pg, ar, rk, ad] = await Promise.all([
           fetchGAS('GET_ALL', { sheet: 'Master_Siswa' }),
           fetchGAS('GET_ALL', { sheet: 'Presensi' }),
           fetchGAS('GET_ALL', { sheet: 'Keuangan' }),
-          fetchGAS('GET_ALL', { sheet: 'Log_Panggilan' })
+          fetchGAS('GET_ALL', { sheet: 'Log_Panggilan' }),
+          fetchGAS('GET_ALL', { sheet: 'Archive_Rekap_Absensi' }),
+          fetchGAS('GET_ALL', { sheet: 'Archive_Rekap_Keuangan' }),
+          fetchGAS('GET_ALL', { sheet: 'Archive_Detail_Absensi' })
         ]);
 
         const allSiswa = s.data || [];
-        setSiswa(allSiswa.filter(st => st.Status_Aktif === 'Aktif'));
+        setSiswa(allSiswa);
         setPresensi(p.data || []);
         setKeuangan(k.data || []);
         setPanggilan(pg.data || []);
+        setArchiveAbsensi(ar.data || []);
+        setArchiveKeuangan(rk.data || []);
+        setArchiveDetail(ad.data || []);
       } catch (error) {
         console.error('Laporan load error:', error);
         showToast('Gagal memuat data laporan.', 'error');
@@ -142,11 +151,14 @@ export default function Laporan() {
   }, [filterType, selectedMonth, selectedWeek]);
 
   const filteredPresensi = useMemo(() => {
-    return presensi.filter(p => {
-      const d = parseISO(p.Tanggal);
-      return d >= dateRange.start && d <= dateRange.end;
+    const combined = [...presensi, ...archiveDetail];
+    return combined.filter(p => {
+      try {
+        const d = parseISO(p.Tanggal);
+        return d >= dateRange.start && d <= dateRange.end;
+      } catch { return false; }
     });
-  }, [presensi, dateRange]);
+  }, [presensi, archiveDetail, dateRange]);
 
   const filteredKeuangan = useMemo(() => {
     return keuangan.filter(k => {
@@ -179,8 +191,22 @@ export default function Laporan() {
         if (summary[status] !== undefined) summary[status]++;
       });
     });
+
+    // Add archived data if month matches
+    if (filterType === 'month') {
+      archiveAbsensi.forEach(ar => {
+        if (ar.Bulan === selectedMonth) {
+          summary.H += Number(ar.H) || 0;
+          summary.S += Number(ar.S) || 0;
+          summary.I += Number(ar.I) || 0;
+          summary.A += Number(ar.A) || 0;
+          summary.B += Number(ar.B) || 0;
+        }
+      });
+    }
+
     return summary;
-  }, [filteredPresensi]);
+  }, [filteredPresensi, archiveAbsensi, selectedMonth, filterType]);
 
   const chartDataGeneral = [
     { name: 'Hadir', value: generalStats.H, color: '#10b981' },
@@ -194,17 +220,21 @@ export default function Laporan() {
   const absentStudents = useMemo(() => {
     const isNotPresent = (s) => s && ['S', 'I', 'A', 'B'].includes(s);
 
-    return filteredPresensi
-      .filter(p => isNotPresent(p.Status_Pagi) || isNotPresent(p.Status_Siang) || isNotPresent(p.Status))
-      .map(p => {
-        const s = siswa.find(item => item.ID_Siswa === p.ID_Siswa);
-        return {
-          ...p,
-          Nama: s?.Nama_Siswa || p.ID_Siswa
-        };
-      })
-      .sort((a, b) => new Date(b.Tanggal) - new Date(a.Tanggal));
-  }, [filteredPresensi, siswa]);
+    const active = filteredPresensi
+      .filter(p => isNotPresent(p.Status_Pagi) || isNotPresent(p.Status_Siang) || isNotPresent(p.Status));
+
+    // Combine with archived detail if month matches
+    const archivedForMonth = filterType === 'month'
+      ? archiveDetail.filter(ad => ad.Tanggal.startsWith(selectedMonth))
+      : [];
+
+    const combined = [...active, ...archivedForMonth].map(p => ({
+      ...p,
+      Nama: siswa.find(item => item.ID_Siswa === p.ID_Siswa)?.Nama_Siswa || p.ID_Siswa
+    }));
+
+    return combined.sort((a, b) => new Date(b.Tanggal) - new Date(a.Tanggal));
+  }, [filteredPresensi, archiveDetail, siswa, selectedMonth, filterType]);
 
   // Total absence per student (Unique per day logic: A+A=1, A+B=1A & 1B)
   const studentAbsenceTotals = useMemo(() => {
@@ -226,20 +256,76 @@ export default function Laporan() {
         if (totals[idSiswa][st] !== undefined) totals[idSiswa][st]++;
       });
     });
+
+    // Add totals from archive rekap
+    if (filterType === 'month') {
+      archiveAbsensi.forEach(ar => {
+        if (ar.Bulan === selectedMonth) {
+          const sid = ar.ID_Siswa;
+          if (!totals[sid]) totals[sid] = { S: 0, I: 0, A: 0, B: 0 };
+          totals[sid].S += Number(ar.S) || 0;
+          totals[sid].I += Number(ar.I) || 0;
+          totals[sid].A += Number(ar.A) || 0;
+          totals[sid].B += Number(ar.B) || 0;
+        }
+      });
+    }
+
     return totals;
-  }, [filteredPresensi]);
+  }, [filteredPresensi, archiveAbsensi, selectedMonth, filterType]);
 
   // 3. Financial Summary
   const financialStats = useMemo(() => {
+    const parseNumber = (val) => {
+      if (!val) return 0;
+      if (typeof val === 'number') return val;
+      // Jika string, hapus titik (ribuan) dan ganti koma ke titik (desimal) jika ada
+      const cleaned = val.toString().replace(/\./g, '').replace(/,/g, '.');
+      return Number(cleaned) || 0;
+    };
+
+    // Hitung pemasukan & pengeluaran periode yang dipilih
     let masuk = 0;
     let keluar = 0;
     filteredKeuangan.forEach(k => {
-      const val = Number(k.Jumlah) || 0;
+      const val = parseNumber(k.Jumlah);
       if (k.Tipe === 'Masuk') masuk += val;
       else if (k.Tipe === 'Keluar') keluar += val;
     });
-    return { masuk, keluar, saldo: masuk - keluar };
-  }, [filteredKeuangan]);
+
+    // Step 1: Ambil saldo akhir dari arsip bulan-bulan sebelumnya
+    let archivedSaldo = 0;
+    if (archiveKeuangan.length > 0) {
+      if (filterType === 'month') {
+        const monthRekap = archiveKeuangan.find(ak => ak.Bulan === selectedMonth);
+        if (monthRekap) {
+          archivedSaldo = parseNumber(monthRekap.Saldo_Awal);
+        } else {
+          archivedSaldo = parseNumber(archiveKeuangan[archiveKeuangan.length - 1].Saldo_Akhir);
+        }
+      } else {
+        archivedSaldo = parseNumber(archiveKeuangan[archiveKeuangan.length - 1].Saldo_Akhir);
+      }
+    }
+
+    // Step 2: Untuk filter mingguan, tambahkan transaksi aktif SEBELUM minggu yang dipilih
+    let preRangeNet = 0;
+    if (filterType === 'week') {
+      keuangan.forEach(k => {
+        try {
+          const d = parseISO(k.Tanggal);
+          if (d < dateRange.start) {
+            const val = parseNumber(k.Jumlah);
+            if (k.Tipe === 'Masuk') preRangeNet += val;
+            else if (k.Tipe === 'Keluar') preRangeNet -= val;
+          }
+        } catch { /* skip */ }
+      });
+    }
+
+    const saldoAwal = archivedSaldo + preRangeNet;
+    return { masuk, keluar, saldo: saldoAwal + masuk - keluar, saldoAwal };
+  }, [filteredKeuangan, keuangan, archiveKeuangan, selectedMonth, filterType, dateRange]);
 
   // 4. Panggilan Stats
   const panggilanStats = useMemo(() => {
@@ -255,36 +341,70 @@ export default function Laporan() {
     return stats;
   }, [filteredPanggilan]);
 
+  // Memoized Student Groups
+  const activeStudents = useMemo(() => {
+    return siswa.filter(s => s.Status_Aktif === 'Aktif');
+  }, [siswa]);
+
+  const keluarStudents = useMemo(() => {
+    return siswa.filter(s => s.Status_Aktif === 'Keluar');
+  }, [siswa]);
+
   // 1.5 Trend Data (Attendance counts per date)
   const trendData = useMemo(() => {
     const days = eachDayOfInterval({ start: dateRange.start, end: dateRange.end });
+    const totalSiswaCount = activeStudents.length || 0;
 
     return days.map(day => {
       const dateStr = format(day, 'yyyy-MM-dd');
-      const dayPresensi = filteredPresensi.filter(p => {
-        try {
-          return isSameDay(parseISO(p.Tanggal), day);
-        } catch { return false; }
+
+      // Get from active data
+      const dayPresensiActive = filteredPresensi.filter(p => {
+        try { return isSameDay(parseISO(p.Tanggal), day); } catch { return false; }
+      });
+
+      // Get from archive detail (S/I/A/B only)
+      const dayPresensiArchive = archiveDetail.filter(ad => {
+        try { return isSameDay(parseISO(ad.Tanggal), day); } catch { return false; }
       });
 
       const counts = { H: 0, S: 0, I: 0, A: 0, B: 0 };
-      dayPresensi.forEach(p => {
-        const uniqueInDay = new Set();
-        if (p.Status_Pagi) uniqueInDay.add(p.Status_Pagi);
-        if (p.Status_Siang) uniqueInDay.add(p.Status_Siang);
-        if (!p.Status_Pagi && !p.Status_Siang && p.Status) uniqueInDay.add(p.Status);
 
-        uniqueInDay.forEach(status => {
-          if (counts[status] !== undefined) counts[status]++;
+      if (dayPresensiActive.length > 0) {
+        dayPresensiActive.forEach(p => {
+          const uniqueInDay = new Set();
+          if (p.Status_Pagi) uniqueInDay.add(p.Status_Pagi);
+          if (p.Status_Siang) uniqueInDay.add(p.Status_Siang);
+          if (!p.Status_Pagi && !p.Status_Siang && p.Status) uniqueInDay.add(p.Status);
+
+          uniqueInDay.forEach(status => {
+            if (counts[status] !== undefined) counts[status]++;
+          });
         });
-      });
+      } else if (dayPresensiArchive.length > 0) {
+        // For archived days, we have S,I,A,B detail. We estimate H as Total - Non-H
+        dayPresensiArchive.forEach(p => {
+          const uniqueInDay = new Set();
+          if (p.Status_Pagi) uniqueInDay.add(p.Status_Pagi);
+          if (p.Status_Siang) uniqueInDay.add(p.Status_Siang);
+          if (!p.Status_Pagi && !p.Status_Siang && p.Status) uniqueInDay.add(p.Status);
+
+          uniqueInDay.forEach(status => {
+            if (counts[status] !== undefined && status !== 'H') counts[status]++;
+          });
+        });
+
+        // Count unique students who was NOT present at least once in that day
+        const nonHadirStudentIds = new Set(dayPresensiArchive.map(p => p.ID_Siswa));
+        counts.H = Math.max(0, totalSiswaCount - nonHadirStudentIds.size);
+      }
 
       return {
         name: format(day, filterType === 'month' ? 'dd' : 'eee', { locale: id }),
         ...counts
       };
     }).filter(d => (d.H + d.S + d.I + d.A + d.B) > 0);
-  }, [filteredPresensi, dateRange, filterType]);
+  }, [filteredPresensi, archiveDetail, dateRange, filterType, siswa]);
 
   const handleDownload = () => {
     window.print();
@@ -324,49 +444,60 @@ export default function Laporan() {
         @media print {
           @page {
             size: A4;
-            margin: 10mm 15mm;
+            margin: 15mm;
           }
-          body {
-            background: white !important;
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
+          /* Hide everything except report manually to allow proper flow */
+          .no-print, aside, header, nav, footer, button, .sidebar-class, .navbar-class {
+            display: none !important;
           }
-          body * {
-            visibility: hidden;
-          }
-          #printable-report, #printable-report * {
-            visibility: visible;
-          }
-          #printable-report {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
+          
+          /* Reset root and parents for multi-page flow */
+          html, body, #root, main, .max-w-6xl, .space-y-8 {
+            height: auto !important;
+            overflow: visible !important;
+            display: block !important;
+            position: static !important;
+            width: 100% !important;
+            max-width: none !important;
             margin: 0 !important;
             padding: 0 !important;
+          }
+
+          #printable-report {
             display: block !important;
+            position: static !important;
+            width: 100% !important;
+            height: auto !important;
+            margin: 0 !important;
+            padding: 0 !important;
             box-shadow: none !important;
             border: none !important;
+            background: white !important;
           }
+
           table {
-            border-collapse: collapse !important;
             width: 100% !important;
-            display: table !important;
-            page-break-inside: auto;
+            border-collapse: collapse !important;
+            page-break-inside: auto !important;
+          }
+          tr {
+            page-break-inside: avoid !important;
+            page-break-after: auto !important;
           }
           thead {
             display: table-header-group !important;
           }
-          tr {
+          .bg-slate-900 { 
+            background-color: #0f172a !important; 
+            color: white !important; 
+            print-color-adjust: exact !important; 
+            -webkit-print-color-adjust: exact !important;
+          }
+          
+          .grid.grid-cols-2, .h-\[260px\], .h-\[240px\], section, .space-y-12 > div {
             page-break-inside: avoid !important;
-            page-break-after: auto;
-          }
-          th, td {
-            border: 1px solid #e2e8f0 !important;
-          }
-          .bg-slate-900 { background-color: #0f172a !important; color: white !important; -webkit-print-color-adjust: exact; }
-          .no-print {
-             display: none !important;
+            display: block !important;
+            margin-bottom: 20px !important;
           }
         }
       `}</style>
@@ -436,7 +567,7 @@ export default function Laporan() {
         </div>
       </div>
 
-      <PageGuide 
+      <PageGuide
         title="Panduan Laporan:"
         steps={[
           'Pilih periode laporan menggunakan fitur filter tanggal atau bulan.',
@@ -451,7 +582,9 @@ export default function Laporan() {
         <div className="border-b-2 border-slate-900 pb-4 flex justify-between items-end">
           <div>
             <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">
-              Laporan {filterType === 'month' ? academicMonths.find(m => m.value === selectedMonth)?.label : `Minggu ${parseInt(selectedWeek?.split('-')[2]) / 7 + 1}`}
+              Laporan {filterType === 'month'
+                ? academicMonths.find(m => m.value === selectedMonth)?.label
+                : `${format(dateRange.start, 'dd MMM', { locale: id })} - ${format(dateRange.end, 'dd MMM yyyy', { locale: id })}`}
             </h2>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-1">Sistem Informasi Wali Kelas Digital</p>
           </div>
@@ -552,58 +685,62 @@ export default function Laporan() {
             <div className="w-1.5 h-4 bg-rose-600 rounded-full" />
             II. Detail Ketidakhadiran
           </h3>
-          <div className="bg-white rounded-[2rem] border border-slate-200 overflow-hidden shadow-sm">
-            <table className="w-full text-left text-[11px]">
+          <div className="bg-white rounded-[2rem] border border-slate-200 shadow-sm">
+            <table className="modern-table">
               <thead>
-                <tr className="bg-slate-900 text-white font-bold uppercase text-[9px] tracking-widest text-center">
-                  <th className="px-6 py-4 text-left">Nama Siswa</th>
-                  <th className="px-4 py-4">Tgl</th>
-                  <th className="px-4 py-4">Pagi</th>
-                  <th className="px-4 py-4">Siang</th>
-                  <th className="px-6 py-4">Rekap</th>
-                  <th className="px-6 py-4 text-left">Ket.</th>
+                <tr>
+                  <th className="text-left w-12">No.</th>
+                  <th className="text-left">Nama Siswa</th>
+                  <th className="text-center">Sakit (S)</th>
+                  <th className="text-center">Izin (I)</th>
+                  <th className="text-center">Alpha (A)</th>
+                  <th className="text-center">Bolos (B)</th>
+                  <th className="text-center">Total</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {absentStudents.length > 0 ? absentStudents.map((p, i) => (
-                  <tr key={i} className="hover:bg-slate-50 transition-colors text-center">
-                    <td className="px-6 py-4 text-left border-r border-slate-50">
-                      <p className="font-extrabold text-slate-800 leading-none">{p.Nama}</p>
-                      <p className="text-[8px] text-slate-400 font-black mt-1 uppercase leading-none">{p.ID_Siswa} | {p.NISN || '-'}</p>
-                    </td>
-                    <td className="px-4 py-4 text-slate-500 font-black border-r border-slate-50">{format(parseISO(p.Tanggal), 'dd/MM')}</td>
-                    <td className="px-4 py-4 border-r border-slate-50">
-                      <div className="flex flex-col items-center gap-0.5">
-                        <StatusBadge status={p.Status_Pagi} size="sm" />
-                        <span className="text-[7px] font-black text-slate-400 leading-none">{formatTime(p.Timestamp_Pagi)}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 border-r border-slate-50">
-                      <div className="flex flex-col items-center gap-0.5">
-                        <StatusBadge status={p.Status_Siang} size="sm" />
-                        <span className="text-[7px] font-black text-slate-400 leading-none">{formatTime(p.Timestamp_Siang)}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 border-r border-slate-50">
-                      <div className="flex items-center justify-center gap-1">
-                        {['S', 'I', 'A', 'B'].map(st => {
-                          const count = (studentAbsenceTotals[p.ID_Siswa] || {})[st] || 0;
-                          return (
-                            <div key={st} className={`flex items-center gap-0.5 px-1 py-1 rounded-md border text-[8px] font-black ${count > 0 ? 'bg-slate-50 border-slate-200 text-slate-900' : 'text-slate-200 border-transparent opacity-30'}`}>
-                              <span>{st}</span>
-                              <span className="text-emerald-600 border-l border-slate-200 pl-0.5">{count}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-slate-500 italic text-[10px] truncate max-w-[100px] text-left">
-                      {p.Keterangan || '-'}
-                    </td>
-                  </tr>
-                )) : (
-                  <tr><td colSpan="6" className="py-12 text-center text-slate-300 font-black uppercase tracking-widest">Nihil</td></tr>
-                )}
+                {(() => {
+                  const filtered = siswa
+                    .filter(x => {
+                      const totals = studentAbsenceTotals[String(x.ID_Siswa)] || { S: 0, I: 0, A: 0, B: 0 };
+                      const total = (totals.S || 0) + (totals.I || 0) + (totals.A || 0) + (totals.B || 0);
+                      return x.Status_Aktif === 'Aktif' && total > 0;
+                    })
+                    .sort((a, b) => (a.Nama_Siswa || '').localeCompare(b.Nama_Siswa || ''));
+
+                  if (filtered.length === 0) {
+                    return <tr><td colSpan="7" className="py-12 text-center text-slate-300 font-black uppercase tracking-widest">Nihil</td></tr>;
+                  }
+
+                  return filtered.map((x, idx) => {
+                    const totals = studentAbsenceTotals[String(x.ID_Siswa)];
+                    const total = (totals.S || 0) + (totals.I || 0) + (totals.A || 0) + (totals.B || 0);
+                    return (
+                      <tr key={x.ID_Siswa} className="hover:bg-slate-50 transition-colors text-center font-bold">
+                        <td className="text-slate-400 font-black text-[10px] text-center">{idx + 1}</td>
+                        <td className="text-left font-extrabold text-slate-800 leading-none">
+                          <p>{x.Nama_Siswa}</p>
+                          <p className="text-[8px] text-slate-400 font-black mt-1 uppercase leading-none">{x.ID_Siswa} | {x.NISN || '-'}</p>
+                        </td>
+                        <td className="text-center">
+                          <span className={`px-2 py-1 rounded-full text-[9px] font-black ${totals.S > 0 ? 'bg-amber-100 text-amber-700' : 'text-slate-200'}`}>{totals.S || 0}</span>
+                        </td>
+                        <td className="text-center">
+                          <span className={`px-2 py-1 rounded-full text-[9px] font-black ${totals.I > 0 ? 'bg-blue-100 text-blue-700' : 'text-slate-200'}`}>{totals.I || 0}</span>
+                        </td>
+                        <td className="text-center">
+                          <span className={`px-2 py-1 rounded-full text-[9px] font-black ${totals.A > 0 ? 'bg-rose-100 text-rose-700' : 'text-slate-200'}`}>{totals.A || 0}</span>
+                        </td>
+                        <td className="text-center">
+                          <span className={`px-2 py-1 rounded-full text-[9px] font-black ${totals.B > 0 ? 'bg-purple-100 text-purple-700' : 'text-slate-200'}`}>{totals.B || 0}</span>
+                        </td>
+                        <td className="text-center">
+                          <span className="px-2 py-1 rounded-full text-[9px] font-black bg-slate-900 text-white">{total}</span>
+                        </td>
+                      </tr>
+                    );
+                  });
+                })()}
               </tbody>
             </table>
           </div>
@@ -615,45 +752,66 @@ export default function Laporan() {
             <div className="w-1.5 h-4 bg-indigo-600 rounded-full" />
             III. Rekapitulasi Keuangan
           </h3>
-          <div className="grid grid-cols-3 gap-6">
+          <div className="grid grid-cols-4 gap-4">
+            <div className="bg-slate-50 p-4 rounded-2xl border border-white shadow-sm">
+              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Saldo Awal</p>
+              <p className="text-lg font-black text-slate-600">Rp {financialStats.saldoAwal.toLocaleString('id-ID')}</p>
+            </div>
             <div className="bg-emerald-50 p-4 rounded-2xl border border-white shadow-sm">
-              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Pemasukan</p>
-              <p className="text-xl font-black text-emerald-600">Rp {financialStats.masuk.toLocaleString('id-ID')}</p>
+              <p className="text-[9px] font-black text-emerald-400 uppercase tracking-widest">Masuk (+)</p>
+              <p className="text-lg font-black text-emerald-600">Rp {financialStats.masuk.toLocaleString('id-ID')}</p>
             </div>
             <div className="bg-rose-50 p-4 rounded-2xl border border-white shadow-sm">
-              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Pengeluaran</p>
-              <p className="text-xl font-black text-rose-600">Rp {financialStats.keluar.toLocaleString('id-ID')}</p>
+              <p className="text-[9px] font-black text-rose-400 uppercase tracking-widest">Keluar (-)</p>
+              <p className="text-lg font-black text-rose-600">Rp {financialStats.keluar.toLocaleString('id-ID')}</p>
             </div>
             <div className="bg-slate-900 p-4 rounded-2xl text-white shadow-md">
-              <p className="text-[9px] font-black opacity-60 uppercase tracking-widest">Saldo</p>
-              <p className="text-xl font-black">Rp {financialStats.saldo.toLocaleString('id-ID')}</p>
+              <p className="text-[9px] font-black opacity-60 uppercase tracking-widest">Saldo Akhir</p>
+              <p className="text-lg font-black">Rp {financialStats.saldo.toLocaleString('id-ID')}</p>
             </div>
           </div>
 
-          <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden">
-            <table className="w-full text-left text-[11px]">
-              <thead className="bg-slate-900 text-white font-bold uppercase text-[9px] tracking-widest">
+          {/* Tabel Mutasi Kas */}
+          <div className="bg-white rounded-[2rem] border border-slate-200 shadow-sm">
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-2">
+              <div className="w-1.5 h-4 bg-indigo-400 rounded-full" />
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Riwayat Mutasi Saldo Kas</p>
+            </div>
+            <table className="modern-table">
+              <thead>
                 <tr>
-                  <th className="px-6 py-4">Tgl</th>
-                  <th className="px-6 py-4">Pihak</th>
-                  <th className="px-6 py-4">Keterangan</th>
-                  <th className="px-6 py-4 text-right">Nominal</th>
+                  <th className="text-left">Bulan</th>
+                  <th className="text-right">Saldo Awal</th>
+                  <th className="text-right">Pemasukan</th>
+                  <th className="text-right">Pengeluaran</th>
+                  <th className="text-right">Saldo Akhir</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filteredKeuangan.map((k, i) => {
-                  const s = siswa.find(item => item.ID_Siswa === k.ID_Siswa);
-                  return (
-                    <tr key={i} className="hover:bg-slate-50 transition-colors font-bold">
-                      <td className="px-6 py-4 text-slate-400">{format(parseISO(k.Tanggal), 'dd/MM/yy')}</td>
-                      <td className="px-6 py-4 text-slate-800">{s?.Nama_Siswa || k.ID_Siswa || 'Umum'}</td>
-                      <td className="px-6 py-4 text-slate-400 italic font-medium">{k.Keterangan || '-'}</td>
-                      <td className={`px-6 py-4 text-right font-black ${k.Tipe === 'Masuk' ? 'text-emerald-600' : 'text-rose-600'}`}>
-                        {k.Tipe === 'Masuk' ? '+' : '-'} Rp {Number(k.Jumlah).toLocaleString('id-ID')}
-                      </td>
-                    </tr>
-                  );
-                })}
+              <tbody className="divide-y divide-slate-50">
+                {archiveKeuangan.length > 0 ? archiveKeuangan.map((ak, i) => (
+                  <tr key={i} className="hover:bg-slate-50 transition-colors font-bold">
+                    <td className="px-6 py-3 text-slate-600">{ak.Bulan}</td>
+                    <td className="px-4 py-3 text-right text-slate-500">Rp {Number(ak.Saldo_Awal).toLocaleString('id-ID')}</td>
+                    <td className="px-4 py-3 text-right text-emerald-600">+Rp {Number(ak.Total_Masuk).toLocaleString('id-ID')}</td>
+                    <td className="px-4 py-3 text-right text-rose-600">-Rp {Number(ak.Total_Keluar).toLocaleString('id-ID')}</td>
+                    <td className="px-4 py-3 text-right font-black text-slate-900">Rp {Number(ak.Saldo_Akhir).toLocaleString('id-ID')}</td>
+                  </tr>
+                )) : null}
+                <tr className="bg-indigo-50 font-black text-[11px]">
+                  <td className="px-6 py-3 text-indigo-700">
+                    {selectedMonth}
+                    <span className="text-[8px] ml-1.5 bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded-full uppercase tracking-wide">Aktif</span>
+                  </td>
+                  <td className="px-4 py-3 text-right text-slate-500">Rp {(financialStats.saldoAwal || 0).toLocaleString('id-ID')}</td>
+                  <td className="px-4 py-3 text-right text-emerald-600">+Rp {financialStats.masuk.toLocaleString('id-ID')}</td>
+                  <td className="px-4 py-3 text-right text-rose-600">-Rp {financialStats.keluar.toLocaleString('id-ID')}</td>
+                  <td className="px-4 py-3 text-right text-indigo-700">Rp {financialStats.saldo.toLocaleString('id-ID')}</td>
+                </tr>
+                {archiveKeuangan.length === 0 && filteredKeuangan.length === 0 && (
+                  <tr>
+                    <td colSpan="5" className="py-8 text-center text-slate-300 font-black uppercase tracking-widest text-xs">Belum ada data mutasi</td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -679,34 +837,39 @@ export default function Laporan() {
             ))}
           </div>
 
-          <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden">
-            <table className="w-full text-left text-[11px]">
-              <thead className="bg-slate-900 text-white font-bold uppercase text-[9px] tracking-widest text-center">
+          <div className="bg-white rounded-3xl border border-slate-200">
+            <table className="modern-table">
+              <thead>
                 <tr>
-                  <th className="px-6 py-4 text-left">Nama Siswa</th>
-                  <th className="px-4 py-4">Tgl</th>
-                  <th className="px-4 py-4">Kategori</th>
-                  <th className="px-6 py-4">Alasan / Kasus</th>
-                  <th className="px-4 py-4">Status</th>
+                  <th className="text-left w-12">No.</th>
+                  <th className="text-left">Nama Siswa</th>
+                  <th className="text-center">Tgl</th>
+                  <th className="text-center">Kategori</th>
+                  <th className="text-left">Alasan / Kasus</th>
+                  <th className="text-center">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {filteredPanggilan.length > 0 ? filteredPanggilan.map((pg, i) => {
-                  const s = siswa.find(item => item.ID_Siswa === pg.ID_Siswa);
+                  const s = siswa.find(item =>
+                    item.ID_Siswa === pg.ID_Siswa ||
+                    String(item.NISN) === String(pg.NISN)
+                  );
                   return (
                     <tr key={i} className="hover:bg-slate-50 transition-colors text-center font-bold">
-                      <td className="px-6 py-4 text-left border-r border-slate-50">
-                        <p className="text-slate-800">{s?.Nama_Siswa || pg.ID_Siswa}</p>
-                        <p className="text-[8px] text-slate-400 font-black mt-0.5">{pg.ID_Siswa}</p>
+                      <td className="text-slate-400 font-black text-[10px] text-center">{i + 1}</td>
+                      <td className="text-left">
+                        <p className="text-slate-800">{s?.Nama_Siswa || pg.NISN || pg.ID_Siswa}</p>
+                        <p className="text-[8px] text-slate-400 font-black mt-0.5">{pg.NISN || pg.ID_Siswa}</p>
                       </td>
-                      <td className="px-4 py-4 text-slate-500 border-r border-slate-50">{format(parseISO(pg.Tanggal), 'dd/MM/yy')}</td>
-                      <td className="px-4 py-4 border-r border-slate-50">
+                      <td className="text-slate-500">{format(parseISO(pg.Tanggal), 'dd/MM/yy')}</td>
+                      <td>
                         <span className={`px-2 py-0.5 rounded text-[8px] uppercase ${pg.Kategori === 'Home Visit' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}`}>
                           {pg.Kategori}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-slate-600 italic font-medium border-r border-slate-50">{pg.Alasan}</td>
-                      <td className="px-4 py-4">
+                      <td className="text-slate-600 italic font-medium text-left">{pg.Alasan}</td>
+                      <td>
                         <span className={`px-2 py-0.5 rounded text-[8px] uppercase ${pg.Status_Selesai === 'Selesai' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
                           {pg.Status_Selesai}
                         </span>
@@ -715,6 +878,46 @@ export default function Laporan() {
                   );
                 }) : (
                   <tr><td colSpan="5" className="py-8 text-center text-slate-300 font-black uppercase tracking-widest text-xs">Tidak ada data panggilan periodik</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        {/* SECTION 5: SISWA KELUAR */}
+        <div className="space-y-6">
+          <h3 className="text-sm font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2">
+            <div className="w-1.5 h-4 bg-slate-400 rounded-full" />
+            V. Rekapitulasi Siswa Keluar
+          </h3>
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-sm">
+            <table className="modern-table">
+              <thead>
+                <tr>
+                  <th className="text-left w-12">No.</th>
+                  <th className="text-left">Nama Siswa</th>
+                  <th className="text-left">Keterangan (Alasan Keluar)</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {keluarStudents.length > 0 ? keluarStudents
+                  .sort((a, b) => (a.Nama_Siswa || '').localeCompare(b.Nama_Siswa || ''))
+                  .map((x, idx) => (
+                    <tr key={x.ID_Siswa} className="hover:bg-slate-50 transition-colors font-bold">
+                      <td className="text-slate-400 font-black text-[10px] text-center">{idx + 1}</td>
+                      <td className="text-left font-extrabold text-slate-800 leading-none">
+                        <p>{x.Nama_Siswa}</p>
+                        <p className="text-[8px] text-slate-400 font-black mt-1 uppercase leading-none">{x.ID_Siswa} | {x.NISN || '-'}</p>
+                      </td>
+                      <td className="text-slate-600 italic font-medium text-left">
+                        {x.Keterangan || 'Tidak ada keterangan'}
+                      </td>
+                    </tr>
+                  )) : (
+                  <tr>
+                    <td colSpan="3" className="py-8 text-center text-slate-300 font-black uppercase tracking-widest text-xs">
+                      Nihil
+                    </td>
+                  </tr>
                 )}
               </tbody>
             </table>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
@@ -12,6 +12,7 @@ import Presensi from './pages/Presensi';
 import PresensiPagi from './pages/PresensiPagi';
 import PresensiSiang from './pages/PresensiSiang';
 import Laporan from './pages/Laporan';
+import LaporanHarian from './pages/LaporanHarian';
 import Keuangan from './pages/Keuangan';
 import Panggilan from './pages/Panggilan';
 import Profile from './pages/Profile';
@@ -46,106 +47,123 @@ function RoleProtectedRoute({ children, allowedRoles }) {
   return children;
 }
 
+// AppRoutes: wrapper yang punya akses ke useLocation.
+// key={location.key} memaksa komponen remount setiap navigasi → data selalu fresh.
+function AppRoutes() {
+  const location = useLocation();
+  return (
+    <Routes>
+      <Route path="/login" element={<Login />} />
+
+      <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+        <Route index element={<Navigate to="/dashboard" replace />} />
+        <Route path="dashboard" element={<Dashboard key={location.key} />} />
+        <Route
+          path="master-siswa"
+          element={
+            <RoleProtectedRoute allowedRoles={['Wali Kelas']}>
+              <MasterSiswa key={location.key} />
+            </RoleProtectedRoute>
+          }
+        />
+        <Route path="profile" element={<Profile key={location.key} />} />
+        <Route
+          path="tanggungan"
+          element={
+            <RoleProtectedRoute allowedRoles={['Wali Kelas', 'Bendahara']}>
+              <Tanggungan key={location.key} />
+            </RoleProtectedRoute>
+          }
+        />
+        <Route
+          path="presensi-pagi"
+          element={
+            <RoleProtectedRoute allowedRoles={['Wali Kelas', 'Ketua Kelas', 'Sekretaris']}>
+              <PresensiPagi key={location.key} />
+            </RoleProtectedRoute>
+          }
+        />
+        <Route
+          path="presensi-siang"
+          element={
+            <RoleProtectedRoute allowedRoles={['Wali Kelas', 'Ketua Kelas', 'Sekretaris']}>
+              <PresensiSiang key={location.key} />
+            </RoleProtectedRoute>
+          }
+        />
+        <Route
+          path="laporan"
+          element={
+            <RoleProtectedRoute allowedRoles={['Wali Kelas']}>
+              <Laporan key={location.key} />
+            </RoleProtectedRoute>
+          }
+        />
+        <Route
+          path="laporan-harian"
+          element={
+            <RoleProtectedRoute allowedRoles={['Wali Kelas']}>
+              <LaporanHarian key={location.key} />
+            </RoleProtectedRoute>
+          }
+        />
+        <Route
+          path="buku-klaper"
+          element={
+            <RoleProtectedRoute allowedRoles={['Wali Kelas']}>
+              <BukuKlaper key={location.key} />
+            </RoleProtectedRoute>
+          }
+        />
+        <Route
+          path="dkn"
+          element={
+            <RoleProtectedRoute allowedRoles={['Wali Kelas']}>
+              <DKN key={location.key} />
+            </RoleProtectedRoute>
+          }
+        />
+        <Route
+          path="update-presensi"
+          element={
+            <RoleProtectedRoute allowedRoles={[]}>
+              <Presensi key={location.key} />
+            </RoleProtectedRoute>
+          }
+        />
+        <Route
+          path="keuangan"
+          element={
+            <RoleProtectedRoute allowedRoles={['Wali Kelas', 'Ketua Kelas', 'Bendahara']}>
+              <Keuangan key={location.key} />
+            </RoleProtectedRoute>
+          }
+        />
+        <Route
+          path="panggilan"
+          element={
+            <RoleProtectedRoute allowedRoles={['Wali Kelas']}>
+              <Panggilan key={location.key} />
+            </RoleProtectedRoute>
+          }
+        />
+        <Route path="notifications" element={<Notifications key={location.key} />} />
+      </Route>
+
+      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+    </Routes>
+  );
+}
+
 function App() {
   return (
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
       <ToastProvider>
         <AuthProvider>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            
-            <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-              <Route index element={<Navigate to="/dashboard" replace />} />
-              <Route path="dashboard" element={<Dashboard />} />
-              <Route 
-                path="master-siswa" 
-                element={
-                  <RoleProtectedRoute allowedRoles={['Wali Kelas']}>
-                    <MasterSiswa />
-                  </RoleProtectedRoute>
-                } 
-              />
-              <Route path="profile" element={<Profile />} />
-              <Route 
-                path="tanggungan" 
-                element={
-                  <RoleProtectedRoute allowedRoles={['Wali Kelas', 'Bendahara']}>
-                    <Tanggungan />
-                  </RoleProtectedRoute>
-                }
-              />
-              <Route 
-                path="presensi-pagi" 
-                element={
-                  <RoleProtectedRoute allowedRoles={['Wali Kelas', 'Ketua Kelas', 'Sekretaris']}>
-                    <PresensiPagi />
-                  </RoleProtectedRoute>
-                } 
-              />
-              <Route 
-                path="presensi-siang" 
-                element={
-                  <RoleProtectedRoute allowedRoles={['Wali Kelas', 'Ketua Kelas', 'Sekretaris']}>
-                    <PresensiSiang />
-                  </RoleProtectedRoute>
-                } 
-              />
-              <Route 
-                path="laporan" 
-                element={
-                  <RoleProtectedRoute allowedRoles={['Wali Kelas']}>
-                    <Laporan />
-                  </RoleProtectedRoute>
-                } 
-              />
-              <Route 
-                path="buku-klaper" 
-                element={
-                  <RoleProtectedRoute allowedRoles={['Wali Kelas']}>
-                    <BukuKlaper />
-                  </RoleProtectedRoute>
-                } 
-              />
-              <Route 
-                path="dkn" 
-                element={
-                  <RoleProtectedRoute allowedRoles={['Wali Kelas']}>
-                    <DKN />
-                  </RoleProtectedRoute>
-                } 
-              />
-              <Route 
-                path="update-presensi" 
-                element={
-                  <RoleProtectedRoute allowedRoles={[]}> 
-                    <Presensi />
-                  </RoleProtectedRoute>
-                } 
-              />
-              <Route 
-                path="keuangan" 
-                element={
-                  <RoleProtectedRoute allowedRoles={['Wali Kelas', 'Ketua Kelas', 'Bendahara']}>
-                    <Keuangan />
-                  </RoleProtectedRoute>
-                } 
-              />
-              <Route 
-                path="panggilan" 
-                element={
-                  <RoleProtectedRoute allowedRoles={['Wali Kelas']}>
-                    <Panggilan />
-                  </RoleProtectedRoute>
-                } 
-              />
-              <Route path="notifications" element={<Notifications />} />
-            </Route>
-
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
-          </Routes>
-        </BrowserRouter>
-      </AuthProvider>
+          <BrowserRouter>
+            <AppRoutes />
+          </BrowserRouter>
+        </AuthProvider>
       </ToastProvider>
     </GoogleOAuthProvider>
   );

@@ -52,8 +52,8 @@ export default function DKN() {
       setDraftNilai({});
       setAddedColumns([]);
     } catch (err) {
-      console.error('DKN load error:', err);
-      showToast('Gagal memuat data DKN.', 'error');
+      console.error('Leger load error:', err);
+      showToast('Gagal memuat data Leger.', 'error');
     } finally {
       setLoading(false);
     }
@@ -278,7 +278,7 @@ export default function DKN() {
         throw new Error('Respons backend error');
       }
     } catch (err) {
-      console.error('Save DKN Failed:', err);
+      console.error('Save Leger Failed:', err);
       showToast('Gagal menyimpan nilai.', 'error');
     } finally {
       setSaving(false);
@@ -372,9 +372,9 @@ export default function DKN() {
         XLSX.utils.book_append_sheet(wb, ws, `Kelas ${lvl}`);
       });
 
-      const fileName = `DKN_${new Date().getTime()}.xlsx`;
+      const fileName = `Leger_${new Date().getTime()}.xlsx`;
       XLSX.writeFile(wb, fileName);
-      showToast('Berhasil mengekspor DKN kelas X, XI, dan XII.', 'success');
+      showToast('Berhasil mengekspor Leger kelas X, XI, dan XII.', 'success');
     } catch (error) {
       console.error('Export Excel Error:', error);
       showToast('Gagal mengekspor ke Excel.', 'error');
@@ -404,8 +404,8 @@ export default function DKN() {
         { s: { r: 0, c: 4 }, e: { r: 1, c: 4 } }
       ];
 
-      XLSX.utils.book_append_sheet(wb, ws, 'Template DKN');
-      XLSX.writeFile(wb, `Template_DKN_${jenjang}_${semester}.xlsx`);
+      XLSX.utils.book_append_sheet(wb, ws, 'Template Leger');
+      XLSX.writeFile(wb, `Template_Leger_${jenjang}_${semester}.xlsx`);
       showToast('Template berhasil diunduh.', 'success');
     } catch (e) {
       showToast('Gagal membuat template.', 'error');
@@ -461,7 +461,7 @@ export default function DKN() {
     <div className="space-y-6 animate-fade-in print:space-y-4">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between print:hidden">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800">Daftar Kumpulan Nilai (DKN)</h2>
+          <h2 className="text-2xl font-bold text-slate-800">Daftar Kumpulan Nilai (Leger)</h2>
           <p className="text-sm text-slate-500">Kelola dan input nilai Akademik & Produktif siswa.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -481,9 +481,9 @@ export default function DKN() {
 
             <div className="w-px h-6 bg-slate-200 mx-1" />
 
-            <button onClick={handleExportExcel} className="flex items-center gap-2 px-3 py-2 text-slate-600 hover:text-[#008647] hover:bg-emerald-50 rounded-lg transition-all" title="Ekspor DKN ke Excel">
+            <button onClick={handleExportExcel} className="flex items-center gap-2 px-3 py-2 text-slate-600 hover:text-[#008647] hover:bg-emerald-50 rounded-lg transition-all" title="Ekspor Leger ke Excel">
               <FileSpreadsheet className="w-4 h-4" />
-              <span className="text-[10px] font-bold uppercase tracking-tight">Ekspor DKN</span>
+              <span className="text-[10px] font-bold uppercase tracking-tight">Ekspor Leger</span>
             </button>
           </div>
 
@@ -495,7 +495,7 @@ export default function DKN() {
 
       {/* Petunjuk Pengisian */}
       <PageGuide 
-        title="Petunjuk Pengisian DKN:"
+        title="Petunjuk Pengisian Leger:"
         steps={[
           'Pilih <span class="font-black">Jenjang dan Semester</span> terlebih dahulu untuk memfilter data.',
           'Klik <span class="font-black">+ Tambah Kolom Mapel</span> jika mata pelajaran belum tersedia di tabel.',
