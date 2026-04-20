@@ -220,19 +220,19 @@ export default function Keuangan() {
           </div>
 
           <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
               <p className="text-xs text-slate-500 uppercase tracking-[0.2em]">Total Siswa Aktif</p>
               <p className="mt-2 text-2xl font-bold text-slate-900">{activeStudents.length}</p>
             </div>
-            <div className="rounded-3xl border border-slate-200 bg-white p-4">
+            <div className="rounded-2xl border border-slate-200 bg-white p-4">
               <p className="text-xs text-slate-500 uppercase tracking-[0.2em]">Sudah Bayar Minggu Ini</p>
               <p className="mt-2 text-2xl font-bold text-slate-900">{activeStudents.length - unpaidKasThisWeek.length}</p>
             </div>
-            <div className="rounded-3xl border border-slate-200 bg-white p-4">
+            <div className="rounded-2xl border border-slate-200 bg-white p-4">
               <p className="text-xs text-slate-500 uppercase tracking-[0.2em]">Belum Bayar Minggu Ini</p>
               <p className="mt-2 text-2xl font-bold text-rose-700">{unpaidKasThisWeek.length}</p>
             </div>
-            <div className="rounded-3xl border border-slate-200 bg-white p-4">
+            <div className="rounded-2xl border border-slate-200 bg-white p-4">
               <p className="text-xs text-slate-500 uppercase tracking-[0.2em]">Bayar Kurang (Belum Tuntas)</p>
               <p className="mt-2 text-2xl font-bold text-yellow-700">{partialPayments.length}</p>
             </div>
@@ -281,7 +281,7 @@ export default function Keuangan() {
                 Total: <span className="font-semibold text-yellow-700">{partialPayments.length}</span>
               </div>
             </div>
-            <div className="overflow-x-auto rounded-3xl border border-slate-200 bg-white">
+            <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
               <table className="w-full text-left text-sm text-slate-600">
                 <thead className="bg-slate-50 text-slate-700 uppercase text-xs">
                   <tr>

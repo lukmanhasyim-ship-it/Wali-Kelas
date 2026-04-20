@@ -504,7 +504,7 @@ export default function Laporan() {
       `}</style>
 
       {/* Header & Filters (Web Only) */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm no-print">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 bg-white p-6 rounded-2xl border border-slate-100 shadow-sm no-print">
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-2 text-emerald-600">
             <FileText className="w-5 h-5" />
@@ -578,7 +578,7 @@ export default function Laporan() {
         ]}
       />
 
-      <div ref={reportRef} id="printable-report" className="bg-white p-8 md:p-12 rounded-[2rem] border border-slate-100 shadow-xl space-y-12">
+      <div ref={reportRef} id="printable-report" className="bg-white p-8 md:p-12 rounded-2xl border border-slate-100 shadow-xl space-y-12">
         {/* Simple Title */}
         <div className="border-b-2 border-slate-900 pb-4 flex justify-between items-end">
           <div>
@@ -619,7 +619,7 @@ export default function Laporan() {
           </div>
 
           <div className="grid grid-cols-2 gap-8 h-[240px]">
-            <div className="bg-slate-50/50 rounded-3xl border border-slate-100 p-4">
+            <div className="bg-slate-50/50 rounded-2xl border border-slate-100 p-4">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -643,7 +643,7 @@ export default function Laporan() {
                 </PieChart>
               </ResponsiveContainer>
             </div>
-            <div className="bg-slate-50/50 rounded-3xl border border-slate-100 p-4">
+            <div className="bg-slate-50/50 rounded-2xl border border-slate-100 p-4">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartDataGeneral}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
@@ -659,7 +659,7 @@ export default function Laporan() {
           </div>
 
           {/* New Trend Chart */}
-          <div className="bg-slate-50/50 rounded-3xl border border-slate-100 p-6 h-[260px]">
+          <div className="bg-slate-50/50 rounded-2xl border border-slate-100 p-6 h-[260px]">
             <div className="flex items-center justify-between mb-4">
               <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Trend Kehadiran Periodik</h4>
             </div>
@@ -686,7 +686,7 @@ export default function Laporan() {
             <div className="w-1.5 h-4 bg-rose-600 rounded-full" />
             II. Detail Ketidakhadiran
           </h3>
-          <div className="bg-white rounded-[2rem] border border-slate-200 shadow-sm">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm">
             <table className="modern-table">
               <thead>
                 <tr>
@@ -773,7 +773,7 @@ export default function Laporan() {
           </div>
 
           {/* Tabel Mutasi Kas */}
-          <div className="bg-white rounded-[2rem] border border-slate-200 shadow-sm">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm">
             <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-2">
               <div className="w-1.5 h-4 bg-indigo-400 rounded-full" />
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Riwayat Mutasi Saldo Kas</p>
@@ -838,7 +838,7 @@ export default function Laporan() {
             ))}
           </div>
 
-          <div className="bg-white rounded-3xl border border-slate-200">
+          <div className="bg-white rounded-2xl border border-slate-200">
             <table className="modern-table">
               <thead>
                 <tr>
@@ -890,7 +890,7 @@ export default function Laporan() {
             <div className="w-1.5 h-4 bg-slate-400 rounded-full" />
             V. Rekapitulasi Siswa Keluar
           </h3>
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-sm">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm">
             <table className="modern-table">
               <thead>
                 <tr>

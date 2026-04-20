@@ -169,7 +169,7 @@ export default function LaporanHarian() {
       `}</style>
 
       {/* Header & Filters */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm no-print">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 bg-white p-6 rounded-2xl border border-slate-100 shadow-sm no-print">
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-2 text-emerald-600">
             <Calendar className="w-5 h-5" />
@@ -234,7 +234,7 @@ export default function LaporanHarian() {
 
         {/* Summary Cards */}
         <div className="grid grid-cols-2 gap-6">
-          <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-4">
+          <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm space-y-4">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
               <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Sesi Pagi</h4>
@@ -248,7 +248,7 @@ export default function LaporanHarian() {
               ))}
             </div>
           </div>
-          <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-4">
+          <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm space-y-4">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse" />
               <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Sesi Siang</h4>

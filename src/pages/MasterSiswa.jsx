@@ -9,7 +9,7 @@ import Loading from '../components/Loading';
 import Skeleton, { SkeletonStats, SkeletonTable } from '../components/Skeleton';
 import EmptyState from '../components/EmptyState';
 import PageGuide from '../components/PageGuide';
-import { UserPlus, FileUp, Download, FileDown } from 'lucide-react';
+import { UserPlus, FileUp, Download, FileDown, X, MapPin } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { formatPhoneNumber } from '../utils/logic';
 
@@ -157,10 +157,10 @@ export default function MasterSiswa() {
       const wb = XLSX.utils.book_new();
       const ws = XLSX.utils.json_to_sheet(allSiswa);
       XLSX.utils.book_append_sheet(wb, ws, 'Data Master Siswa');
-      
+
       const timestamp = new Date().getTime();
       XLSX.writeFile(wb, `Master_Siswa_Lengkap_${timestamp}.xlsx`);
-      
+
       showToast('Berhasil mengekspor data.', 'success');
     } catch (e) {
       console.error('Export error:', e);
@@ -434,388 +434,344 @@ export default function MasterSiswa() {
 
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-slate-800">Master Data Siswa</h2>
-          <p className="text-sm text-slate-500">Kelola informasi profil dan status keaktifan siswa.</p>
-        </div>
+    <>
+      <div className="space-y-6 animate-fade-in">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-slate-800">Master Data Siswa</h2>
+            <p className="text-sm text-slate-500">Kelola informasi profil dan status keaktifan siswa.</p>
+          </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          {canAddStudent && (
-            <>
-              <div className="flex items-center gap-1 p-1 bg-white rounded-xl border border-slate-200 shadow-sm">
-                <button onClick={handleDownloadTemplate} className="flex items-center gap-2 px-3 py-2 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all" title="Unduh Template Excel">
-                  <Download className="w-4 h-4" />
-                  <span className="text-[10px] font-bold uppercase tracking-tight">Template</span>
-                </button>
+          <div className="flex flex-wrap items-center gap-2">
+            {canAddStudent && (
+              <>
+                <div className="flex items-center gap-1 p-1 bg-white rounded-xl border border-slate-200 shadow-sm">
+                  <button onClick={handleDownloadTemplate} className="flex items-center gap-2 px-3 py-2 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all" title="Unduh Template Excel">
+                    <Download className="w-4 h-4" />
+                    <span className="text-[10px] font-bold uppercase tracking-tight">Template</span>
+                  </button>
 
-                <div className="relative group">
-                  <input type="file" accept=".xlsx, .xls" onChange={handleImportExcel} className="absolute inset-0 opacity-0 cursor-pointer z-10" title="Impor Siswa dari Excel" />
-                  <button className="flex items-center gap-2 px-3 py-2 text-slate-600 group-hover:text-emerald-600 group-hover:bg-emerald-50 rounded-lg transition-all">
-                    <FileUp className="w-4 h-4" />
-                    <span className="text-[10px] font-bold uppercase tracking-tight">{isImporting ? 'Memproses...' : 'Impor Siswa'}</span>
+                  <div className="relative group">
+                    <input type="file" accept=".xlsx, .xls" onChange={handleImportExcel} className="absolute inset-0 opacity-0 cursor-pointer z-10" title="Impor Siswa dari Excel" />
+                    <button className="flex items-center gap-2 px-3 py-2 text-slate-600 group-hover:text-emerald-600 group-hover:bg-emerald-50 rounded-lg transition-all">
+                      <FileUp className="w-4 h-4" />
+                      <span className="text-[10px] font-bold uppercase tracking-tight">{isImporting ? 'Memproses...' : 'Impor Siswa'}</span>
+                    </button>
+                  </div>
+
+                  <button onClick={handleExportData} className="flex items-center gap-2 px-3 py-2 text-slate-600 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all" title="Ekspor Seluruh Data Siswa">
+                    <FileDown className="w-4 h-4" />
+                    <span className="text-[10px] font-bold uppercase tracking-tight">Ekspor</span>
                   </button>
                 </div>
 
-                <button onClick={handleExportData} className="flex items-center gap-2 px-3 py-2 text-slate-600 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all" title="Ekspor Seluruh Data Siswa">
-                  <FileDown className="w-4 h-4" />
-                  <span className="text-[10px] font-bold uppercase tracking-tight">Ekspor</span>
+                <button
+                  onClick={() => {
+                    const newBulkOpen = !isBulkOpen;
+                    setIsBulkOpen(newBulkOpen);
+                    if (newBulkOpen) {
+                      setIsFormOpen(false);
+                      if (siswa.length > 0) {
+                        setBulkTglMasukX(siswa[0].Tanggal_Masuk_X || '');
+                        setBulkTglNaikXI(siswa[0].Tanggal_Naik_XI || '');
+                        setBulkTglNaikXII(siswa[0].Tanggal_Naik_XII || '');
+                        setBulkTglTamat(siswa[0].Tanggal_Tamat_Sekolah || '');
+                      }
+                    }
+                  }}
+                  className="btn-secondary flex items-center gap-2"
+                >
+                  {isBulkOpen ? 'Tutup Massal' : 'Update Massal'}
+                </button>
+              </>
+            )}
+
+            <button
+              onClick={() => {
+                setEditingStudent(null);
+                clearForm();
+                setIsFormOpen(true);
+                setIsBulkOpen(false);
+              }}
+              className="btn-primary flex items-center gap-2"
+            >
+              <UserPlus className="w-4 h-4" /> Tambah Siswa
+            </button>
+          </div>
+        </div>
+
+        {canAddStudent && isBulkOpen && (
+          <div className="card p-6 border-2 border-emerald-100 bg-emerald-50/30">
+            <h3 className="text-lg font-semibold text-slate-800 mb-2">Update Massal Histori Kelas</h3>
+            <p className="text-xs text-slate-500 mb-4">Pilih tanggal yang ingin diterapkan ke SEMUA siswa saat ini.</p>
+            <form onSubmit={handleBulkUpdateHistory} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">Tgl Masuk X</label>
+                  <input type="date" className="input-field" value={bulkTglMasukX} onChange={(e) => setBulkTglMasukX(e.target.value)} />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">Tgl Naik XI</label>
+                  <input type="date" className="input-field" value={bulkTglNaikXI} onChange={(e) => setBulkTglNaikXI(e.target.value)} />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">Tgl Naik XII</label>
+                  <input type="date" className="input-field" value={bulkTglNaikXII} onChange={(e) => setBulkTglNaikXII(e.target.value)} />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">Tgl Tamat Sekolah</label>
+                  <input type="date" className="input-field" value={bulkTglTamat} onChange={(e) => setBulkTglTamat(e.target.value)} />
+                </div>
+              </div>
+              <div className="flex justify-end">
+                <button
+                  type="submit"
+                  disabled={isSavingBulk}
+                  className="btn-primary !bg-emerald-600 hover:!bg-emerald-700 min-w-[150px]"
+                >
+                  {isSavingBulk ? 'Memproses...' : 'Terapkan ke Semua'}
                 </button>
               </div>
+            </form>
+          </div>
+        )}
 
-              <button
-                onClick={() => {
-                  const newBulkOpen = !isBulkOpen;
-                  setIsBulkOpen(newBulkOpen);
-                  if (newBulkOpen) {
-                    setIsFormOpen(false);
-                    if (siswa.length > 0) {
-                      setBulkTglMasukX(siswa[0].Tanggal_Masuk_X || '');
-                      setBulkTglNaikXI(siswa[0].Tanggal_Naik_XI || '');
-                      setBulkTglNaikXII(siswa[0].Tanggal_Naik_XII || '');
-                      setBulkTglTamat(siswa[0].Tanggal_Tamat_Sekolah || '');
-                    }
-                  }
-                }}
-                className="btn-secondary flex items-center gap-2"
-              >
-                {isBulkOpen ? 'Tutup Massal' : 'Update Massal'}
-              </button>
-            </>
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
+          {siswa.length === 0 ? (
+            <div className="col-span-full">
+              <EmptyState
+                title="Belum Ada Siswa"
+                description="Daftar siswa Anda masih kosong. Silakan tambahkan siswa baru menggunakan tombol di atas."
+                icon={UserPlus}
+              />
+            </div>
+          ) : (
+            siswa.map(student => (
+              <StudentCard
+                key={student.NISN}
+                student={student}
+                onWaClick={role === 'Wali Kelas' ? handleWA : undefined}
+                onWaStudentClick={role === 'Wali Kelas' ? handleWASiswa : undefined}
+                onContactClick={role === 'Wali Kelas' ? (s) => navigate('/panggilan', { state: { nisn: s.NISN || s.ID_Siswa } }) : undefined}
+                onEdit={canAddStudent ? handleEditStudent : undefined}
+                onDelete={canAddStudent ? handleDeleteStudent : undefined}
+                canSeeLocation={role === 'Wali Kelas'}
+              />
+            ))
           )}
-
-          <button
-            onClick={() => {
-              setEditingStudent(null);
-              clearForm();
-              setIsFormOpen(true);
-              setIsBulkOpen(false);
-            }}
-            className="btn-primary flex items-center gap-2"
-          >
-            <UserPlus className="w-4 h-4" /> Tambah Siswa
-          </button>
         </div>
       </div>
-
-      {canAddStudent && isBulkOpen && (
-        <div className="card p-6 border-2 border-emerald-100 bg-emerald-50/30">
-          <h3 className="text-lg font-semibold text-slate-800 mb-2">Update Massal Histori Kelas</h3>
-          <p className="text-xs text-slate-500 mb-4">Pilih tanggal yang ingin diterapkan ke SEMUA siswa saat ini.</p>
-          <form onSubmit={handleBulkUpdateHistory} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Tgl Masuk X</label>
-                <input type="date" className="input-field" value={bulkTglMasukX} onChange={(e) => setBulkTglMasukX(e.target.value)} />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Tgl Naik XI</label>
-                <input type="date" className="input-field" value={bulkTglNaikXI} onChange={(e) => setBulkTglNaikXI(e.target.value)} />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Tgl Naik XII</label>
-                <input type="date" className="input-field" value={bulkTglNaikXII} onChange={(e) => setBulkTglNaikXII(e.target.value)} />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Tgl Tamat Sekolah</label>
-                <input type="date" className="input-field" value={bulkTglTamat} onChange={(e) => setBulkTglTamat(e.target.value)} />
-              </div>
-            </div>
-            <div className="flex justify-end">
-              <button
-                type="submit"
-                disabled={isSavingBulk}
-                className="btn-primary !bg-emerald-600 hover:!bg-emerald-700 min-w-[150px]"
-              >
-                {isSavingBulk ? 'Memproses...' : 'Terapkan ke Semua'}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
 
       {canAddStudent && isFormOpen && (
-        <div className="card p-6">
-          <h3 className="text-lg font-semibold text-slate-800 mb-4">
-            {editingStudent ? 'Edit Data Siswa' : 'Form Tambah Siswa Baru'}
-          </h3>
-          {error && <div className="text-sm text-red-600 mb-4">{error}</div>}
-          <form onSubmit={handleCreateOrUpdateStudent} className="space-y-6">
-            <div className="grid gap-4">
-              <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
-                <h4 className="text-sm font-semibold text-slate-800 mb-3">Data Siswa</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1">NIS</label>
-                    <input
-                      className="input-field"
-                      value={nis}
-                      onChange={(e) => setNis(e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1">NISN</label>
-                    <input
-                      className="input-field"
-                      value={nisn}
-                      onChange={(e) => setNisn(e.target.value)}
-                    />
-                  </div>
-                  <div className="lg:col-span-2">
-                    <label className="block text-xs font-medium text-slate-700 mb-1">Nama Siswa</label>
-                    <input
-                      className="input-field"
-                      value={nama}
-                      onChange={(e) => setNama(e.target.value)}
-                      required
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                  <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1">Tempat Lahir</label>
-                    <input
-                      className="input-field"
-                      value={tempatLahir}
-                      onChange={(e) => setTempatLahir(e.target.value)}
-                      disabled={role === 'Wali Kelas'}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1">Tanggal Lahir</label>
-                    <input
-                      type="date"
-                      className="input-field"
-                      value={tanggalLahir}
-                      onChange={(e) => setTanggalLahir(e.target.value)}
-                      disabled={role === 'Wali Kelas'}
-                    />
-                  </div>
-                </div>
-              </div>
-              <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
-                <h4 className="text-sm font-semibold text-slate-800 mb-3">Histori Kelas & Kelulusan</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1">Tgl Masuk Kls X</label>
-                    <input type="date" className="input-field" value={tglMasukX} onChange={(e) => setTglMasukX(e.target.value)} />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1">Tgl Naik Kls XI</label>
-                    <input type="date" className="input-field" value={tglNaikXI} onChange={(e) => setTglNaikXI(e.target.value)} />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1">Tgl Naik Kls XII</label>
-                    <input type="date" className="input-field" value={tglNaikXII} onChange={(e) => setTglNaikXII(e.target.value)} />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1">Tgl Tamat Sekolah</label>
-                    <input type="date" className="input-field" value={tglTamat} onChange={(e) => setTglTamat(e.target.value)} />
-                  </div>
-                </div>
-              </div>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+          {/* Backdrop with blur - forced full viewport */}
+          <div
+            className="fixed inset-0 bg-slate-900/40 backdrop-blur-md animate-in fade-in duration-300 pointer-events-auto"
+            onClick={clearForm}
+          />
 
-              <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
-                <h4 className="text-sm font-semibold text-slate-800 mb-3">Informasi Akademik</h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1">Jenis Kelamin</label>
-                    <select className="input-field" value={jk} onChange={(e) => setJk(e.target.value)}>
-                      <option value="L">L</option>
-                      <option value="P">P</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1">Jabatan</label>
-                    <select className="input-field" value={jabatan} onChange={(e) => setJabatan(e.target.value)}>
-                      <option value="Siswa">Siswa</option>
-                      <option value="Ketua Kelas">Ketua Kelas</option>
-                      <option value="Sekretaris">Sekretaris</option>
-                      <option value="Bendahara">Bendahara</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1">Status</label>
-                    <select className="input-field" value={statusAktif} onChange={(e) => setStatusAktif(e.target.value)}>
-                      <option value="Aktif">Aktif</option>
-                      <option value="Keluar">Keluar</option>
-                      <option value="Lulus">Lulus</option>
-                    </select>
-                  </div>
-                  {statusAktif === 'Keluar' && (
-                    <div className="md:col-span-2">
-                      <label className="block text-xs font-medium text-slate-700 mb-1">Keterangan (Alasan Keluar)</label>
-                      <input
-                        className="input-field"
-                        value={keterangan}
-                        onChange={(e) => setKeterangan(e.target.value)}
-                        placeholder="Masukan alasan siswa keluar..."
-                      />
-                    </div>
-                  )}
+          {/* Modal Container */}
+          <div className="relative bg-white w-full max-w-5xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl animate-in zoom-in-95 duration-500 z-10 border border-slate-100">
+            {/* Top accent bar */}
+            <div className="h-1.5 w-full bg-emerald-600 sticky top-0 z-30" />
+            
+            <div className="sticky top-1.5 z-20 bg-white/95 backdrop-blur-sm px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center">
+                  <UserPlus className="w-6 h-6 text-emerald-600" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-slate-900 tracking-tight leading-none">
+                    {editingStudent ? 'Edit Profil Siswa' : 'Registrasi Siswa Baru'}
+                  </h3>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1.5">
+                    {editingStudent ? 'Perbarui informasi akademik dan personal secara menyeluruh' : 'Lengkapi data identitas untuk pendaftaran siswa baru'}
+                  </p>
                 </div>
               </div>
-
-              <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
-                <h4 className="text-sm font-semibold text-slate-800 mb-3">Kontak & Wali</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1">Email</label>
-                    <input
-                      type="email"
-                      className="input-field"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1">Nama Orang Tua</label>
-                    <input
-                      className="input-field"
-                      value={wali}
-                      onChange={(e) => setWali(e.target.value)}
-                      disabled={role === 'Wali Kelas'}
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                  <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1">No WA Wali</label>
-                    <input
-                      className="input-field"
-                      value={wa}
-                      onChange={(e) => setWa(e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1">No WA Siswa</label>
-                    <input
-                      className="input-field"
-                      value={waSiswa}
-                      onChange={(e) => setWaSiswa(e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1">Alamat</label>
-                    <input
-                      className="input-field"
-                      value={alamat}
-                      onChange={(e) => setAlamat(e.target.value)}
-                      disabled={role === 'Wali Kelas'}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
-                <h4 className="text-sm font-semibold text-slate-800 mb-3">Lokasi GPS</h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1">Latitude</label>
-                    <input
-                      className="input-field"
-                      value={latitude}
-                      onChange={(e) => {
-                        if (!canChangeLocation) return;
-                        const formatted = formatCoordinateInput(e.target.value, true);
-                        setLatitude(formatted);
-                        if (formatted && longitude) {
-                          setLokasi(createMapsLink(formatted, longitude));
-                        }
-                      }}
-                      placeholder="-6.2088"
-                      disabled={!canChangeLocation}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1">Longitude</label>
-                    <input
-                      className="input-field"
-                      value={longitude}
-                      onChange={(e) => {
-                        if (!canChangeLocation) return;
-                        const formatted = formatCoordinateInput(e.target.value, false);
-                        setLongitude(formatted);
-                        if (latitude && formatted) {
-                          setLokasi(createMapsLink(latitude, formatted));
-                        }
-                      }}
-                      placeholder="106.8456"
-                      disabled={!canChangeLocation}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1">Link Google Maps</label>
-                    <input
-                      className="input-field"
-                      value={lokasi}
-                      readOnly
-                      placeholder="Masukan latitude dan longitude untuk membuat link"
-                    />
-                  </div>
-                </div>
-                <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <button type="button" onClick={handleGetGPS} className="btn-secondary" disabled={!canChangeLocation}>
-                    Dapatkan Lokasi GPS
-                  </button>
-                  {latitude && longitude && (
-                    <a
-                      href={`https://www.google.com/maps?q=${latitude},${longitude}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="btn-secondary"
-                    >
-                      Lihat di Google Maps
-                    </a>
-                  )}
-                </div>
-                {!canChangeLocation && (
-                  <p className="text-xs text-slate-500 mt-2">Wali Kelas tidak dapat mengubah lokasi.</p>
-                )}
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-3 justify-end items-center">
-              <button
-                type="button"
+              <button 
                 onClick={clearForm}
-                className="btn-secondary min-w-[120px]"
+                className="p-2 hover:bg-slate-100 rounded-xl transition-all text-slate-400 hover:text-rose-500 hover:rotate-90 duration-300 focus:outline-none bg-slate-50"
               >
-                Batal
-              </button>
-              <button type="submit" className="btn-primary min-w-[160px]">
-                {editingStudent ? 'Simpan Perubahan' : 'Simpan Siswa'}
+                <X className="w-6 h-6" />
               </button>
             </div>
-          </form>
+
+            <div className="p-6">
+              {error && (
+                <div className="bg-rose-50 border border-rose-100 text-rose-600 p-4 rounded-xl text-sm mb-6 animate-in slide-in-from-top-2">
+                  {error}
+                </div>
+              )}
+
+              <form onSubmit={handleCreateOrUpdateStudent} className="space-y-8">
+                <div className="grid gap-6">
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-6 bg-emerald-500 rounded-full" />
+                      <h4 className="text-[11px] font-black text-slate-500 uppercase tracking-[0.2em]">Identitas Dasar</h4>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                      <div>
+                        <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">NIS</label>
+                        <input className="input-field" value={nis} onChange={(e) => setNis(e.target.value)} placeholder="Contoh: 12345" />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">NISN</label>
+                        <input className="input-field" value={nisn} onChange={(e) => setNisn(e.target.value)} placeholder="Contoh: 0012345678" />
+                      </div>
+                      <div className="lg:col-span-2">
+                        <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Nama Lengkap</label>
+                        <input className="input-field" value={nama} onChange={(e) => setNama(e.target.value)} required placeholder="Masukkan nama sesuai ijazah" />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                      <div>
+                        <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Tempat Lahir</label>
+                        <input className="input-field" value={tempatLahir} onChange={(e) => setTempatLahir(e.target.value)} />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Tanggal Lahir</label>
+                        <input type="date" className="input-field" value={tanggalLahir} onChange={(e) => setTanggalLahir(e.target.value)} />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Histori Kelas */}
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-6 bg-blue-500 rounded-full" />
+                      <h4 className="text-[11px] font-black text-slate-500 uppercase tracking-[0.2em]">Histori Kelas & Kelulusan</h4>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                      <div>
+                        <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Masuk Kls X</label>
+                        <input type="date" className="input-field" value={tglMasukX} onChange={(e) => setTglMasukX(e.target.value)} />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Naik Kls XI</label>
+                        <input type="date" className="input-field" value={tglNaikXI} onChange={(e) => setTglNaikXI(e.target.value)} />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Naik Kls XII</label>
+                        <input type="date" className="input-field" value={tglNaikXII} onChange={(e) => setTglNaikXII(e.target.value)} />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Tamat Sekolah</label>
+                        <input type="date" className="input-field" value={tglTamat} onChange={(e) => setTglTamat(e.target.value)} />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Informasi Akademik */}
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-6 bg-amber-500 rounded-full" />
+                      <h4 className="text-[11px] font-black text-slate-500 uppercase tracking-[0.2em]">Status & Jabatan</h4>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div>
+                        <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">L/P</label>
+                        <select className="input-field" value={jk} onChange={(e) => setJk(e.target.value)}>
+                          <option value="L">Laki-laki</option>
+                          <option value="P">Perempuan</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Struktur Organisasi</label>
+                        <select className="input-field" value={jabatan} onChange={(e) => setJabatan(e.target.value)}>
+                          <option value="Siswa">Siswa</option>
+                          <option value="Ketua Kelas">Ketua Kelas</option>
+                          <option value="Sekretaris">Sekretaris</option>
+                          <option value="Bendahara">Bendahara</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Status Keaktifan</label>
+                        <select className="input-field" value={statusAktif} onChange={(e) => setStatusAktif(e.target.value)}>
+                          <option value="Aktif">Aktif</option>
+                          <option value="Keluar">Keluar</option>
+                          <option value="Lulus">Lulus</option>
+                        </select>
+                      </div>
+                      {statusAktif === 'Keluar' && (
+                        <div className="md:col-span-3 mt-2">
+                          <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Catatan Alasan Keluar</label>
+                          <textarea className="input-field min-h-[80px]" value={keterangan} onChange={(e) => setKeterangan(e.target.value)} placeholder="Jelaskan alasan siswa keluar dari sekolah..." />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Kontak & Lokasi */}
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-6 bg-indigo-500 rounded-full" />
+                      <h4 className="text-[11px] font-black text-slate-500 uppercase tracking-[0.2em]">Kontak & Geotagging</h4>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Email Siswa</label>
+                        <input type="email" className="input-field" value={email} onChange={(e) => setEmail(e.target.value)} />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Nama Orang Tua/Wali</label>
+                        <input className="input-field" value={wali} onChange={(e) => setWali(e.target.value)} />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                      <div>
+                        <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">WhatsApp Orang Tua</label>
+                        <input className="input-field" value={wa} onChange={(e) => setWa(e.target.value)} />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">WhatsApp Siswa</label>
+                        <input className="input-field" value={waSiswa} onChange={(e) => setWaSiswa(e.target.value)} />
+                      </div>
+                    </div>
+
+                    <div className="mt-6 border-t border-slate-100 pt-6">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Latitude</label>
+                          <input className="input-field" value={latitude} onChange={(e) => {
+                            if (!canChangeLocation) return;
+                            const formatted = formatCoordinateInput(e.target.value, true);
+                            setLatitude(formatted);
+                            if (formatted && longitude) setLokasi(createMapsLink(formatted, longitude));
+                          }} disabled={!canChangeLocation} />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Longitude</label>
+                          <input className="input-field" value={longitude} onChange={(e) => {
+                            if (!canChangeLocation) return;
+                            const formatted = formatCoordinateInput(e.target.value, false);
+                            setLongitude(formatted);
+                            if (latitude && formatted) setLokasi(createMapsLink(latitude, formatted));
+                          }} disabled={!canChangeLocation} />
+                        </div>
+                        <div className="flex items-end">
+                          <button type="button" onClick={handleGetGPS} className="btn-secondary w-full" disabled={!canChangeLocation}>
+                            <MapPin className="w-4 h-4 mr-2" /> Ambil Lokasi GPS
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-3 pt-6 border-t border-slate-100">
+                  <button type="button" onClick={clearForm} className="btn-secondary min-w-[120px]">Batal</button>
+                  <button type="submit" className="btn-primary min-w-[200px]">
+                    {editingStudent ? 'Simpan Perubahan' : 'Daftarkan Siswa'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
         </div>
       )}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {siswa.length === 0 ? (
-          <div className="col-span-full">
-            <EmptyState
-              title="Belum Ada Siswa"
-              description="Daftar siswa Anda masih kosong. Silakan tambahkan siswa baru menggunakan tombol di atas."
-              icon={UserPlus}
-            />
-          </div>
-        ) : (
-          siswa.map(student => (
-            <StudentCard
-              key={student.NISN}
-              student={student}
-              onWaClick={role === 'Wali Kelas' ? handleWA : undefined}
-              onWaStudentClick={role === 'Wali Kelas' ? handleWASiswa : undefined}
-              onContactClick={role === 'Wali Kelas' ? (s) => navigate('/panggilan', { state: { nisn: s.NISN || s.ID_Siswa } }) : undefined}
-              onEdit={canAddStudent ? handleEditStudent : undefined}
-              onDelete={canAddStudent ? handleDeleteStudent : undefined}
-              canSeeLocation={role === 'Wali Kelas'}
-            />
-          ))
-        )}
-      </div>
-    </div>
+    </>
   );
 }

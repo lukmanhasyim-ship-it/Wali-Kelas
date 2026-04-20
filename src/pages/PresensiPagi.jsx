@@ -241,12 +241,12 @@ export default function PresensiPagi() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="card bg-[#008647] text-white border-0">
-          <p className="text-emerald-100 text-xs font-bold uppercase tracking-widest opacity-80">Total Siswa</p>
+        <div className="card bg-[#008647] text-white border-0 shadow-lg shadow-emerald-200/50">
+          <p className="text-white text-[10px] font-black uppercase tracking-widest">Total Siswa</p>
           <p className="text-4xl font-black mt-1">{siswa.length}</p>
         </div>
-        <div className="card bg-emerald-500 text-white border-0">
-          <p className="text-emerald-500 text-xs font-bold uppercase tracking-widest opacity-80 mix-blend-overlay">Hadir Pagi</p>
+        <div className="card bg-emerald-500 text-white border-0 shadow-lg shadow-emerald-200/50">
+          <p className="text-white text-[10px] font-black uppercase tracking-widest">Hadir Pagi</p>
           <p className="text-4xl font-black mt-1">
             {presensi.filter(p => p.Tanggal === date && p.Status_Pagi === 'H').length}
           </p>

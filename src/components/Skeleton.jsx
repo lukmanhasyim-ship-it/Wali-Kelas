@@ -35,13 +35,41 @@ export const SkeletonTable = ({ rows = 5 }) => (
 );
 
 export const SkeletonStats = () => (
-  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-    {[...Array(4)].map((_, i) => (
-      <div key={i} className="card p-4">
-        <Skeleton className="h-3 w-1/2 mb-3" />
-        <Skeleton className="h-8 w-2/3" />
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    {[...Array(2)].map((_, i) => (
+      <div key={i} className="card p-6 h-32">
+        <Skeleton className="h-4 w-1/4 mb-4 opacity-20" />
+        <Skeleton className="h-10 w-1/2" />
       </div>
     ))}
+  </div>
+);
+
+export const SkeletonDashboard = () => (
+  <div className="space-y-6 animate-fade-in">
+    <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+        <Skeleton className="h-8 w-1/3 mb-2" />
+        <Skeleton className="h-4 w-1/2" />
+    </div>
+    
+    <SkeletonStats />
+
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-1 card h-80">
+            <Skeleton className="h-4 w-1/3 mb-6" />
+            <div className="flex justify-center items-center h-48">
+                <div className="w-32 h-32 rounded-full border-8 border-slate-50 border-t-slate-100 animate-spin" />
+            </div>
+        </div>
+        <div className="lg:col-span-2 card h-80">
+            <Skeleton className="h-4 w-1/4 mb-6" />
+            <div className="h-48 flex items-end gap-2 px-4">
+                {[...Array(12)].map((_, i) => (
+                    <Skeleton key={i} className="flex-1" style={{ height: `${Math.random() * 80 + 20}%` }} />
+                ))}
+            </div>
+        </div>
+    </div>
   </div>
 );
 

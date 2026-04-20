@@ -144,7 +144,7 @@ export default function Panggilan() {
   return (
     <div className="space-y-8 pb-12">
       {/* Header Section */}
-      <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
+      <div className="bg-white p-8 rounded-2xl border border-slate-100 shadow-sm">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-emerald-600 mb-1">
@@ -172,7 +172,7 @@ export default function Panggilan() {
           { label: 'Selesai', val: stats.selesai, color: 'emerald', icon: CheckCircle2 },
           { label: 'Hari Ini', val: stats.today, color: 'amber', icon: PlusCircle }
         ].map((s, i) => (
-          <div key={i} className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center gap-4">
+          <div key={i} className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
             <div className={`w-10 h-10 rounded-2xl bg-${s.color}-50 flex items-center justify-center`}>
               <s.icon className={`w-5 h-5 text-${s.color}-600`} />
             </div>
@@ -187,7 +187,7 @@ export default function Panggilan() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Form Creation Card */}
         <div className="lg:col-span-1">
-          <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-xl sticky top-6">
+          <div className="bg-white p-8 rounded-2xl border border-slate-100 shadow-xl sticky top-6">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 bg-emerald-600 rounded-2xl flex items-center justify-center text-white shadow-lg">
                 <PlusCircle className="w-5 h-5" />
@@ -278,7 +278,7 @@ export default function Panggilan() {
               </div>
             </div>
 
-            <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl overflow-hidden">
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-xl overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse">
                   <thead>
@@ -294,7 +294,7 @@ export default function Panggilan() {
                       <tr>
                         <td colSpan="4" className="px-8 py-20 text-center">
                           <div className="flex flex-col items-center justify-center space-y-4 grayscale opacity-40">
-                            <div className="w-16 h-16 bg-slate-100 rounded-3xl flex items-center justify-center">
+                            <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center">
                               <PhoneCall className="w-8 h-8 text-slate-300" />
                             </div>
                             <div className="space-y-1">

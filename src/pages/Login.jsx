@@ -105,7 +105,7 @@ export default function Login() {
       <div className="absolute bottom-[-100px] right-[10%] w-[300px] h-[300px] border-[1px] border-orange-400 rounded-full opacity-30 pointer-events-none"></div>
       <div className="absolute bottom-[50px] right-[15%] w-6 h-6 bg-blue-600 rounded-full opacity-90 pointer-events-none"></div>
 
-      <div className="w-full max-w-5xl bg-white rounded-[2rem] shadow-2xl flex flex-col md:flex-row overflow-hidden relative z-10 md:min-h-[600px]">
+      <div className="w-full max-w-5xl bg-white rounded-2xl shadow-2xl flex flex-col md:flex-row overflow-hidden relative z-10 md:min-h-[600px]">
 
         {/* Left Section - Illustration */}
         <div className="hidden md:flex md:w-[45%] bg-[#E8F2FB] flex-col items-center justify-center p-6 relative overflow-hidden">

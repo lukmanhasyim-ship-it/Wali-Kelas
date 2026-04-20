@@ -4,26 +4,38 @@ import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
 
-export default function NotificationDrawer({ isOpen, onClose, notifications, onMarkAsRead }) {
+export default function NotificationDrawer({ isOpen, onClose, notifications, onMarkAsRead, onMarkAllAsRead }) {
   const navigate = useNavigate();
   if (!isOpen) return null;
+
+  const unreadCount = notifications.filter(n => !n.isRead).length;
 
   return (
     <>
       {/* Backdrop */}
       <div 
-        className="fixed inset-0 z-[60] bg-slate-900/10 backdrop-blur-sm md:hidden" 
+        className="fixed inset-0 z-[60] bg-slate-900/10" 
         onClick={onClose} 
       />
       
       {/* Drawer/Dropdown */}
-      <div className="absolute top-full right-0 mt-4 w-[320px] sm:w-[380px] bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden z-[70] animate-in slide-in-from-top-4 duration-300">
+      <div className="fixed md:absolute top-20 md:top-full left-4 right-4 md:left-auto md:right-0 md:mt-4 md:w-[380px] bg-white rounded-2xl md:rounded-2xl shadow-2xl border border-slate-100 overflow-hidden z-[70] animate-in slide-in-from-top-4 duration-300">
         <div className="p-6 border-b border-slate-50 flex items-center justify-between bg-white sticky top-0">
           <div>
             <h3 className="text-lg font-black text-slate-900">Notifikasi</h3>
-            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">
-              {notifications.filter(n => !n.isRead).length} Pesan Belum Terbaca
-            </p>
+            <div className="flex items-center gap-3 mt-0.5">
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-none">
+                {unreadCount} Belum Terbaca
+              </p>
+              {unreadCount > 0 && (
+                <button 
+                  onClick={onMarkAllAsRead}
+                  className="text-[9px] font-black text-emerald-600 uppercase tracking-tighter hover:text-emerald-800 transition-colors"
+                >
+                  Tandai Semua Dibaca
+                </button>
+              )}
+            </div>
           </div>
           <button 
             onClick={onClose}

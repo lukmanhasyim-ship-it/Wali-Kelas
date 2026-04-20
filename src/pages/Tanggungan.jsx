@@ -194,7 +194,7 @@ export default function Tanggungan() {
   return (
     <div className="space-y-8 pb-12">
       {/* Header & Filter Section */}
-      <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-6">
+      <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm space-y-6">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="space-y-1">
             <div className="flex items-center gap-2 text-emerald-600 mb-1">
@@ -262,7 +262,7 @@ export default function Tanggungan() {
           { label: 'Lunas', val: stats.lunas, icon: CheckCircle2, color: 'emerald', bg: 'bg-emerald-500' },
           { label: 'Terkumpul', val: formatIDR(stats.totalTerkumpul), icon: Wallet, color: 'emerald', bg: 'bg-emerald-600' }
         ].map((s, i) => (
-          <div key={i} className="group relative bg-white p-5 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-emerald-500/5 transition-all overflow-hidden cursor-default">
+          <div key={i} className="group relative bg-white p-5 rounded-2xl border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-emerald-500/5 transition-all overflow-hidden cursor-default">
             <div className="relative z-10 flex justify-between items-start">
               <div className="space-y-1">
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{s.label}</p>
@@ -278,7 +278,7 @@ export default function Tanggungan() {
       </div>
 
       {/* Progres Overview */}
-      <div className="bg-emerald-900 rounded-[2.5rem] p-8 text-white relative overflow-hidden shadow-2xl shadow-emerald-200">
+      <div className="bg-emerald-900 rounded-2xl p-8 text-white relative overflow-hidden shadow-2xl shadow-emerald-200">
         <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-12 items-center">
           <div className="space-y-4">
             <div>

@@ -92,6 +92,9 @@ function handleResponse(e) {
       MARK_NOTIF_READ: function() {
         return { status: 'success', data: updateData('Notifikasi', payload && payload.id, { Is_Read: 'true' }) };
       },
+      MARK_ALL_NOTIFS_READ: function() {
+        return { status: 'success', data: markAllNotificationsRead(payload && payload.role, payload && payload.email) };
+      },
       DELETE_NOTIF: function() {
         return { status: 'success', data: deleteNotification(payload && payload.id) };
       },
@@ -223,27 +226,35 @@ function updateData(sheetName, id, updateObj) {
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
   if (!sheet) return false;
 
+  // Pastikan field baru masuk ke header jika ada
   ensureHeaders(sheet, updateObj);
 
-  var data = sheet.getDataRange().getValues();
+  var range = sheet.getDataRange();
+  var data = range.getValues();
   if (data.length <= 1) return false;
 
   var headers = data[0];
   var headerMap = buildHeaderIndex(headers);
-  var pkIndex = 0;
+  var pkIndex = 0; 
 
   if (sheetName === 'Presensi' && updateObj.Status_Siang) {
     updateObj.Timestamp_Siang = formatDateValue(new Date(), 'Timestamp_Siang');
   }
 
+  // Cari baris yang cocok
   for (var i = 1; i < data.length; i++) {
     if (data[i][pkIndex].toString() === id.toString()) {
+      var rowRange = sheet.getRange(i + 1, 1, 1, headers.length);
+      var rowValues = [data[i]]; // Ambil data baris saat ini
+      
       for (var key in updateObj) {
         if (updateObj.hasOwnProperty(key) && headerMap.hasOwnProperty(key)) {
           var colIndex = headerMap[key];
-          sheet.getRange(i + 1, colIndex + 1).setValue(formatDateValue(updateObj[key], key));
+          rowValues[0][colIndex] = formatDateValue(updateObj[key], key);
         }
       }
+      // Simpan seluruh baris dengan 1 API call
+      rowRange.setValues(rowValues);
       return true;
     }
   }
@@ -486,19 +497,22 @@ function bulkUpdateMasterHistory(dataList) {
   var sheet = ss.getSheetByName('Master_Siswa');
   if (!sheet) return false;
 
-  var fullData = sheet.getDataRange().getValues();
+  var range = sheet.getDataRange();
+  var fullData = range.getValues();
   var headers = fullData[0];
   var headerMap = buildHeaderIndex(headers);
   var idIdx = headerMap['ID_Siswa'] !== undefined ? headerMap['ID_Siswa'] : headerMap['NISN'];
-  if (idIdx === undefined) throw new Error('Kolom identitas (ID_Siswa/NISN) tidak ditemukan di sheet Master_Siswa.');
+  
+  if (idIdx === undefined) throw new Error('Kolom identitas tidak ditemukan.');
 
-  // Map to find row by identity column
+  // Create mapping for fast row lookup
   var idToRowMap = {};
   for (var i = 1; i < fullData.length; i++) {
     var idVal = (fullData[i][idIdx] || '').toString();
     if (idVal) idToRowMap[idVal] = i;
   }
 
+  var updatedCount = 0;
   dataList.forEach(function(item) {
     var idVal = (item.ID_Siswa || item.NISN || '').toString();
     if (!idVal) return;
@@ -508,11 +522,17 @@ function bulkUpdateMasterHistory(dataList) {
       for (var keyAttr in item) {
         if (item.hasOwnProperty(keyAttr) && headerMap.hasOwnProperty(keyAttr) && keyAttr !== 'ID_Siswa' && keyAttr !== 'NISN') {
           var colIdx = headerMap[keyAttr];
-          sheet.getRange(rowIdx + 1, colIdx + 1).setValue(formatDateValue(item[keyAttr], keyAttr));
+          fullData[rowIdx][colIdx] = formatDateValue(item[keyAttr], keyAttr);
         }
       }
+      updatedCount++;
     }
   });
+
+  // Write all data back in one batch operation
+  if (updatedCount > 0) {
+    range.setValues(fullData);
+  }
 
   return true;
 }
@@ -573,6 +593,43 @@ function createNotification(message, type, targetRole, targetEmail) {
   };
   appendData('Notifikasi', row);
   return row;
+}
+
+function markAllNotificationsRead(role, email) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('Notifikasi');
+  if (!sheet) return false;
+
+  var range = sheet.getDataRange();
+  var data = range.getValues();
+  if (data.length <= 1) return true;
+
+  var headers = data[0];
+  var hMap = buildHeaderIndex(headers);
+  var roleIdx = hMap['Target_Role'];
+  var emailIdx = hMap['Target_Email'];
+  var readIdx = hMap['Is_Read'];
+
+  var updated = false;
+  for (var i = 1; i < data.length; i++) {
+    // Check if it belongs to user
+    var nRole = (data[i][roleIdx] || 'ALL').toString().toUpperCase();
+    var nEmail = (data[i][emailIdx] || '').toString().toLowerCase();
+    var uRole = (role || 'SISWA').toString().toUpperCase();
+    var uEmail = (email || '').toString().toLowerCase();
+
+    var isTarget = (nRole === 'ALL' || nRole === uRole) && (nEmail === '' || nEmail === uEmail);
+
+    if (isTarget && data[i][readIdx].toString() !== 'true') {
+      data[i][readIdx] = 'true';
+      updated = true;
+    }
+  }
+
+  if (updated) {
+    range.setValues(data);
+  }
+  return true;
 }
 
 function deleteNotification(id) {

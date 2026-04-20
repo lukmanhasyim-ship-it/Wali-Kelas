@@ -1,17 +1,11 @@
 # Siswa.Hub - Ekosistem Manajemen Kelas Digital Premium
 
 Siswa.Hub adalah platform revolusioner berbasis **Serverless** yang dirancang khusus untuk memodernisasi kinerja Wali Kelas dan sekolah dalam mengelola administrasi siswa. Mengusung konsep *Human-Centric Design*, aplikasi ini memadukan estetika antarmuka (UI) mutakhir dengan logika sistem yang cerdas, transparan, dan peduli.
-Siswa.Hub adalah platform revolusioner berbasis **Serverless** yang dirancang khusus untuk memodernisasi kinerja Wali Kelas dan sekolah dalam mengelola administrasi siswa. Mengusung konsep *Human-Centric Design*, aplikasi ini memadukan estetika antarmuka (UI) mutakhir dengan logika sistem yang cerdas, transparan, dan peduli.
 
 ---
 
 ## ✨ Fitur Unggulan Utama
-## ✨ Fitur Unggulan Utama
 
-### 🖥️ Smart & Personal Dashboard
-*   **Contextual Greeting**: Penyambutan personal berdasarkan Role (Wali Kelas / Siswa).
-*   **Privacy-First Alerts**: Siswa hanya melihat status kedisiplinan miliknya sendiri, sementara Wali Kelas mengontrol seluruh kelas.
-*   **Real-time Analytics**: Visualisasi kehadiran hari ini dan saldo kas mingguan secara instan.
 ### 🖥️ Smart & Personal Dashboard
 *   **Contextual Greeting**: Penyambutan personal berdasarkan Role (Wali Kelas / Siswa).
 *   **Privacy-First Alerts**: Siswa hanya melihat status kedisiplinan miliknya sendiri, sementara Wali Kelas mengontrol seluruh kelas.
@@ -21,19 +15,12 @@ Siswa.Hub adalah platform revolusioner berbasis **Serverless** yang dirancang kh
 *   **Dual-Session Attendance**: Pencatatan pagi dan siang untuk akurasi maksimal.
 *   **Automated Archive Integration**: Data otomatis digabungkan dari sheet aktif dan arsip historis (`Archive_*`) untuk laporan bulanan/semester yang utuh.
 *   **Smart Disciplinary Workflow**: Notifikasi "Siap Panggil" otomatis berubah menjadi status "Sudah Dipanggil" saat surat panggilan dibuat.
-### ⏰ Presensi & Manajemen Kedisiplinan Terpadu
-*   **Dual-Session Attendance**: Pencatatan pagi dan siang untuk akurasi maksimal.
-*   **Automated Archive Integration**: Data otomatis digabungkan dari sheet aktif dan arsip historis (`Archive_*`) untuk laporan bulanan/semester yang utuh.
-*   **Smart Disciplinary Workflow**: Notifikasi "Siap Panggil" otomatis berubah menjadi status "Sudah Dipanggil" saat surat panggilan dibuat.
 
 ### 💰 Keuangan & Tanggungan Transparan
 *   **4-Column Financial Report**: Laporan saldo transparan (Saldo Awal, Masuk, Keluar, Saldo Akhir).
 *   **Cumulative Balance**: Saldo kas tetap berlanjut meskipun periode bulan sudah diarsip.
 *   **Debtor Tracking**: Deteksi otomatis siswa yang memiliki tanggungan iuran kas kelas.
-### 💰 Keuangan & Tanggungan Transparan
-*   **4-Column Financial Report**: Laporan saldo transparan (Saldo Awal, Masuk, Keluar, Saldo Akhir).
-*   **Cumulative Balance**: Saldo kas tetap berlanjut meskipun periode bulan sudah diarsip.
-*   **Debtor Tracking**: Deteksi otomatis siswa yang memiliki tanggungan iuran kas kelas.
+
 
 ### 📞 Log Panggilan & Pendampingan
 *   **Wali Kelas Exclusive**: Fitur pemanggilan resmi dan akses Google Maps rumah siswa hanya dapat diakses oleh Wali Kelas.

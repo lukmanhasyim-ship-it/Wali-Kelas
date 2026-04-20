@@ -253,8 +253,8 @@ export default function PresensiSiang() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="card bg-[#008647] text-white border-0">
-          <p className="text-emerald-100 text-xs font-bold uppercase tracking-widest opacity-80">Total Siswa</p>
+        <div className="card bg-[#008647] text-white border-0 shadow-lg shadow-emerald-200/50">
+          <p className="text-white text-[10px] font-black uppercase tracking-widest">Total Siswa</p>
           <p className="text-4xl font-black mt-1">{siswa.length}</p>
         </div>
         <div className="card bg-white border border-slate-100">

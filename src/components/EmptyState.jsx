@@ -7,7 +7,7 @@ const EmptyState = ({
   icon: Icon = Inbox
 }) => (
   <div className="flex flex-col items-center justify-center py-16 px-4 text-center animate-in fade-in zoom-in duration-500">
-    <div className="bg-slate-50 p-6 rounded-[2.5rem] mb-6 border border-slate-100 shadow-inner">
+    <div className="bg-slate-50 p-6 rounded-2xl mb-6 border border-slate-100 shadow-inner">
       <Icon className="w-12 h-12 text-slate-300" />
     </div>
     <div className="max-w-xs space-y-2">

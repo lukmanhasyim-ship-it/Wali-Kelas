@@ -7,8 +7,12 @@ import { calculateDisciplineStatus, formatIDR } from '../utils/logic';
 import StudentCard from '../components/StudentCard';
 import { Users, Wallet, AlertTriangle, CheckCircle2, Bell, ChevronRight } from 'lucide-react';
 import Loading from '../components/Loading';
-import Skeleton, { SkeletonStats } from '../components/Skeleton';
+import Skeleton, { SkeletonStats, SkeletonDashboard } from '../components/Skeleton';
 import EmptyState from '../components/EmptyState';
+import { 
+  PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, AreaChart, Area
+} from 'recharts';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -93,7 +97,55 @@ export default function Dashboard() {
     });
     const kasWeekNet = kasWeekMasuk - kasWeekKeluar;
 
-    return { hadirHariIni, totalSiswa, percentageHadir, totalKas: archivedBalance + activeKas, saldoMingguIni: kasWeekNet, kasWeekMasuk, kasWeekKeluar };
+    // Data for Attendance Pie Chart
+    const statusCounts = todayPresensi.reduce((acc, curr) => {
+      const status = getEffectiveStatus(curr);
+      acc[status] = (acc[status] || 0) + 1;
+      return acc;
+    }, {});
+
+    const pieData = [
+      { name: 'Hadir', value: statusCounts['H'] || 0, color: '#10b981' },
+      { name: 'Ijin', value: statusCounts['I'] || 0, color: '#f59e0b' },
+      { name: 'Sakit', value: statusCounts['S'] || 0, color: '#3b82f6' },
+      { name: 'Alfa', value: statusCounts['A'] || 0, color: '#ef4444' },
+      { name: 'Bolos', value: statusCounts['B'] || 0, color: '#000000' },
+    ].filter(d => d.value > 0);
+
+    // If no presence today, show "No Data" or empty
+    if (pieData.length === 0 && totalSiswa > 0) {
+       pieData.push({ name: 'Belum Absen', value: totalSiswa, color: '#e2e8f0' });
+    }
+
+    // Data for Financial Trend (Last 7 days)
+    const last7Days = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - (6 - i));
+      return format(d, 'yyyy-MM-dd');
+    });
+
+    const financialTrendData = last7Days.map(date => {
+      const dayData = data.keuangan.filter(k => k.Tanggal === date);
+      const masuk = dayData.filter(k => k.Tipe === 'Masuk').reduce((sum, k) => sum + Number(k.Jumlah), 0);
+      const keluar = dayData.filter(k => k.Tipe === 'Keluar').reduce((sum, k) => sum + Number(k.Jumlah), 0);
+      return {
+        date: format(parseISO(date), 'dd MMM'),
+        Masuk: masuk,
+        Keluar: keluar
+      };
+    });
+
+    return { 
+      hadirHariIni, 
+      totalSiswa, 
+      percentageHadir, 
+      totalKas: archivedBalance + activeKas, 
+      saldoMingguIni: kasWeekNet, 
+      kasWeekMasuk, 
+      kasWeekKeluar,
+      pieData,
+      financialTrendData
+    };
   }, [data, getEffectiveStatus]);
 
   // Alerts - memoized
@@ -173,14 +225,14 @@ export default function Dashboard() {
     window.open(url, '_blank');
   }, []);
 
-  if (loading) return <Loading message="Menyiapkan ringkasan dashboard..." />;
+  if (loading) return <SkeletonDashboard />;
 
   const firstName = user?.name ? user.name.split(' ')[0] : 'User';
   const isTeacher = user.role === 'Wali Kelas';
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-black text-slate-800 tracking-tight">Halo, {firstName}! 👋</h2>
           <p className="text-sm text-slate-500 font-medium">
@@ -225,6 +277,75 @@ export default function Dashboard() {
             <div className="bg-white/10 p-3 rounded-full">
               <Wallet className="w-6 h-6 text-white" />
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-1 card">
+          <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest mb-4">Komposisi Presensi</h3>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={stats.pieData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={80}
+                  paddingAngle={5}
+                  dataKey="value"
+                >
+                  {stats.pieData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  contentStyle={{ borderRadius: '1rem', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                />
+                <Legend iconType="circle" wrapperStyle={{ fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase' }} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="lg:col-span-2 card">
+          <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest mb-4">Tren Transaksi Kas (7 Hari)</h3>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={stats.financialTrendData}>
+                <defs>
+                  <linearGradient id="colorMasuk" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.1}/>
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                  </linearGradient>
+                  <linearGradient id="colorKeluar" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#ef4444" stopOpacity={0.1}/>
+                    <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis 
+                  dataKey="date" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }} 
+                />
+                <YAxis 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }}
+                  tickFormatter={(value) => `Rp${value/1000}k`}
+                />
+                <Tooltip 
+                  contentStyle={{ borderRadius: '1rem', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                  formatter={(value) => formatIDR(value)}
+                />
+                <Area type="monotone" dataKey="Masuk" stroke="#10b981" fillOpacity={1} fill="url(#colorMasuk)" strokeWidth={3} />
+                <Area type="monotone" dataKey="Keluar" stroke="#ef4444" fillOpacity={1} fill="url(#colorKeluar)" strokeWidth={3} />
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
         </div>
       </div>
