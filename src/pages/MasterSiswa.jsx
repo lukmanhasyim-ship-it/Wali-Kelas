@@ -11,6 +11,7 @@ import EmptyState from '../components/EmptyState';
 import PageGuide from '../components/PageGuide';
 import { UserPlus, FileUp, Download, FileDown } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import { formatPhoneNumber } from '../utils/logic';
 
 export default function MasterSiswa() {
   const { user } = useAuth();
@@ -75,8 +76,8 @@ export default function MasterSiswa() {
     try {
       const wb = XLSX.utils.book_new();
       const headers = [
-        ['ID_Siswa', 'NIS', 'NISN', 'Nama_Siswa', 'JK', 'Email', 'Nama_Wali', 'No_WA_Wali', 'Alamat', 'Jabatan', 'Status_Aktif'],
-        ['SISWA001', '12345', '0012345678', 'Nama Lengkap', 'L/P', 'siswa@email.com', 'Nama Orang Tua', '081234567890', 'Alamat Lengkap', 'Siswa/Ketua Kelas/Sekretaris/Bendahara', 'Aktif']
+        ['ID_Siswa', 'NIS', 'NISN', 'Nama_Siswa', 'L/P', 'Email', 'No_WA_Siswa', 'Nama_Wali', 'No_WA_Wali', 'Alamat', 'Jabatan', 'Status_Aktif'],
+        ['SISWA001', '12345', '0012345678', 'Nama Lengkap', 'L', 'siswa@email.com', '6281234567890', 'Nama Orang Tua', '6281234567890', 'Alamat Lengkap', 'Siswa/Ketua Kelas/Sekretaris/Bendahara', 'Aktif']
       ];
       const ws = XLSX.utils.aoa_to_sheet(headers);
       XLSX.utils.book_append_sheet(wb, ws, 'Template Siswa');
@@ -108,10 +109,11 @@ export default function MasterSiswa() {
           NIS: row.NIS?.toString() || '',
           NISN: row.NISN?.toString() || '',
           Nama_Siswa: row.Nama_Siswa || '',
-          JK: row.JK || 'L',
+          'L/P': row['L/P'] || row.JK || 'L',
           Email: row.Email || '',
+          No_WA_Siswa: formatPhoneNumber(row.No_WA_Siswa),
           Nama_Wali: row.Nama_Wali || '',
-          No_WA_Wali: row.No_WA_Wali?.toString() || '',
+          No_WA_Wali: formatPhoneNumber(row.No_WA_Wali),
           Alamat: row.Alamat || '',
           Jabatan: row.Jabatan || 'Siswa',
           Status_Aktif: row.Status_Aktif || 'Aktif',
@@ -213,9 +215,9 @@ export default function MasterSiswa() {
       Tanggal_Tamat_Sekolah: tglTamat,
       Email: email,
       Jabatan: jabatan,
-      No_WA_Siswa: waSiswa,
+      No_WA_Siswa: formatPhoneNumber(waSiswa),
       Nama_Wali: wali,
-      No_WA_Wali: wa,
+      No_WA_Wali: formatPhoneNumber(wa),
       Alamat: alamat,
       Latitude: latitude,
       Longitude: longitude,

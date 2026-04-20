@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { Phone, PhoneCall, AlertTriangle, Edit3, MapPin, Trash2, MessageCircle } from 'lucide-react';
+import { Phone, FileText, AlertTriangle, Edit3, MapPin, Trash2, MessageCircle } from 'lucide-react';
 
 function StudentCard({ student, disciplineStatus, onWaClick, onWaStudentClick, onContactClick, onEdit, onDelete, canSeeLocation }) {
   const getAvatarColor = (gender) => {
@@ -55,7 +55,7 @@ function StudentCard({ student, disciplineStatus, onWaClick, onWaStudentClick, o
                 className="p-2 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-600 hover:text-white transition-all duration-300 shadow-sm"
                 title="Buat Surat Panggilan"
               >
-                <PhoneCall className="w-3.5 h-3.5" />
+                <FileText className="w-3.5 h-3.5" />
               </button>
             )}
             {onWaStudentClick && (

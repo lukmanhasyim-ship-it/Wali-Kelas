@@ -40,3 +40,42 @@ export function calculateDisciplineStatus(attendanceRecords, semesterBolosCount 
 
   return null;
 }
+
+// Format Phone Number to International (62 for Indonesia)
+export function formatPhoneNumber(phone) {
+  if (!phone) return '';
+  // Remove all non-numeric characters
+  let cleaned = phone.toString().replace(/\D/g, '');
+  
+  // If starts with '0', replace with '62'
+  if (cleaned.startsWith('0')) {
+    cleaned = '62' + cleaned.substring(1);
+  } 
+  // If starts with '8', add '62'
+  else if (cleaned.startsWith('8')) {
+    cleaned = '62' + cleaned;
+  }
+  
+  return cleaned;
+}
+
+// Format Date to DD/MMMM/YYYY (Indonesian)
+export function formatDateIndo(dateStr) {
+  if (!dateStr) return '-';
+  try {
+    const months = [
+      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ];
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return dateStr;
+    
+    const day = date.getDate();
+    const month = months[date.getMonth()];
+    const year = date.getFullYear();
+    
+    return `${day} ${month} ${year}`;
+  } catch (e) {
+    return dateStr;
+  }
+}

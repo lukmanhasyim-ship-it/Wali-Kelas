@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { fetchGAS } from '../utils/gasClient';
 import Loading from '../components/Loading';
+import { formatPhoneNumber } from '../utils/logic';
 import Skeleton from '../components/Skeleton';
 import PageGuide from '../components/PageGuide';
 
@@ -14,6 +15,7 @@ export default function Profile() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [resetting, setResetting] = useState(false);
   const [error, setError] = useState('');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -23,11 +25,16 @@ export default function Profile() {
   const [alamat, setAlamat] = useState('');
   const [namaWali, setNamaWali] = useState('');
   const [noWaWali, setNoWaWali] = useState('');
+  const [tempatLahir, setTempatLahir] = useState('');
+  const [tanggalLahir, setTanggalLahir] = useState('');
   const [latitude, setLatitude] = useState('');
   const [longitude, setLongitude] = useState('');
   const [lokasi, setLokasi] = useState('');
   const [nominalIuran, setNominalIuran] = useState('');
   const [kelas, setKelas] = useState('');
+  const [noWaSiswa, setNoWaSiswa] = useState('');
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [confirmInput, setConfirmInput] = useState('');
 
   const role = user?.role || 'Siswa';
   const isWaliKelas = role === 'Wali Kelas';
@@ -58,6 +65,9 @@ export default function Profile() {
         setAlamat(row.Alamat || '');
         setNamaWali(row.Nama_Wali || '');
         setNoWaWali(row.No_WA_Wali || '');
+        setNoWaSiswa(row.No_WA_Siswa || '');
+        setTempatLahir(row.Tempat_Lahir || '');
+        setTanggalLahir(row.Tanggal_Lahir || '');
         setLatitude(formatCoordinateInput(row.Latitude || '', true));
         setLongitude(formatCoordinateInput(row.Longitude || '', false));
         setLokasi(row.Lokasi || '');
@@ -170,7 +180,10 @@ export default function Profile() {
         Nama_Siswa: name,
         Alamat: alamat,
         Nama_Wali: namaWali,
-        No_WA_Wali: noWaWali,
+        No_WA_Wali: formatPhoneNumber(noWaWali),
+        No_WA_Siswa: formatPhoneNumber(noWaSiswa),
+        Tempat_Lahir: tempatLahir,
+        Tanggal_Lahir: tanggalLahir,
         Latitude: latitude,
         Longitude: longitude,
         Lokasi: latitude && longitude ? createMapsLink(latitude, longitude) : lokasi
@@ -209,6 +222,32 @@ export default function Profile() {
       showToast('Gagal menyimpan profil.', 'error');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleResetDatabase = () => {
+    setShowResetModal(true);
+    setConfirmInput('');
+  };
+
+  const confirmReset = async () => {
+    if (confirmInput !== 'RESET') {
+      showToast("Teks konfirmasi tidak sesuai.", "error");
+      return;
+    }
+
+    setShowResetModal(false);
+    setResetting(true);
+    try {
+      const response = await fetchGAS('RESET_DATABASE', { email: user.email });
+      showToast(response.data || 'Database berhasil direset.', 'success');
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
+    } catch (err) {
+      console.error('Reset database error:', err);
+      showToast('Gagal mereset database.', 'error');
+      setResetting(false);
     }
   };
 
@@ -300,6 +339,31 @@ export default function Profile() {
                   className="input-field"
                   value={noWaWali}
                   onChange={(e) => setNoWaWali(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">No WA Siswa</label>
+                <input
+                  className="input-field"
+                  value={noWaSiswa}
+                  onChange={(e) => setNoWaSiswa(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">Tempat Lahir</label>
+                <input
+                  className="input-field"
+                  value={tempatLahir}
+                  onChange={(e) => setTempatLahir(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">Tanggal Lahir</label>
+                <input
+                  type="date"
+                  className="input-field"
+                  value={tanggalLahir}
+                  onChange={(e) => setTanggalLahir(e.target.value)}
                 />
               </div>
             </div>
@@ -428,6 +492,83 @@ export default function Profile() {
           </div>
         </form>
       </div>
+
+      {isWaliKelas && (
+        <div className="card p-6 border-red-100 bg-red-50/30">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="space-y-1">
+              <h3 className="text-lg font-bold text-red-600">Zona Bahaya: Reset Database</h3>
+              <p className="text-sm text-slate-600">
+                Menghapus seluruh data siswa, transaksi, dan laporan. Gunakan hanya saat pergantian tahun ajaran atau ingin memulai dari awal.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleResetDatabase}
+              disabled={resetting}
+              className={`px-6 py-2.5 rounded-xl font-bold transition-all duration-200 ${
+                resetting 
+                  ? 'bg-slate-200 text-slate-400 cursor-not-allowed' 
+                  : 'bg-red-600 text-white hover:bg-red-700 shadow-lg shadow-red-200 active:scale-95'
+              }`}
+            >
+              {resetting ? 'Mereset...' : 'Reset Semua Data'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Konfirmasi Reset */}
+      {showResetModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-300 border border-slate-100">
+            <div className="p-8 text-center">
+              <div className="w-20 h-20 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner animate-pulse">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <h3 className="text-2xl font-bold text-slate-800 mb-2">Hapus Seluruh Data?</h3>
+              <p className="text-slate-500 mb-6 text-sm leading-relaxed">
+                Tindakan ini akan menghapus **seluruh data siswa, transaksi, absensi, dan arsip**. Hanya akun Wali Kelas Anda yang akan tersisa. Tindakan ini <span className="text-red-600 font-bold underline">TIDAK DAPAT DIBATALKAN</span>.
+              </p>
+              
+              <div className="mb-8">
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Ketik "RESET" untuk konfirmasi</label>
+                <input 
+                  type="text" 
+                  className="input-field text-center font-bold tracking-[0.5em] focus:border-red-500 focus:ring-red-500/20"
+                  placeholder="RESET"
+                  value={confirmInput}
+                  onChange={(e) => setConfirmInput(e.target.value.toUpperCase())}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <button 
+                  type="button" 
+                  onClick={() => setShowResetModal(false)}
+                  className="btn-secondary py-3 rounded-2xl"
+                >
+                  Batal
+                </button>
+                <button 
+                  type="button" 
+                  disabled={confirmInput !== 'RESET'}
+                  onClick={confirmReset}
+                  className={`py-3 rounded-2xl font-bold transition-all shadow-lg ${
+                    confirmInput === 'RESET' 
+                      ? 'bg-red-600 text-white hover:bg-red-700 shadow-red-200 active:scale-95' 
+                      : 'bg-slate-100 text-slate-300 cursor-not-allowed shadow-none'
+                  }`}
+                >
+                  Ya, Reset Data
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

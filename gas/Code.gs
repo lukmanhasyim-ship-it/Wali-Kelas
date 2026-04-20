@@ -112,6 +112,9 @@ function handleResponse(e) {
       },
       SETUP_TRIGGERS: function() {
         return { status: 'success', data: setupArchiveTriggers() };
+      },
+      RESET_DATABASE: function() {
+        return { status: 'success', data: resetDatabase(payload && payload.email) };
       }
     };
 
@@ -838,4 +841,33 @@ function archiveKeuangan(ss, monthStr) {
   }
   
   return 'Berhasil mutasi kas bulan ' + monthStr + '. Saldo Akhir: Rp ' + saldoAkhir.toLocaleString('id-ID');
+}
+
+/**
+ * RESET DATABASE - Hapus semua record kecuali profile Wali Kelas
+ */
+function resetDatabase(requesterEmail) {
+  if (!requesterEmail) throw new Error('Email pengirim harus disertakan.');
+  
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheets = ss.getSheets();
+
+  sheets.forEach(function(sheet) {
+    var name = sheet.getName();
+    
+    // Jangan hapus akun Wali Kelas
+    if (name === 'Profil_Wali_Kelas') {
+      return; 
+    }
+    
+    // Hapus semua baris mulai dari baris ke-2 (menyisakan header)
+    if (sheet.getLastRow() > 1) {
+      sheet.deleteRows(2, sheet.getLastRow() - 1);
+    }
+  });
+
+  // Buat notifikasi baru setelah reset
+  createNotification('Database telah direset sepenuhnya oleh ' + requesterEmail + '. Semua data siswa, transaksi, dan arsip telah dihapus.', 'alert', 'Wali Kelas', requesterEmail);
+  
+  return "Database berhasil direset. Seluruh records pada semua sheet telah dihapus, menyisakan header dan data Wali Kelas.";
 }

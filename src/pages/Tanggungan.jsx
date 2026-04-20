@@ -68,7 +68,7 @@ export default function Tanggungan() {
   }, [user.email, showToast]);
 
   const activeStudents = useMemo(() => {
-    return siswa.filter((item) => item.NISN && item.Status_Aktif !== 'Tidak Aktif');
+    return siswa.filter((item) => item.NISN && item.Status_Aktif === 'Aktif');
   }, [siswa]);
 
   // Filter keuangan berdasarkan periode

@@ -45,6 +45,7 @@ import Loading from '../components/Loading';
 import Skeleton, { SkeletonStats, SkeletonTable } from '../components/Skeleton';
 import EmptyState from '../components/EmptyState';
 import PageGuide from '../components/PageGuide';
+import { formatDateIndo } from '../utils/logic';
 
 const COLORS = ['#10b981', '#f59e0b', '#3b82f6', '#ef4444', '#8b5cf6', '#64748b'];
 
@@ -584,7 +585,7 @@ export default function Laporan() {
             <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">
               Laporan {filterType === 'month'
                 ? academicMonths.find(m => m.value === selectedMonth)?.label
-                : `${format(dateRange.start, 'dd MMM', { locale: id })} - ${format(dateRange.end, 'dd MMM yyyy', { locale: id })}`}
+                : `${formatDateIndo(dateRange.start)} - ${formatDateIndo(dateRange.end)}`}
             </h2>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-1">Sistem Informasi Wali Kelas Digital</p>
           </div>

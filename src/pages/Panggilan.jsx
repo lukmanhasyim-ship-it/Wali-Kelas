@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import Loading from '../components/Loading';
 import { sendNotification } from '../utils/notifications';
+import { formatDateIndo } from '../utils/logic';
 
 export default function Panggilan() {
   const { user } = useAuth();
@@ -33,6 +34,7 @@ export default function Panggilan() {
   const [kategori, setKategori] = useState('Panggilan Wali');
   const [alasan, setAlasan] = useState('Lainnya');
   const [keteranganLainnya, setKeteranganLainnya] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Handle incoming state (from dashboard alerts)
   useEffect(() => {
@@ -131,6 +133,14 @@ export default function Panggilan() {
     today: log.filter(l => l.Tanggal === format(new Date(), 'yyyy-MM-dd')).length
   };
 
+  const filteredLog = log.filter(item => {
+    const s = siswa.find(s => String(s.NISN) === String(item.NISN));
+    const searchStr = (s?.Nama_Siswa || item.NISN || '').toLowerCase() + 
+                      (item.Kategori || '').toLowerCase() + 
+                      (item.Alasan || '').toLowerCase();
+    return searchStr.includes(searchTerm.toLowerCase());
+  });
+
   return (
     <div className="space-y-8 pb-12">
       {/* Header Section */}
@@ -148,7 +158,7 @@ export default function Panggilan() {
           <div className="flex items-center gap-3">
             <div className="bg-emerald-50 px-4 py-2 rounded-2xl flex items-center gap-2">
               <Clock className="w-4 h-4 text-emerald-600" />
-              <span className="text-xs font-black text-emerald-700 uppercase tracking-widest">{format(new Date(), 'dd MMMM yyyy')}</span>
+              <span className="text-xs font-black text-emerald-700 uppercase tracking-widest">{formatDateIndo(new Date())}</span>
             </div>
           </div>
         </div>
@@ -250,77 +260,116 @@ export default function Panggilan() {
         </div>
 
         {/* History Table Container */}
-        <div className="lg:col-span-2">
-            <div className="table-container pt-8 shadow-xl">
-              <table className="modern-table">
-                <thead>
-                  <tr>
-                    <th className="text-left">Tanggal</th>
-                    <th className="text-left">Siswa</th>
-                    <th className="text-left">Detail Masalah</th>
-                    <th className="text-right">Aksi Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50">
-                  {log.length === 0 ? (
-                    <tr>
-                      <td colSpan="4" className="px-8 py-16 text-center">
-                        <div className="flex flex-col items-center justify-center space-y-3 grayscale opacity-40">
-                          <PhoneCall className="w-12 h-12 text-slate-300" />
-                          <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Tidak ada riwayat panggilan</p>
-                        </div>
-                      </td>
+        <div className="lg:col-span-2 space-y-4">
+            <div className="flex items-center justify-between px-2">
+              <div className="flex items-center gap-2">
+                <History className="w-5 h-5 text-slate-400" />
+                <h3 className="text-lg font-black text-slate-800">Riwayat Panggilan</h3>
+              </div>
+              <div className="relative w-64">
+                <input
+                  type="text"
+                  placeholder="Cari nama atau alasan..."
+                  className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-2xl text-xs font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+                <Info className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              </div>
+            </div>
+
+            <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50/50 border-b border-slate-100">
+                      <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Waktu</th>
+                      <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Siswa</th>
+                      <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Topik & Alasan</th>
+                      <th className="px-8 py-5 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
                     </tr>
-                  ) : log.map(item => {
-                    const s = siswa.find(s => String(s.NISN) === String(item.NISN));
-                    const isSelesai = item.Status_Selesai === 'Selesai';
-                    return (
-                      <tr key={item.ID_Panggilan} className="group hover:bg-slate-50 transition-colors">
-                        <td className="px-8 py-6">
-                          <div className="flex flex-col">
-                            <span className="font-black text-slate-900">{item.Tanggal}</span>
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Recorded</span>
-                          </div>
-                        </td>
-                        <td className="px-8 py-6">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-xl bg-slate-50 flex items-center justify-center text-[10px] font-black text-slate-400">
-                              {s ? s.Nama_Siswa.charAt(0) : '?'}
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {filteredLog.length === 0 ? (
+                      <tr>
+                        <td colSpan="4" className="px-8 py-20 text-center">
+                          <div className="flex flex-col items-center justify-center space-y-4 grayscale opacity-40">
+                            <div className="w-16 h-16 bg-slate-100 rounded-3xl flex items-center justify-center">
+                              <PhoneCall className="w-8 h-8 text-slate-300" />
                             </div>
-                            <div className="flex flex-col">
-                              <span className="font-black text-slate-800 leading-tight">{s ? s.Nama_Siswa : item.NISN}</span>
-                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{item.NISN}</span>
+                            <div className="space-y-1">
+                              <p className="text-sm font-black text-slate-400 uppercase tracking-widest">Belum ada rekaman</p>
+                              <p className="text-xs font-medium text-slate-400">Gunakan form di samping untuk membuat laporan baru.</p>
                             </div>
                           </div>
-                        </td>
-                        <td className="px-8 py-6">
-                          <div className="flex flex-col gap-1">
-                            <div className={`inline-flex items-center gap-1.5 self-start px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest ${item.Kategori === 'Home Visit' ? 'bg-amber-50 text-amber-600 border border-amber-100' : 'bg-blue-50 text-blue-600 border border-blue-100'
-                              }`}>
-                              {item.Kategori === 'Home Visit' ? <MapPin className="w-2.5 h-2.5" /> : <PhoneCall className="w-2.5 h-2.5" />}
-                              {item.Kategori}
-                            </div>
-                            <span className="text-xs font-bold text-slate-600">{item.Alasan}</span>
-                          </div>
-                        </td>
-                        <td className="px-8 py-6 text-right">
-                          <button
-                            onClick={() => handleUpdateStatus(item.ID_Panggilan, isSelesai ? 'Pending' : 'Selesai')}
-                            className={`inline-flex items-center gap-2 pl-4 pr-3 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl border transition-all ${isSelesai
-                              ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
-                              : 'bg-rose-50 text-rose-600 border-rose-100 hover:bg-rose-100'
-                              }`}
-                          >
-                            <div className={`w-1.5 h-1.5 rounded-full ${isSelesai ? 'bg-emerald-600' : 'bg-rose-600'}`} />
-                            {item.Status_Selesai}
-                            <ChevronRight className="w-3.5 h-3.5 opacity-50" />
-                          </button>
                         </td>
                       </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
+                    ) : filteredLog.map(item => {
+                      const s = siswa.find(s => String(s.NISN) === String(item.NISN));
+                      const isSelesai = item.Status_Selesai === 'Selesai';
+                      return (
+                        <tr key={item.ID_Panggilan} className="group hover:bg-slate-50/80 transition-all duration-300">
+                        <td className="px-8 py-6">
+                          <div className="flex flex-col">
+                            <span className="font-black text-slate-900">{formatDateIndo(item.Tanggal)}</span>
+                            <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">{item.ID_Panggilan}</span>
+                          </div>
+                        </td>
+                          <td className="px-8 py-6">
+                            <div className="flex items-center gap-4">
+                              <div className="relative">
+                                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-lg font-black text-slate-400 border border-white shadow-sm overflow-hidden">
+                                  {s?.Picture ? (
+                                    <img src={s.Picture} alt="" className="w-full h-full object-cover" />
+                                  ) : (
+                                    s?.Nama_Siswa?.charAt(0) || '?'
+                                  )}
+                                </div>
+                                <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-lg border-2 border-white shadow-sm ${isSelesai ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="font-black text-slate-800 leading-tight group-hover:text-emerald-600 transition-colors">{s ? s.Nama_Siswa : item.NISN}</span>
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mt-1">{item.NISN}</span>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-8 py-6">
+                            <div className="space-y-2">
+                              <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest ${
+                                item.Kategori === 'Home Visit' 
+                                  ? 'bg-amber-100 text-amber-700 border border-amber-200' 
+                                  : item.Kategori === 'Teguran'
+                                  ? 'bg-rose-100 text-rose-700 border border-rose-200'
+                                  : 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+                                }`}>
+                                {item.Kategori === 'Home Visit' ? <MapPin className="w-3 h-3" /> : <PhoneCall className="w-3 h-3" />}
+                                {item.Kategori}
+                              </div>
+                              <p className="text-xs font-bold text-slate-600 leading-relaxed max-w-[200px]">{item.Alasan}</p>
+                            </div>
+                          </td>
+                          <td className="px-8 py-6 text-right">
+                            <button
+                              onClick={() => handleUpdateStatus(item.ID_Panggilan, isSelesai ? 'Pending' : 'Selesai')}
+                              className={`group/btn relative inline-flex items-center gap-3 pl-5 pr-4 py-3 text-[10px] font-black uppercase tracking-[0.15em] rounded-2xl border-2 transition-all active:scale-95 ${
+                                isSelesai
+                                  ? 'bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-100 hover:border-emerald-200'
+                                  : 'bg-white text-slate-400 border-slate-100 hover:border-rose-200 hover:text-rose-600 hover:bg-rose-50'
+                                }`}
+                            >
+                              <div className={`w-2 h-2 rounded-full ring-4 ${
+                                isSelesai ? 'bg-emerald-500 ring-emerald-500/20' : 'bg-slate-200 ring-slate-100 group-hover/btn:bg-rose-500 group-hover/btn:ring-rose-200'
+                              }`} />
+                              {item.Status_Selesai}
+                              <ChevronRight className={`w-4 h-4 transition-transform group-hover/btn:translate-x-1 ${isSelesai ? 'text-emerald-400' : 'text-slate-300'}`} />
+                            </button>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>
