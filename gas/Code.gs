@@ -121,6 +121,12 @@ function handleResponse(e) {
       },
       RENAME_MAPEL: function() {
         return { status: 'success', data: renameMapel(payload && payload.oldMapel, payload && payload.oldTopik, payload && payload.newName, payload && payload.newTopik, payload && payload.kategori) };
+      },
+      SEND_PIKET_NOTIFICATIONS: function() {
+        return { status: 'success', data: sendPiketNotifications() };
+      },
+      SYNC_PIKET: function() {
+        return { status: 'success', data: syncPiket(payload && payload.data) };
       }
     };
 
@@ -712,22 +718,22 @@ function deleteNotification(id) {
 function setupSpreadsheet() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var master = ss.insertSheet('Master_Siswa');
-  master.appendRow(['ID_Siswa', 'NISN', 'NIS', 'Nama_Siswa', 'L/P', 'Tempat_Lahir', 'Tanggal_Lahir', 'Email', 'Jabatan', 'No_WA_Siswa', 'Nama_Wali', 'No_WA_Wali', 'Alamat', 'Latitude', 'Longitude', 'Lokasi', 'Status_Aktif', 'Keterangan', 'Tanggal_Masuk_X', 'Tanggal_Naik_XI', 'Tanggal_Naik_XII', 'Tanggal_Tamat_Sekolah']);
+  master.appendRow(['ID_Siswa', 'NIS', 'NISN', 'Nama_Siswa', 'L/P', 'Email', 'Jabatan', 'Tempat_Lahir', 'Tanggal_Lahir', 'No_WA_Siswa', 'Nama_Wali', 'No_WA_Wali', 'Alamat']);
   
   var presensi = ss.insertSheet('Presensi');
-  presensi.appendRow(['ID_Presensi', 'Tanggal', 'ID_Siswa', 'Status_Pagi', 'Status_Siang', 'Keterangan', 'Timestamp_Pagi', 'Timestamp_Siang']);
+  presensi.appendRow(['ID_Presensi', 'Tanggal', 'ID_Siswa', 'NISN', 'Status_Pagi', 'Timestamp_Pagi', 'Status_Siang', 'Timestamp_Siang', 'Keterangan']);
   
   var keuangan = ss.insertSheet('Keuangan');
-  keuangan.appendRow(['ID_Transaksi', 'Tanggal', 'ID_Siswa', 'Tipe', 'Jumlah', 'Keterangan', 'Timestamp']);
+  keuangan.appendRow(['ID_Transaksi', 'Tanggal', 'ID_Siswa', 'NISN', 'Tipe', 'Jumlah', 'Keterangan']);
 
   var daftarNilai = ss.insertSheet('Daftar_Nilai');
-  daftarNilai.appendRow(['ID_Nilai', 'ID_Siswa', 'Jenjang', 'Semester', 'Kategori_Mapel', 'Nama_Mapel', 'Topik', 'Nilai', 'Timestamp']);
+  daftarNilai.appendRow(['ID_Nilai', 'ID_Siswa', 'NISN', 'Jenjang', 'Semester', 'Kategori_Mapel', 'Nama_Mapel', 'Topik', 'Nilai', 'Timestamp']);
   
   var panggilan = ss.insertSheet('Log_Panggilan');
-  panggilan.appendRow(['ID_Panggilan', 'Tanggal', 'ID_Siswa', 'Kategori', 'Alasan', 'Hasil_Pertemuan', 'Status_Selesai']);
+  panggilan.appendRow(['ID_Panggilan', 'Tanggal', 'ID_Siswa', 'NISN', 'Kategori', 'Alasan', 'Hasil_Pertemuan', 'Status_Selesai']);
   
   var profil = ss.insertSheet('Profil_Wali_Kelas');
-  profil.appendRow(['Id_Wali', 'Nama', 'Email', 'Kelas', 'Bio', 'Gaya_Ajar', 'Kontak', 'Created_At']);
+  profil.appendRow(['Id_Wali', 'Nama', 'Email', 'Bio', 'Gaya_Ajar', 'Kontak', 'Created_At', 'Nominal_Iuran', 'Kelas']);
   
   var queue = ss.insertSheet('Queue_Chat');
   queue.appendRow(['ID_Queue', 'Email', 'ID_Siswa', 'Student_Name', 'Query', 'Attendance_Detail', 'Summary', 'Status', 'Response', 'Created_At', 'Processed_At']);
@@ -739,7 +745,10 @@ function setupSpreadsheet() {
   lokasi.appendRow(['ID_Lokasi', 'Nama_Lokasi', 'Deskripsi', 'Alamat', 'Latitude', 'Longitude', 'Lokasi', 'Created_By', 'Created_By_Email', 'Created_At']);
 
   var notif = ss.insertSheet('Notifikasi');
-  notif.appendRow(['ID', 'Message', 'Type', 'Target_Role', 'Target_Email', 'Is_Read', 'Timestamp']);
+  notif.appendRow(['ID', 'Message', 'Type', 'Target_Email', 'Is_Read', 'Timestamp', 'Target_Role', 'Role', 'Email']);
+
+  var piket = ss.insertSheet('Piket');
+  piket.appendRow(['ID_Piket', 'Hari', 'ID_Siswa', 'Nama_Siswa', 'Email']);
   
   // Seed initial notification
   createNotification('Selamat datang di SISWA.HUB! Sistem manajemen kelas digital Anda sudah siap digunakan.', 'success', 'ALL');
@@ -799,15 +808,13 @@ function runMonthlyArchive(targetMonth) {
 
 function ensureArchiveSheets(ss) {
   if (!ss.getSheetByName('Archive_Rekap_Absensi')) {
-    ss.insertSheet('Archive_Rekap_Absensi').appendRow(['ID_Siswa', 'Bulan', 'H', 'S', 'I', 'A', 'B']);
+    ss.insertSheet('Archive_Rekap_Absensi').appendRow(['ID_Siswa', 'Bulan', 'H', 'I', 'S', 'A', 'B']);
   }
   if (!ss.getSheetByName('Archive_Rekap_Keuangan')) {
     ss.insertSheet('Archive_Rekap_Keuangan').appendRow(['Bulan', 'Saldo_Awal', 'Total_Masuk', 'Total_Keluar', 'Saldo_Akhir']);
   }
   if (!ss.getSheetByName('Archive_Detail_Absensi')) {
-    var template = ss.getSheetByName('Presensi');
-    var headers = template ? template.getRange(1, 1, 1, template.getLastColumn()).getValues()[0] : ['ID_Presensi', 'Tanggal', 'ID_Siswa', 'Status_Pagi', 'Status_Siang', 'Keterangan', 'Timestamp_Pagi', 'Timestamp_Siang'];
-    ss.insertSheet('Archive_Detail_Absensi').appendRow(headers);
+    ss.insertSheet('Archive_Detail_Absensi').appendRow(['ID_Presensi', 'Tanggal', 'ID_Siswa', 'NISN', 'Status_Pagi', 'Timestamp_Pagi', 'Status_Siang', 'Timestamp_Siang', 'Keterangan']);
   }
 }
 
@@ -1018,4 +1025,89 @@ function renameMapel(oldMapel, oldTopik, newName, newTopik, kategori) {
     range.setValues(data);
   }
   return updatedCount;
+}
+
+/**
+ * LOGIKA PIKET SISWA
+ */
+
+function getPiketToday() {
+  var allPiket = readData('Piket');
+  var days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+  var todayName = days[new Date().getDay()];
+  
+  return allPiket.filter(function(p) {
+    return p.Hari === todayName;
+  });
+}
+
+function sendPiketNotifications() {
+  var piketToday = getPiketToday();
+  if (piketToday.length === 0) return "Tidak ada jadwal piket hari ini.";
+  
+  var todayStr = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
+  var count = 0;
+  
+  piketToday.forEach(function(member) {
+    var email = (member.Email || '').toString().toLowerCase();
+    if (!email) return;
+    
+    // Cek apakah sudah dikirim hari ini
+    var notifs = readData('Notifikasi');
+    var alreadySent = notifs.some(function(n) {
+      return n.Target_Email.toLowerCase() === email && 
+             n.Message.indexOf('tugas piket') > -1 && 
+             n.Timestamp.indexOf(todayStr) > -1;
+    });
+    
+    if (!alreadySent) {
+      createNotification(
+        'Hallo ' + member.Nama_Siswa + ', jangan lupa ya hari ini kamu ada tugas piket kelas. Mari jaga kebersihan kelas kita!',
+        'info',
+        'Siswa',
+        email
+      );
+      count++;
+    }
+  });
+  
+  return "Berhasil mengirim " + count + " notifikasi piket.";
+}
+
+function syncPiket(dataList) {
+  try {
+    if (!dataList || !Array.isArray(dataList)) return false;
+    
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName('Piket');
+    if (!sheet) {
+      sheet = ss.insertSheet('Piket');
+      sheet.appendRow(['ID_Piket', 'Hari', 'ID_Siswa', 'Nama_Siswa', 'Email']);
+    }
+    
+    // Clear all old records safely
+    var lastRow = sheet.getLastRow();
+    if (lastRow > 1) {
+      sheet.deleteRows(2, lastRow - 1);
+    }
+    
+    if (dataList.length > 0) {
+      var headers = ['ID_Piket', 'Hari', 'ID_Siswa', 'Nama_Siswa', 'Email'];
+      var rows = dataList.map(function(item) {
+        return [
+          (item.ID_Piket || 'PK' + new Date().getTime() + Math.random().toString(36).substr(2, 5)).toString(),
+          (item.Hari || '').toString(),
+          (item.ID_Siswa || '').toString(),
+          (item.Nama_Siswa || '').toString(),
+          (item.Email || '').toString()
+        ];
+      });
+      sheet.getRange(2, 1, rows.length, headers.length).setValues(rows);
+    }
+    
+    return true;
+  } catch (err) {
+    Logger.log('SyncPiket Error: ' + err.toString());
+    throw err;
+  }
 }

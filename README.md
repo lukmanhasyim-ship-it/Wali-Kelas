@@ -9,9 +9,11 @@ Siswa.Hub adalah platform revolusioner berbasis **Serverless** yang dirancang kh
 ### 🖥️ Smart & Personal Dashboard
 *   **Contextual Greeting**: Penyambutan personal berdasarkan Role (Wali Kelas / Siswa).
 *   **Privacy-First Alerts**: Siswa hanya melihat status kedisiplinan dan nilai miliknya sendiri.
+*   **Piket Hari Ini**: Tampilan otomatis jadwal kebersihan harian di dashboard.
 *   **Real-time Analytics**: Visualisasi kehadiran hari ini dan saldo kas mingguan secara instan.
 
 ### 📚 Administrasi Akademik & Kurikulum Merdeka
+*   **Jadwal Piket Otomatis**: Sistem manajemen regu kerja mingguan dengan fitur eliminasi siswa (satu siswa, satu jadwal) dan notifikasi otomatis.
 *   **Leger Nilai (DKN)**: Modul pengelolaan nilai yang fleksibel dengan fitur **"Terapkan Susunan Mapel"** otomatis dan editor nama mata pelajaran dinamis.
 *   **Buku Klaper Digital**: Arsip data mutasi, ijazah, dan riwayat siswa yang rapi dan siap cetak.
 *   **Dual-Session Attendance**: Pencatatan presensi pagi dan siang untuk akurasi maksimal.
@@ -38,16 +40,23 @@ Buat Spreadsheet baru di Google Drive Anda. Lalu buat sheet-sheet berikut dengan
 
 | Nama Sheet | Struktur Kolom (Header Baris 1) |
 | :--- | :--- |
-| **Profil_Wali_Kelas** | Id_Wali, Nama, Email, Bio, Gaya_Ajar, Kontak, Alamat, Latitude, Longitude, Lokasi, Nominal_Iuran, Kelas, Semester |
-| **Master_Siswa** | ID_Siswa, NISN, NIS, Nama_Siswa, L/P, Tempat_Lahir, Tanggal_Lahir, Email, Jabatan, No_WA_Siswa, Nama_Wali, No_WA_Wali, Alamat, Latitude, Longitude, Lokasi, Status_Aktif, Keterangan, Tanggal_Masuk_X, Tanggal_Naik_XI, Tanggal_Naik_XII, Tanggal_Tamat_Sekolah |
-| **Daftar_Nilai** | ID_Siswa, Kategori_Mapel, Nama_Mapel, Topik, Nilai, KKM |
-| **Presensi** | ID_Presensi, Tanggal, ID_Siswa, Status_Pagi, Status_Siang, Keterangan, Timestamp_Pagi, Timestamp_Siang |
+| **Master_Siswa** | ID_Siswa, NIS, NISN, Nama_Siswa, L/P, Email, Jabatan, Tempat_Lahir, Tanggal_Lahir, No_WA_Siswa, Nama_Wali, No_WA_Wali, Alamat |
+| **Piket** | ID_Piket, Hari, ID_Siswa, Nama_Siswa, Email |
+| **Presensi** | ID_Presensi, Tanggal, ID_Siswa, NISN, Status_Pagi, Timestamp_Pagi, Status_Siang, Timestamp_Siang, Keterangan |
 | **Keuangan** | ID_Transaksi, Tanggal, ID_Siswa, NISN, Tipe, Jumlah, Keterangan |
-| **Log_Panggilan** | ID_Panggilan, Tanggal, NISN, Kategori, Alasan, Hasil_Pertemuan, Status_Selesai |
-| **Notifikasi** | ID, Message, Type, Timestamp, Role, Email, Is_Read |
-| **Archive_Rekap_Absensi** | ID_Siswa, Bulan, H, S, I, A, B |
+| **Daftar_Nilai** | ID_Nilai, ID_Siswa, NISN, Jenjang, Semester, Kategori_Mapel, Nama_Mapel, Topik, Nilai, Timestamp |
+| **Log_Panggilan** | ID_Panggilan, Tanggal, ID_Siswa, NISN, Kategori, Alasan, Hasil_Pertemuan, Status_Selesai |
+| **Profil_Wali_Kelas** | Id_Wali, Nama, Email, Bio, Gaya_Ajar, Kontak, Created_At, Nominal_Iuran, Kelas |
+| **Notifikasi** | ID, Message, Type, Target_Email, Is_Read, Timestamp, Target_Role, Role, Email |
+| **Queue_Chat** | ID_Queue, Email, ID_Siswa, Student_Name, Query, Attendance_Detail, Summary, Status, Response, Created_At, Processed_At |
+| **Catatan_Siswa** | ID_Siswa, Nama_Siswa, Tanggal, Ringkasan_AI, Tindak_Lanjut, Created_By |
+| **Lokasi** | ID_Lokasi, Nama_Lokasi, Deskripsi, Alamat, Latitude, Longitude, Lokasi, Created_By, Created_By_Email, Created_At |
+| **Archive_Rekap_Absensi** | ID_Siswa, Bulan, H, I, S, A, B |
 | **Archive_Rekap_Keuangan** | Bulan, Saldo_Awal, Total_Masuk, Total_Keluar, Saldo_Akhir |
-| **Archive_Detail_Absensi** | ID_Presensi, Tanggal, ID_Siswa, Status_Pagi, Status_Siang, Keterangan, Timestamp_Pagi, Timestamp_Siang |
+| **Archive_Detail_Absensi** | ID_Presensi, Tanggal, ID_Siswa, NISN, Status_Pagi, Timestamp_Pagi, Status_Siang, Timestamp_Siang, Keterangan |
+
+> [!TIP]
+> Tiga sheet terakhir (**Archive_...**) akan dibuat secara otomatis oleh sistem, namun menyiapkannya lebih awal dapat membantu integrasi data.
 
 ### 3. Konfigurasi Google Apps Script (Backend)
 1.  Di Spreadsheet Anda, klik menu **Extensions** > **Apps Script**.

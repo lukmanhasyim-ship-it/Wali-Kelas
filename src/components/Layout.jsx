@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Users, ClipboardList, CalendarCheck,
   Wallet, PhoneCall, LogOut, Sun, Moon, FileText,
   Edit3, User, Settings, Bell, BookOpen, LibraryBig,
-  ChevronLeft, ChevronRight, Search
+  ChevronLeft, ChevronRight, Search, Calendar
 } from 'lucide-react';
 import Breadcrumbs from './Breadcrumbs';
 import { useAuth } from '../context/AuthContext';
@@ -208,6 +208,7 @@ export default function Layout() {
 
           {access.presensiPagi && <NavItem to="presensi-pagi" icon={Sun} label="Presensi Pagi" collapsed={isSidebarCollapsed} />}
           {access.presensiSiang && <NavItem to="presensi-siang" icon={Moon} label="Presensi Siang" collapsed={isSidebarCollapsed} />}
+          <NavItem to="piket" icon={Calendar} label="Jadwal Piket" collapsed={isSidebarCollapsed} />
           {access.laporan && <NavItem to="laporan" icon={FileText} label="Laporan Akhir" collapsed={isSidebarCollapsed} />}
           {access.laporanHarian && <NavItem to="laporan-harian" icon={CalendarCheck} label="Laporan Harian" collapsed={isSidebarCollapsed} />}
           {access.keuangan && <NavItem to="keuangan" icon={Wallet} label="KAS Kelas" collapsed={isSidebarCollapsed} />}

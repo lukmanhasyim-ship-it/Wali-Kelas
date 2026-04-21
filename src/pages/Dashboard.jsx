@@ -3,9 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { format, startOfWeek, endOfWeek, parseISO } from 'date-fns';
 import { fetchGAS } from '../utils/gasClient';
-import { calculateDisciplineStatus, formatIDR } from '../utils/logic';
+import { calculateDisciplineStatus, formatIDR, formatDateIndo } from '../utils/logic';
 import StudentCard from '../components/StudentCard';
-import { Users, Wallet, AlertTriangle, CheckCircle2, Bell, ChevronRight } from 'lucide-react';
+import { Users, Wallet, AlertTriangle, CheckCircle2, Bell, ChevronRight, Calendar, Info } from 'lucide-react';
 import Loading from '../components/Loading';
 import Skeleton, { SkeletonStats, SkeletonDashboard } from '../components/Skeleton';
 import EmptyState from '../components/EmptyState';
@@ -13,6 +13,7 @@ import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, AreaChart, Area
 } from 'recharts';
+import { id } from 'date-fns/locale';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -21,7 +22,8 @@ export default function Dashboard() {
     siswa: [],
     presensi: [],
     keuangan: [],
-    archiveKeuangan: []
+    archiveKeuangan: [],
+    piket: []
   });
   const [loading, setLoading] = useState(true);
 
@@ -29,15 +31,24 @@ export default function Dashboard() {
     async function load() {
       try {
         // Fetch all data in parallel using Promise.all
-        const [s, p, k, rk, ar, ad, pg] = await Promise.all([
+        const [s, p, k, rk, ar, ad, pg, pk] = await Promise.all([
           fetchGAS('GET_ALL', { sheet: 'Master_Siswa' }),
           fetchGAS('GET_ALL', { sheet: 'Presensi' }),
           fetchGAS('GET_ALL', { sheet: 'Keuangan' }),
           fetchGAS('GET_ALL', { sheet: 'Archive_Rekap_Keuangan' }),
           fetchGAS('GET_ALL', { sheet: 'Archive_Rekap_Absensi' }),
           fetchGAS('GET_ALL', { sheet: 'Archive_Detail_Absensi' }),
-          fetchGAS('GET_ALL', { sheet: 'Log_Panggilan' })
+          fetchGAS('GET_ALL', { sheet: 'Log_Panggilan' }),
+          fetchGAS('GET_ALL', { sheet: 'Piket' })
         ]);
+
+        // Trigger daily piket notifications once per day
+        const today = format(new Date(), 'yyyy-MM-dd');
+        const lastNotif = localStorage.getItem('last_piket_notif');
+        if (lastNotif !== today) {
+          fetchGAS('SEND_PIKET_NOTIFICATIONS');
+          localStorage.setItem('last_piket_notif', today);
+        }
   
         setData({
           siswa: (s.data || []).filter(st => st.Status_Aktif === 'Aktif'),
@@ -46,7 +57,8 @@ export default function Dashboard() {
           archiveKeuangan: rk.data || [],
           archiveAbsensi: ar.data || [],
           archiveDetail: ad.data || [],
-          panggilan: pg.data || []
+          panggilan: pg.data || [],
+          piket: (typeof pk !== 'undefined' ? pk.data : []) || []
         });
       } catch (error) {
         console.error('Dashboard load error:', error);
@@ -129,7 +141,7 @@ export default function Dashboard() {
       const masuk = dayData.filter(k => k.Tipe === 'Masuk').reduce((sum, k) => sum + Number(k.Jumlah), 0);
       const keluar = dayData.filter(k => k.Tipe === 'Keluar').reduce((sum, k) => sum + Number(k.Jumlah), 0);
       return {
-        date: format(parseISO(date), 'dd MMM'),
+        date: format(parseISO(date), 'dd MMM', { locale: id }),
         Masuk: masuk,
         Keluar: keluar
       };
@@ -144,7 +156,8 @@ export default function Dashboard() {
       kasWeekMasuk, 
       kasWeekKeluar,
       pieData,
-      financialTrendData
+      financialTrendData,
+      piketHariIni: data.piket.filter(p => p.Hari === ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'][new Date().getDay()])
     };
   }, [data, getEffectiveStatus]);
 
@@ -278,6 +291,49 @@ export default function Dashboard() {
               <Wallet className="w-6 h-6 text-white" />
             </div>
           </div>
+        </div>
+
+        {/* Card Piket Hari Ini */}
+        <div className="md:col-span-2 card border-l-4 border-l-emerald-500 overflow-hidden relative group hover:shadow-lg transition-all duration-500">
+           <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-110 transition-transform">
+             <Calendar className="w-24 h-24" />
+           </div>
+           <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl">
+                 <Calendar className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-lg font-black text-slate-800 tracking-tight">Piket Hari Ini</h3>
+                <p className="text-xs text-slate-500 font-medium">{format(new Date(), 'EEEE, dd MMMM yyyy', { locale: id })}</p>
+              </div>
+           </div>
+
+           <div className="flex flex-wrap gap-2">
+              {stats.piketHariIni.length === 0 ? (
+                <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-2xl border border-dashed border-slate-200 w-full animate-pulse">
+                   <Info className="w-4 h-4 text-slate-400" />
+                   <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Belum ada jadwal piket hari ini</p>
+                </div>
+              ) : (
+                stats.piketHariIni.map((m, idx) => (
+                  <div key={idx} className="flex items-center gap-2 px-3 py-2 bg-emerald-50 border border-emerald-100 rounded-xl">
+                    <div className="w-6 h-6 bg-emerald-600 text-white rounded-lg flex items-center justify-center text-[10px] font-black uppercase">
+                       {m.Nama_Siswa.charAt(0)}
+                    </div>
+                    <span className="text-xs font-bold text-emerald-700 tracking-tight">{m.Nama_Siswa}</span>
+                  </div>
+                ))
+              )}
+           </div>
+           
+           {isTeacher && (
+             <button 
+               onClick={() => navigate('/piket')}
+               className="mt-6 flex items-center gap-2 text-[10px] font-black text-indigo-600 uppercase tracking-widest hover:gap-3 transition-all"
+             >
+               Kelola Jadwal Piket <ChevronRight className="w-3 h-3" />
+             </button>
+           )}
         </div>
       </div>
 

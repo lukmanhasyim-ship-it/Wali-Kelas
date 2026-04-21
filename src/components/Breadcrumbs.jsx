@@ -15,7 +15,8 @@ const routeMap = {
   'keuangan': 'KAS Kelas',
   'panggilan': 'Log Panggilan',
   'notifications': 'Notifikasi',
-  'profile': 'Profil Pengguna'
+  'profile': 'Profil Pengguna',
+  'piket': 'Jadwal Piket'
 };
 
 export default function Breadcrumbs() {

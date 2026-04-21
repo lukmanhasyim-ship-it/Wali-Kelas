@@ -3,6 +3,7 @@ import { fetchGAS } from '../utils/gasClient';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { format } from 'date-fns';
+import { id } from 'date-fns/locale';
 import { Sun, CheckCircle, Save, Info } from 'lucide-react';
 import Loading from '../components/Loading';
 import Skeleton, { SkeletonStats, SkeletonTable } from '../components/Skeleton';
@@ -208,7 +209,9 @@ export default function PresensiPagi() {
           <h2 className="text-4xl font-black text-slate-900 tracking-tight">
             Presensi Pagi {user?.managedClass && `- Kelas ${user.managedClass}`}
           </h2>
-          <p className="text-slate-500 font-medium">Catat kehadiran siswa untuk memulai hari yang produktif.</p>
+          <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">
+            {format(new Date(date), 'EEEE, dd MMMM yyyy', { locale: id })}
+          </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
