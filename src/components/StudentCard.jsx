@@ -46,67 +46,76 @@ function StudentCard({ student, disciplineStatus, onWaClick, onWaStudentClick, o
               <span className="text-[9px] text-slate-400 font-bold tracking-tighter">NISN: {student.NISN || '-'}</span>
             </div>
             <div className="mt-0.5">
-              <p className="text-[10px] text-slate-500 font-semibold truncate">
+              <p className="text-[10px] text-slate-500 font-semibold truncate leading-tight">
                 <span className="text-slate-400 font-medium tracking-tight">Wali:</span> {student.Nama_Wali}
               </p>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Right: Actions Section */}
-        <div className="flex-shrink-0 flex flex-col items-end gap-2 border-l border-slate-100 pl-3 ml-0.5">
-          {/* Communication Group */}
-          <div className="flex items-center gap-1">
-            {onContactClick && (
-              <button
-                onClick={() => onContactClick(student)}
-                className="p-1.5 bg-slate-50 text-slate-400 rounded-lg hover:bg-indigo-600 hover:text-white transition-all duration-300 shadow-sm"
-                title="Log Panggilan"
-              >
-                <FileText className="w-3 h-3" />
-              </button>
-            )}
-            {onWaStudentClick && (
-              <button
-                onClick={() => onWaStudentClick(student)}
-                className="p-1.5 bg-slate-50 text-slate-400 rounded-lg hover:bg-sky-500 hover:text-white transition-all duration-300 shadow-sm"
-                title="WhatsApp Siswa"
-              >
-                <MessageCircle className="w-3 h-3" />
-              </button>
-            )}
-            {onWaClick && (
-              <button
-                onClick={() => onWaClick(student)}
-                className="p-1.5 bg-slate-50 text-slate-400 rounded-lg hover:bg-emerald-500 hover:text-white transition-all duration-300 shadow-sm"
-                title="WhatsApp Wali"
-              >
-                <Phone className="w-3 h-3" />
-              </button>
-            )}
-          </div>
+      {/* Reorganized Icon Bar - Bottom Action Area */}
+      <div className="mt-4 pt-3 border-t border-slate-50 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5">
+          {student.Latitude && student.Longitude && (
+            <a
+              href={`https://www.google.com/maps?q=${student.Latitude},${student.Longitude}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-8 h-8 flex items-center justify-center bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-600 hover:text-white transition-all duration-300"
+              title="Buka Maps"
+            >
+              <MapPin className="w-3.5 h-3.5" />
+            </a>
+          )}
+          {onContactClick && (
+            <button
+              onClick={() => onContactClick(student)}
+              className="w-8 h-8 flex items-center justify-center bg-slate-50 text-slate-400 rounded-lg hover:bg-indigo-600 hover:text-white transition-all duration-300"
+              title="Log Panggilan"
+            >
+              <FileText className="w-3.5 h-3.5" />
+            </button>
+          )}
+          {onWaStudentClick && (
+            <button
+              onClick={() => onWaStudentClick(student)}
+              className="w-8 h-8 flex items-center justify-center bg-slate-50 text-slate-400 rounded-lg hover:bg-sky-500 hover:text-white transition-all duration-300"
+              title="WhatsApp Siswa"
+            >
+              <MessageCircle className="w-3.5 h-3.5" />
+            </button>
+          )}
+          {onWaClick && (
+            <button
+              onClick={() => onWaClick(student)}
+              className="w-8 h-8 flex items-center justify-center bg-slate-50 text-slate-400 rounded-lg hover:bg-emerald-500 hover:text-white transition-all duration-300"
+              title="WhatsApp Wali"
+            >
+              <Phone className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
 
-          {/* Management Group */}
-          <div className="flex items-center gap-1 opacity-30 group-hover:opacity-100 transition-opacity">
-            {onEdit && (
-              <button
-                onClick={() => onEdit(student)}
-                className="p-1 bg-slate-50 text-slate-400 rounded-md hover:bg-slate-900 hover:text-white transition-all duration-300"
-                title="Edit"
-              >
-                <Edit3 className="w-2.5 h-2.5" />
-              </button>
-            )}
-            {onDelete && (
-              <button
-                onClick={() => onDelete(student.ID_Siswa)}
-                className="p-1 bg-rose-50 text-rose-300 rounded-md hover:bg-rose-600 hover:text-white transition-all duration-300"
-                title="Hapus"
-              >
-                <Trash2 className="w-2.5 h-2.5" />
-              </button>
-            )}
-          </div>
+        <div className="flex items-center gap-1.5">
+          {onEdit && (
+            <button
+              onClick={() => onEdit(student)}
+              className="w-8 h-8 flex items-center justify-center bg-slate-50 text-slate-400 rounded-lg hover:bg-slate-900 hover:text-white transition-all duration-300"
+              title="Edit"
+            >
+              <Edit3 className="w-3.5 h-3.5" />
+            </button>
+          )}
+          {onDelete && (
+            <button
+              onClick={() => onDelete(student.ID_Siswa)}
+              className="w-8 h-8 flex items-center justify-center bg-rose-50 text-rose-300 rounded-lg hover:bg-rose-600 hover:text-white transition-all duration-300"
+              title="Hapus"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
       </div>
       

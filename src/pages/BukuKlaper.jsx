@@ -63,11 +63,40 @@ export default function BukuKlaper() {
       const d = new Date(tanggal);
       if (!isNaN(d.getTime())) {
         return new Intl.DateTimeFormat('id-ID', {
-          day: '2-digit', month: 'short', year: 'numeric'
+          day: '2-digit', month: 'long', year: 'numeric'
         }).format(d);
       }
     } catch (e) { }
     return tanggal;
+  };
+
+  const formatTahunAjar = (tanggal) => {
+    if (!tanggal) return '-';
+    try {
+      const d = new Date(tanggal);
+      if (isNaN(d.getTime())) return '-';
+
+      const year = d.getFullYear();
+      const month = d.getMonth() + 1; // 1-12
+
+      // Semester Ganjil: Juli - Des (7-12)
+      // Semester Genap: Jan - Juni (1-6)
+      if (month >= 7) {
+        // Ganjil: 2025 / ~~2026~~
+        return (
+          <span className="text-[10px] whitespace-nowrap">
+            {year} / <span className="line-through border-slate-400 opacity-40">{year + 1}</span>
+          </span>
+        );
+      } else {
+        // Genap: ~~2024~~ / 2025
+        return (
+          <span className="text-[10px] whitespace-nowrap">
+            <span className="line-through border-slate-400 opacity-40">{year - 1}</span> / {year}
+          </span>
+        );
+      }
+    } catch (e) { return '-'; }
   };
 
   return (
@@ -75,9 +104,21 @@ export default function BukuKlaper() {
       <style dangerouslySetInnerHTML={{
         __html: `
         @media print {
-          @page { size: landscape; margin: 1cm; }
-          body { -webkit-print-color-adjust: exact; }
-          .card { border: none !important; box-shadow: none !important; padding: 0 !important; }
+          @page { 
+            size: landscape; 
+            margin-top: 1.5cm; 
+            margin-bottom: 0.5cm; 
+            margin-left: 0.5cm; 
+            margin-right: 0.5cm; 
+          }
+          body { -webkit-print-color-adjust: exact; background-color: white !important; }
+          .card { border: none !important; box-shadow: none !important; padding: 0 !important; width: 100% !important; overflow: visible !important; }
+          .table-container { overflow: visible !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
+          table { width: 100% !important; border-collapse: collapse !important; table-layout: auto !important; font-size: 8pt !important; }
+          th, td { border: 1px solid black !important; padding: 2px 4px !important; word-break: break-word; vertical-align: middle; }
+          thead th { background-color: #d6ffe4ff !important; -webkit-print-color-adjust: exact; font-weight: bold; }
+          .line-through { text-decoration: line-through !important; }
+          .print-hidden { display: none !important; }
         }
       `}} />
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between print:hidden">
@@ -91,7 +132,7 @@ export default function BukuKlaper() {
       </div>
 
       <div className="hidden print:block text-center mb-6">
-        <h1 className="text-xl font-bold uppercase underline">Buku Klaper Kelas {user?.managedClass || ''}</h1>
+        <h1 className="text-xl font-bold uppercase underline">Buku Klaper</h1>
         <p className="text-sm">Wali Kelas: {user?.name || '-'}</p>
       </div>
 
@@ -99,8 +140,8 @@ export default function BukuKlaper() {
         title="Panduan Buku Klaper:"
         steps={[
           'Lengkapi data mutasi, ijazah, dan keterangan tanggal masuk/tamat siswa.',
-          'Orientasi kertas akan otomatis diatur menjadi <span class="font-black italic">Landscape</span> saat dicetak agar tabel tidak terpotong.',
-          'Data di halaman ini mencakup seluruh riwayat siswa kelas Anda (baik yang masih Aktif maupun Alumni).',
+          'Format <span class="font-black italic">Tahun Ajar</span> akan otomatis menyesuaikan Semester Ganjil/Genap.',
+          'Orientasi kertas akan otomatis diatur menjadi <span class="font-black italic">Landscape</span> saat dicetak.',
           'Klik tombol <span class="font-black italic">Cetak Buku Klaper</span> untuk mencetak dokumen fisik.'
         ]}
       />
@@ -114,61 +155,69 @@ export default function BukuKlaper() {
           />
         ) : (
           <div className="table-container pt-8 shadow-xl">
-            <table className="modern-table min-w-full">
+            <table className="modern-table min-w-full text-[10px]">
               <thead>
                 <tr>
-                  <th colSpan={3} className="text-center">Nomor</th>
-                  <th rowSpan={2} className="min-w-[120px]">Nama Siswa</th>
-                  <th rowSpan={2} className="w-8">L/P</th>
-                  <th colSpan={2} className="text-center">Kelahiran</th>
-                  <th rowSpan={2} className="min-w-[120px]">Nama Orang Tua Kandung</th>
-                  <th colSpan={3} className="text-center">Tanggal Naik / Masuk Kelas</th>
-                  <th rowSpan={2} className="w-20">Tanggal Tamat Sekolah / Mutasi Keluar</th>
-                  <th rowSpan={2} className="w-24">Status</th>
-                  <th rowSpan={2} className="min-w-[150px]">Keterangan</th>
+                  <th colSpan={3} className="bg-slate-100 text-center align-middle border-slate-300 font-bold">NOMOR</th>
+                  <th rowSpan={2} className="bg-slate-100 text-center align-middle min-w-[150px] border-slate-300 font-bold">NAMA SISWA</th>
+                  <th rowSpan={2} className="bg-slate-100 text-center align-middle w-8 border-slate-300 font-bold">L/P</th>
+                  <th colSpan={2} className="bg-slate-100 text-center align-middle border-slate-300 font-bold">KELAHIRAN</th>
+                  <th rowSpan={2} className="bg-slate-100 text-center align-middle min-w-[120px] border-slate-300 font-bold">NAMA ORANG TUA / WALI</th>
+                  <th colSpan={3} className="bg-slate-100 text-center align-middle border-slate-300 font-bold text-[9px]">THN AJAR MASUK / NAIK KELAS</th>
+                  <th rowSpan={2} className="bg-slate-100 text-center align-middle w-32 leading-tight border-slate-300 font-bold text-[9px]">TGL TAMAT / MUTASI</th>
+                  <th rowSpan={2} className="bg-slate-100 text-center align-middle w-32 border-slate-300 font-bold">STATUS</th>
+                  <th rowSpan={2} className="bg-slate-100 text-center align-middle min-w-[150px] border-slate-300 font-bold">KETERANGAN</th>
                 </tr>
                 <tr>
-                  <th className="w-8">Urut</th>
-                  <th className="w-16">Induk(NIS)</th>
-                  <th className="w-20">NISN</th>
-                  <th className="w-20">Tempat</th>
-                  <th className="w-20">Tanggal</th>
-                  <th className="w-10">X</th>
-                  <th className="w-10">XI</th>
-                  <th className="w-10">XII</th>
+                  <th className="bg-slate-50 text-center align-middle w-8 border-slate-300 text-slate-500 font-normal">Urut</th>
+                  <th className="bg-slate-50 text-center align-middle w-16 border-slate-300 text-slate-500 font-normal">Induk</th>
+                  <th className="bg-slate-50 text-center align-middle w-20 border-slate-300 text-slate-500 font-normal">NISN</th>
+                  <th className="bg-slate-50 text-center align-middle w-20 border-slate-300 text-slate-500 font-normal">Tempat</th>
+                  <th className="bg-slate-50 text-center align-middle w-20 border-slate-300 text-slate-500 font-normal">Tanggal</th>
+                  <th className="bg-slate-50 text-center align-middle w-16 border-slate-300 text-slate-500 font-normal">X</th>
+                  <th className="bg-slate-50 text-center align-middle w-16 border-slate-300 text-slate-500 font-normal">XI</th>
+                  <th className="bg-slate-50 text-center align-middle w-16 border-slate-300 text-slate-500 font-normal">XII</th>
+                </tr>
+                {/* Column Numbering Standard */}
+                <tr className="bg-slate-100/50">
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14].map(num => (
+                    <th key={num} className="py-0.5 text-center align-middle text-[8px] font-bold border-slate-300 text-slate-400 print:text-black">{num}</th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
                 {siswa.map((item, index) => (
-                  <tr key={item.ID_Siswa || index} className="hover:bg-slate-50 print:hover:bg-transparent">
-                    <td className="p-2 border border-slate-300 print:border-black text-center">{index + 1}</td>
-                    <td className="p-2 border border-slate-300 print:border-black text-center">{item.NIS || ''}</td>
-                    <td className="p-2 border border-slate-300 print:border-black text-center">{item.NISN || ''}</td>
-                    <td className="p-2 border border-slate-300 print:border-black font-medium">{item.Nama_Siswa}</td>
-                    <td className="p-2 border border-slate-300 print:border-black text-center">{item['L/P']}</td>
-                    <td className="p-2 border border-slate-300 print:border-black">{item.Tempat_Lahir || ''}</td>
-                    <td className="p-2 border border-slate-300 print:border-black text-center">{formatTanggal(item.Tanggal_Lahir)}</td>
-                    <td className="p-2 border border-slate-300 print:border-black">{item.Nama_Wali || ''}</td>
-                    <td className="p-2 border border-slate-300 print:border-black text-center">{formatTanggal(item.Tanggal_Masuk_X)}</td>
-                    <td className="p-2 border border-slate-300 print:border-black text-center">{formatTanggal(item.Tanggal_Naik_XI)}</td>
-                    <td className="p-2 border border-slate-300 print:border-black text-center">{formatTanggal(item.Tanggal_Naik_XII)}</td>
-                    <td className="p-2 border border-slate-300 print:border-black text-center">{formatTanggal(item.Tanggal_Tamat_Sekolah)}</td>
-                    <td className="p-2 border border-slate-300 print:border-black text-center">
-                      <select
-                        className="bg-transparent border-none focus:ring-0 text-center w-full print:appearance-none cursor-pointer"
-                        value={item.Status_Aktif || 'Aktif'}
-                        onChange={(e) => handleUpdateField(item.ID_Siswa, 'Status_Aktif', e.target.value)}
-                      >
-                        <option value="Aktif">Aktif</option>
-                        <option value="Keluar">Keluar</option>
-                        <option value="Lulus">Lulus</option>
-                      </select>
+                  <tr key={item.ID_Siswa || index} className="hover:bg-slate-50 transition-colors group">
+                    <td className="p-1 border border-slate-200 text-center text-slate-500 italic">{index + 1}</td>
+                    <td className="p-1 border border-slate-300 text-center font-bold text-slate-700">{item.NIS || '-'}</td>
+                    <td className="p-1 border border-slate-300 text-center text-slate-600">{item.NISN || '-'}</td>
+                    <td className="p-1 border border-slate-300 font-bold text-slate-800 uppercase tracking-tight group-hover:text-emerald-700">{item.Nama_Siswa}</td>
+                    <td className="p-1 border border-slate-300 text-center text-slate-600">{item['L/P']}</td>
+                    <td className="p-1 border border-slate-300 text-slate-700">{item.Tempat_Lahir || '-'}</td>
+                    <td className="p-1 border border-slate-300 text-center text-slate-600">{formatTanggal(item.Tanggal_Lahir)}</td>
+                    <td className="p-1 border border-slate-300 text-slate-700">{item.Nama_Wali || '-'}</td>
+                    <td className="p-1 border border-slate-300 text-center">{formatTahunAjar(item.Tanggal_Masuk_X)}</td>
+                    <td className="p-1 border border-slate-300 text-center">{formatTahunAjar(item.Tanggal_Naik_XI)}</td>
+                    <td className="p-1 border border-slate-300 text-center">{formatTahunAjar(item.Tanggal_Naik_XII)}</td>
+                    <td className="p-1 border border-slate-300 text-center whitespace-nowrap text-slate-600">{formatTanggal(item.Tanggal_Tamat_Sekolah)}</td>
+                    <td className="p-1 border border-slate-300 text-center">
+                      <div className="flex items-center justify-center">
+                        <select
+                          className="bg-transparent border-none focus:ring-0 text-center w-full print:appearance-none cursor-pointer text-[10px] font-semibold text-slate-700"
+                          value={item.Status_Aktif || 'Aktif'}
+                          onChange={(e) => handleUpdateField(item.ID_Siswa, 'Status_Aktif', e.target.value)}
+                        >
+                          <option value="Aktif">Aktif</option>
+                          <option value="Keluar">Keluar</option>
+                          <option value="Lulus">Lulus</option>
+                        </select>
+                      </div>
                     </td>
-                    <td className="p-2 border border-slate-300 print:border-black">
+                    <td className="p-1 border border-slate-300">
                       <input
-                        className={`w-full px-2 py-1 rounded text-xs transition-all outline-none border focus:ring-1 focus:ring-emerald-500 ${item.Status_Aktif === 'Keluar'
-                          ? 'bg-white border-slate-200 shadow-sm'
-                          : 'bg-transparent border-transparent cursor-not-allowed opacity-50'
+                        className={`w-full px-2 py-0.5 rounded text-[10px] transition-all outline-none border focus:ring-1 focus:ring-emerald-500 ${item.Status_Aktif === 'Keluar'
+                          ? 'bg-white border-emerald-100 shadow-sm text-emerald-700'
+                          : 'bg-transparent border-transparent cursor-not-allowed opacity-50 text-slate-400 italic'
                           }`}
                         value={item.Keterangan || ''}
                         onChange={(e) => {

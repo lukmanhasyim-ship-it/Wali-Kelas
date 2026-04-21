@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useGoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../context/AuthContext';
 import { fetchGAS } from '../utils/gasClient';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { ShieldAlert, Loader2 } from 'lucide-react';
 import loginIllustration from '../assets/login_illustration.png';
 import appLogo from '../assets/logo.png';
@@ -10,8 +10,25 @@ import googleLogo from '../assets/logo google.png';
 
 export default function Login() {
   const { user, login } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [waliContact, setWaliContact] = useState('6282330295812'); // Default fallback
+
+  React.useEffect(() => {
+    async function loadContact() {
+      try {
+        const res = await fetchGAS('GET_ALL', { sheet: 'Profil_Wali_Kelas' });
+        if (res.data && res.data.length > 0) {
+          const c = res.data[0].Kontak;
+          if (c) setWaliContact(c.replace(/[^0-9]/g, ''));
+        }
+      } catch (err) {
+        console.error('Login contact fetch error:', err);
+      }
+    }
+    loadContact();
+  }, []);
 
   const handleGoogleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
@@ -105,7 +122,7 @@ export default function Login() {
       <div className="absolute bottom-[-100px] right-[10%] w-[300px] h-[300px] border-[1px] border-orange-400 rounded-full opacity-30 pointer-events-none"></div>
       <div className="absolute bottom-[50px] right-[15%] w-6 h-6 bg-blue-600 rounded-full opacity-90 pointer-events-none"></div>
 
-      <div className="w-full max-w-5xl bg-white rounded-2xl shadow-2xl flex flex-col md:flex-row overflow-hidden relative z-10 md:min-h-[600px]">
+      <div className="w-full max-w-5xl bg-white rounded-2xl shadow-2xl flex flex-col md:flex-row overflow-hidden relative z-10 md:min-h-[600px] animate-fade-in">
 
         {/* Left Section - Illustration */}
         <div className="hidden md:flex md:w-[45%] bg-[#E8F2FB] flex-col items-center justify-center p-6 relative overflow-hidden">
@@ -137,7 +154,7 @@ export default function Login() {
             <div className="text-center mb-8 md:mb-10">
               <h1 className="text-[1.3rem] md:text-[1.5rem] font-bold text-slate-800 mb-2">Hai, selamat datang kembali</h1>
               <p className="text-[11px] md:text-[12px] text-slate-500">
-                Baru di Wali Kelas App? <a href="https://api.whatsapp.com/send?phone=6282330295812&text=Hallo%2C%20Saya%20tertarik%20untuk%20menggunakan%20aplikasi%20Wali%20Kelas%20yang%20sudah%20anda%20buat.%20Mohon%20bantu%20saya%20untuk%20konfigurasi%20lebih%20lanjut.%20Terimakasih" className="text-blue-500 hover:underline">Hubungi Admin</a>
+                Belum terdaftar di Siswa.Hub? <button onClick={() => navigate('/register')} className="text-blue-500 hover:underline font-bold">Daftar Sekarang</button>
               </p>
             </div>
 
@@ -170,7 +187,7 @@ export default function Login() {
               </div>
 
               <p className="text-left text-[11px] text-slate-400 mt-6 pt-4 border-t border-slate-100 leading-relaxed">
-                Dengan melanjutkan, kamu menerima <a href="#" className="text-blue-500 hover:underline">Syarat Penggunaan</a> dan <a href="#" className="text-blue-500 hover:underline">Kebijakan Privasi</a> kami.
+                Dengan melanjutkan, kamu menerima <button onClick={() => navigate('/terms')} className="text-blue-500 hover:underline">Syarat Penggunaan</button> dan <button onClick={() => navigate('/privacy')} className="text-blue-500 hover:underline">Kebijakan Privasi</button> kami.
               </p>
             </div>
           </div>

@@ -20,6 +20,9 @@ import Tanggungan from './pages/Tanggungan';
 import Notifications from './pages/Notifications';
 import BukuKlaper from './pages/BukuKlaper';
 import DKN from './pages/DKN';
+import Register from './pages/Register';
+import Terms from './pages/Terms';
+import Privacy from './pages/Privacy';
 
 // Google OAuth Client ID dari .env
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
@@ -54,6 +57,9 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/terms" element={<Terms />} />
+      <Route path="/privacy" element={<Privacy />} />
 
       <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
         <Route index element={<Navigate to="/dashboard" replace />} />

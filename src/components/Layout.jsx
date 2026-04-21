@@ -275,7 +275,7 @@ export default function Layout() {
               >
                 <Bell className="w-5 h-5 transition-transform group-hover:rotate-12" />
                 {notifications.some(n => !n.isRead) && (
-                  <span className="absolute top-2 right-2.1 w-2 h-2 bg-rose-500 rounded-full border-2 border-white animate-pulse" />
+                  <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-rose-500 rounded-full border-2 border-white shadow-sm animate-pulse z-10" />
                 )}
               </button>
 

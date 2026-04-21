@@ -8,6 +8,21 @@ import PageGuide from '../components/PageGuide';
 import { BookOpen, Plus, Save, FileSpreadsheet, Trash2, Edit2, X, Info, FileUp, Download } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
+const KURIKULUM_MERDEKA = [
+  { kategori: 'Umum', mapel: 'Pendidikan Agama Islam dan Budi Pekerti' },
+  { kategori: 'Umum', mapel: 'Pendidikan Kewarganegaraan' },
+  { kategori: 'Umum', mapel: 'Bahasa Indonesia' },
+  { kategori: 'Umum', mapel: 'Sejarah' },
+  { kategori: 'Umum', mapel: 'Seni Budaya' },
+  { kategori: 'Kejuruan', mapel: 'Matematika' },
+  { kategori: 'Kejuruan', mapel: 'Bahasa Inggris' },
+  { kategori: 'Kejuruan', mapel: 'Informatika' },
+  { kategori: 'Kejuruan', mapel: 'Ilmu Pengetahuan Alam dan Sosial' },
+  { kategori: 'Kejuruan', mapel: 'Dasar Program Keahlian', topik: 'Sesuai program keahlian' },
+  { kategori: 'Kejuruan', mapel: 'Konsentrasi Keahlian', topik: 'Sesuai program keahlian' },
+  { kategori: 'Kejuruan', mapel: 'Produk Kreatif dan Kewirausahaan' }
+];
+
 export default function DKN() {
   const { user } = useAuth();
   const { showToast } = useToast();
@@ -88,15 +103,16 @@ export default function DKN() {
       }
     });
 
-    // Sort: Umum first, then Produktif. Group by Mapel.
+    // Sort: Umum first, then Kejuruan, then others. Group by Mapel.
+    const order = { 'Umum': 1, 'Kejuruan': 2, 'Pilihan': 3, 'Muatan Lokal': 4 };
     return result.sort((a, b) => {
       if (a.kategori !== b.kategori) {
-        return a.kategori === 'Umum' ? -1 : 1;
+        return (order[a.kategori] || 9) - (order[b.kategori] || 9);
       }
       if (a.mapel !== b.mapel) {
         return a.mapel.localeCompare(b.mapel);
       }
-      return a.topik.localeCompare(b.topik);
+      return (a.topik || '').localeCompare(b.topik || '');
     });
   }, [semuaNilai, jenjang, semester, addedColumns]);
 
@@ -133,9 +149,8 @@ export default function DKN() {
       showToast('Nama Mapel harus diisi', 'error');
       return;
     }
-    if (newKategori === 'Produktif' && !newTopik) {
-      showToast('Topik wajib diisi untuk mapel produktif', 'error');
-      return;
+    if (newKategori === 'Kejuruan' && !newTopik && (newMapel.toLowerCase().includes('keahlian'))) {
+      showToast('Topik sebaiknya diisi untuk mapel kejuruan spesifik', 'warning');
     }
 
     // Check duplication
@@ -148,14 +163,14 @@ export default function DKN() {
     setAddedColumns(prev => [...prev, {
       kategori: newKategori,
       mapel: newMapel,
-      topik: newKategori === 'Produktif' ? newTopik : ''
+      topik: newTopik || ''
     }]);
 
     // Set default value 0 for all students for this new column
     setDraftNilai(prev => {
       const next = { ...prev };
       siswa.forEach(s => {
-        const key = `${s.ID_Siswa}_${newKategori}_${newMapel}_${newKategori === 'Produktif' ? newTopik : ''}`;
+        const key = `${s.ID_Siswa}_${newKategori}_${newMapel}_${newTopik || ''}`;
         if (next[key] === undefined) {
           next[key] = '0';
         }
@@ -199,41 +214,91 @@ export default function DKN() {
   const [editValues, setEditValues] = useState({ mapel: '', topik: '' });
 
   const startEdit = (col) => {
-    const isNew = addedColumns.some(c => c.kategori === col.kategori && c.mapel === col.mapel && c.topik === col.topik);
-    if (!isNew) {
-      showToast('Hanya kolom yang baru ditambah (draft) yang dapat diedit.', 'warning');
-      return;
-    }
     setEditingCol(col);
     setEditValues({ mapel: col.mapel, topik: col.topik });
   };
 
-  const handleUpdateMapel = () => {
+  const handleUpdateMapel = async () => {
     if (!editValues.mapel) return;
 
-    setAddedColumns(prev => prev.map(c => {
-      if (c.kategori === editingCol.kategori && c.mapel === editingCol.mapel && c.topik === editingCol.topik) {
-        return { ...c, mapel: editValues.mapel, topik: editValues.topik };
-      }
-      return c;
-    }));
+    const isNew = addedColumns.some(c => c.kategori === editingCol.kategori && c.mapel === editingCol.mapel && c.topik === editingCol.topik);
 
-    // Migrate draftNilai keys
-    setDraftNilai(prev => {
-      const next = { ...prev };
-      Object.keys(next).forEach(key => {
-        const oldKeySuffix = `_${editingCol.kategori}_${editingCol.mapel}_${editingCol.topik}`;
-        if (key.endsWith(oldKeySuffix)) {
-          const newKey = key.replace(oldKeySuffix, `_${editingCol.kategori}_${editValues.mapel}_${editValues.topik}`);
-          next[newKey] = next[key];
-          delete next[key];
+    if (isNew) {
+      // Update draft columns
+      setAddedColumns(prev => prev.map(c => {
+        if (c.kategori === editingCol.kategori && c.mapel === editingCol.mapel && c.topik === editingCol.topik) {
+          return { ...c, mapel: editValues.mapel, topik: editValues.topik };
         }
+        return c;
+      }));
+
+      // Migrate draftNilai keys
+      setDraftNilai(prev => {
+        const next = { ...prev };
+        Object.keys(next).forEach(key => {
+          const oldKeySuffix = `_${editingCol.kategori}_${editingCol.mapel}_${editingCol.topik}`;
+          if (key.endsWith(oldKeySuffix)) {
+            const newKey = key.replace(oldKeySuffix, `_${editingCol.kategori}_${editValues.mapel}_${editValues.topik}`);
+            next[newKey] = next[key];
+            delete next[key];
+          }
+        });
+        return next;
       });
-      return next;
-    });
+      showToast('Kolom draft berhasil diperbarui.', 'success');
+    } else {
+      // Update existing subjects in database
+      setSaving(true);
+      try {
+        await fetchGAS('RENAME_MAPEL', {
+          oldMapel: editingCol.mapel,
+          oldTopik: editingCol.topik,
+          newName: editValues.mapel,
+          newTopik: editValues.topik,
+          kategori: editingCol.kategori
+        });
+        showToast('Nama Mapel di database berhasil diubah!', 'success');
+        await loadData();
+      } catch (err) {
+        showToast('Gagal mengubah nama mapel di database.', 'error');
+      } finally {
+        setSaving(false);
+      }
+    }
 
     setEditingCol(null);
-    showToast('Kolom berhasil diperbarui.', 'success');
+  };
+
+  const handleApplyTemplate = () => {
+    let addCount = 0;
+    const newDraft = { ...draftNilai };
+    const newAdded = [...addedColumns];
+
+    KURIKULUM_MERDEKA.forEach(tm => {
+      const exists = columns.some(c => c.mapel === tm.mapel && (c.topik || '') === (tm.topik || '') && c.kategori === tm.kategori);
+      if (!exists) {
+        newAdded.push({
+          kategori: tm.kategori,
+          mapel: tm.mapel,
+          topik: tm.topik || ''
+        });
+        siswa.forEach(s => {
+          const key = `${s.ID_Siswa}_${tm.kategori}_${tm.mapel}_${tm.topik || ''}`;
+          if (newDraft[key] === undefined) {
+             newDraft[key] = '0';
+          }
+        });
+        addCount++;
+      }
+    });
+
+    if (addCount > 0) {
+      setAddedColumns(newAdded);
+      setDraftNilai(newDraft);
+      showToast(`Berhasil menambahkan ${addCount} mapel dari susunan kurikulum.`, 'success');
+    } else {
+      showToast('Semua mapel kurikulum sudah ada.', 'info');
+    }
   };
 
   const handleSave = async () => {
@@ -336,7 +401,7 @@ export default function DKN() {
         lvlCols.forEach(c => headerRow1.push(c.kategori));
 
         const headerRow2 = ['', '', '', '', ''];
-        lvlCols.forEach(c => headerRow2.push(c.kategori === 'Produktif' ? `${c.mapel} (${c.topik})` : c.mapel));
+        lvlCols.forEach(c => headerRow2.push(c.kategori === 'Kejuruan' ? `${c.mapel} (${c.topik})` : c.mapel));
 
         // 3. Prepare Data
         const dataRows = siswa.map((item, index) => {
@@ -392,7 +457,7 @@ export default function DKN() {
 
       // Headers
       const h1 = ['No', 'ID Siswa', 'NISN', 'NIS', 'Nama Siswa', ...columns.map(c => c.kategori)];
-      const h2 = ['', '', '', '', '', ...columns.map(c => c.kategori === 'Produktif' ? `${c.mapel} (${c.topik})` : c.mapel)];
+      const h2 = ['', '', '', '', '', ...columns.map(c => c.kategori === 'Kejuruan' ? `${c.mapel} (${c.topik})` : c.mapel)];
       const data = siswa.map((s, i) => [i + 1, s.ID_Siswa, s.NISN || '-', s.NIS || '-', s.Nama_Siswa, ...columns.map(() => '')]);
 
       const ws = XLSX.utils.aoa_to_sheet([h1, h2, ...data]);
@@ -462,7 +527,7 @@ export default function DKN() {
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between print:hidden">
         <div>
           <h2 className="text-2xl font-bold text-slate-800">Daftar Kumpulan Nilai (Leger)</h2>
-          <p className="text-sm text-slate-500">Kelola dan input nilai Akademik & Produktif siswa.</p>
+          <p className="text-sm text-slate-500">Kelola dan input nilai Akademik & Kejuruan siswa.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-1 p-1 bg-white rounded-xl border border-slate-200 shadow-sm">
@@ -498,7 +563,7 @@ export default function DKN() {
         title="Petunjuk Pengisian Leger:"
         steps={[
           'Pilih <span class="font-black">Jenjang dan Semester</span> terlebih dahulu untuk memfilter data.',
-          'Klik <span class="font-black">+ Tambah Kolom Mapel</span> jika mata pelajaran belum tersedia di tabel.',
+          'Klik <span class="font-black">+ Tambah Kolom Mapel</span> atau <span class="font-black">Terapkan Susunan Mapel</span> jika mata pelajaran belum tersedia.',
           'Masukkan nilai langsung pada kolom (<span class="font-black italic">0-100</span>). Kolom baru/diedit akan berwarna <span class="text-amber-700 font-bold">Kuning</span>.',
           'Arahkan kursor ke judul kolom baru untuk <span class="font-black">Mengubah nama</span> atau <span class="font-black">Menghapus</span> kolom draf tersebut.',
           'Pastikan klik <span class="font-black">Simpan Perubahan</span> agar nilai tersimpan permanen ke database Google Sheets.'
@@ -534,10 +599,11 @@ export default function DKN() {
           <div className="flex items-end gap-2 bg-white p-2 rounded-xl shadow-sm border border-slate-200">
             <div>
               <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Kategori</label>
-              <select value={newKategori} onChange={e => setNewKategori(e.target.value)} className="input-field py-1 px-2 text-sm max-w-[100px]">
+              <select value={newKategori} onChange={e => setNewKategori(e.target.value)} className="input-field py-1 px-2 text-sm max-w-[120px]">
                 <option value="Umum">Umum</option>
-                <option value="Produktif">Produktif</option>
-                <option value="Mulok">Mulok</option>
+                <option value="Kejuruan">Kejuruan</option>
+                <option value="Pilihan">Pilihan</option>
+                <option value="Muatan Lokal">Muatan Lokal</option>
               </select>
             </div>
             <div>
@@ -556,9 +622,14 @@ export default function DKN() {
             <button onClick={() => setShowAddMapel(false)} className="bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs px-3 py-1.5 rounded-lg transition-colors font-medium">Batal</button>
           </div>
         ) : (
-          <button onClick={() => setShowAddMapel(true)} className="btn-secondary flex items-center gap-2 border-dashed border-2 bg-white !text-emerald-700 hover:bg-emerald-50 border-emerald-200 hover:border-emerald-300">
-            <Plus className="w-4 h-4" /> Tambah Kolom Mapel
-          </button>
+          <div className="flex gap-2">
+            <button onClick={handleApplyTemplate} className="btn-secondary flex items-center gap-2 border-dashed border-2 bg-white !text-blue-700 hover:bg-blue-50 border-blue-200 hover:border-blue-300 shadow-sm" title="Terapkan susunan mapel sesuai lampiran">
+               <BookOpen className="w-4 h-4" /> Terapkan Susunan Mapel
+            </button>
+            <button onClick={() => setShowAddMapel(true)} className="btn-secondary flex items-center gap-2 border-dashed border-2 bg-white !text-emerald-700 hover:bg-emerald-50 border-emerald-200 hover:border-emerald-300 shadow-sm">
+              <Plus className="w-4 h-4" /> Tambah Kolom Manual
+            </button>
+          </div>
         )}
       </div>
 
@@ -581,7 +652,7 @@ export default function DKN() {
               <thead>
                 <tr className="bg-emerald-50 text-emerald-900 border-b border-emerald-200 print:bg-gray-100 print:text-black">
                   <th className="p-2 border print:border-black font-bold text-center w-8 text-[11px] uppercase tracking-wider" rowSpan={2}>No</th>
-                  <th className="p-2 border print:border-black font-bold text-center w-24 text-[11px] uppercase tracking-wider hidden md:table-cell" rowSpan={2}>NISN</th>
+                  <th className="p-2 border print:border-black font-bold text-center w-14 text-[10px] uppercase tracking-wider hidden md:table-cell" rowSpan={2}>Ket.</th>
                   <th className="p-2 border print:border-black font-bold min-w-[150px] text-[11px] uppercase tracking-wider" rowSpan={2}>Nama Siswa</th>
                   {/* Group headers by Kategori -> Mapel */}
                   {Array.from(new Set(columns.map(c => c.kategori))).map(kat => {
@@ -595,19 +666,19 @@ export default function DKN() {
                     return (
                       <th key={i} className={`p-2 border print:border-black font-semibold text-center align-top min-w-[100px] group relative ${isNew ? 'bg-emerald-50/50' : ''}`}>
                         <div className="flex flex-col h-full justify-between items-center gap-1">
-                          <div className="text-[11px] text-slate-800 leading-tight pr-4">{c.mapel}</div>
-                          {c.kategori === 'Produktif' && <div className="text-[9px] text-slate-500 font-normal max-w-[80px] mx-auto truncate" title={c.topik}>{c.topik}</div>}
+                          <div className="text-[11px] text-slate-800 leading-tight pr-5">{c.mapel}</div>
+                          {c.topik && <div className="text-[9px] text-slate-500 font-normal max-w-[80px] mx-auto truncate" title={c.topik}>{c.topik}</div>}
 
-                          {isNew && (
-                            <div className="flex items-center gap-1 mt-1 opacity-0 group-hover:opacity-100 transition-opacity print:hidden">
-                              <button onClick={() => startEdit(c)} className="p-1 hover:bg-emerald-100 rounded text-emerald-600 transition-colors">
-                                <Edit2 className="w-3 h-3" />
-                              </button>
-                              <button onClick={() => handleDeleteMapel(c)} className="p-1 hover:bg-red-100 rounded text-red-500 transition-colors">
+                          <div className="flex items-center gap-1 mt-1 opacity-0 group-hover:opacity-100 transition-opacity print:hidden">
+                            <button onClick={() => startEdit(c)} className="p-1 hover:bg-emerald-100 rounded text-emerald-600 transition-colors" title="Edit Nama/Topik">
+                              <Edit2 className="w-3 h-3" />
+                            </button>
+                            {isNew && (
+                              <button onClick={() => handleDeleteMapel(c)} className="p-1 hover:bg-red-100 rounded text-red-500 transition-colors" title="Hapus Draft">
                                 <Trash2 className="w-3 h-3" />
                               </button>
-                            </div>
-                          )}
+                            )}
+                          </div>
                         </div>
                         {isNew && <div className="absolute top-0 right-0 w-1.5 h-1.5 bg-emerald-400 rounded-full m-1" title="Kolom Baru (Belum Disimpan)" />}
                       </th>
@@ -619,7 +690,10 @@ export default function DKN() {
                 {siswa.map((item, index) => (
                   <tr key={item.ID_Siswa || index} className="border-b border-slate-100 hover:bg-slate-50 print:border-black transition-colors">
                     <td className="p-2 border print:border-black text-center text-slate-500 text-xs">{index + 1}</td>
-                    <td className="p-2 border print:border-black text-slate-500 text-xs text-center hidden md:table-cell">{item.ID_Siswa} | {item.NISN || '-'}</td>
+                    <td className="p-1 border print:border-black text-slate-500 text-center hidden md:table-cell">
+                      <div className="text-[10px] font-mono leading-none">{item.ID_Siswa}</div>
+                      <div className="text-[9px] opacity-40 leading-none mt-1">{item.NISN || '-'}</div>
+                    </td>
                     <td className="p-2 border print:border-black font-medium text-slate-800">{item.Nama_Siswa}</td>
                     {columns.map((c, i) => {
                       const val = getDisplayedNilai(item.ID_Siswa, c.kategori, c.mapel, c.topik);
@@ -650,7 +724,7 @@ export default function DKN() {
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-emerald-50">
-              <h3 className="font-bold text-emerald-900">Edit Kolom Draft</h3>
+              <h3 className="font-bold text-emerald-900">Ubah Nama Mata Pelajaran</h3>
               <button onClick={() => setEditingCol(null)} className="p-1 hover:bg-emerald-100 rounded-full transition-colors">
                 <X className="w-5 h-5 text-emerald-600" />
               </button>
@@ -665,17 +739,15 @@ export default function DKN() {
                   placeholder="Cth: Matematika"
                 />
               </div>
-              {editingCol.kategori === 'Produktif' && (
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Topik</label>
-                  <input
-                    value={editValues.topik}
-                    onChange={e => setEditValues({ ...editValues, topik: e.target.value })}
-                    className="input-field"
-                    placeholder="Cth: Aljabar"
-                  />
-                </div>
-              )}
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Topik (Opsional)</label>
+                <input
+                  value={editValues.topik}
+                  onChange={e => setEditValues({ ...editValues, topik: e.target.value })}
+                  className="input-field"
+                  placeholder="Cth: Aljabar / Sesuai Kurikulum"
+                />
+              </div>
               <div className="pt-2 flex gap-3">
                 <button onClick={() => setEditingCol(null)} className="btn-secondary flex-1 py-2 text-sm">Batal</button>
                 <button onClick={handleUpdateMapel} className="btn-primary flex-1 py-2 text-sm">Perbarui</button>

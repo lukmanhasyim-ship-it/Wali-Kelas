@@ -118,6 +118,9 @@ function handleResponse(e) {
       },
       RESET_DATABASE: function() {
         return { status: 'success', data: resetDatabase(payload && payload.email) };
+      },
+      RENAME_MAPEL: function() {
+        return { status: 'success', data: renameMapel(payload && payload.oldMapel, payload && payload.oldTopik, payload && payload.newName, payload && payload.newTopik, payload && payload.kategori) };
       }
     };
 
@@ -189,76 +192,87 @@ function appendData(sheetName, dataObj) {
   sheetName = (sheetName || '').toString();
   if (!sheetName || !dataObj) throw new Error('Sheet name dan data harus diisi.');
 
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName(sheetName);
-  if (!sheet) {
-    sheet = ss.insertSheet(sheetName);
-    sheet.appendRow(Object.keys(dataObj));
-  }
-
-  ensureHeaders(sheet, dataObj);
-  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-
-  // Add Timestamp for Presensi sheet
-  if (sheetName === 'Presensi') {
-    // Use formatDateValue to ensure string consistency
-    if (dataObj.Status_Pagi) {
-      dataObj.Timestamp_Pagi = formatDateValue(new Date(), 'Timestamp_Pagi');
+  var lock = LockService.getScriptLock();
+  try {
+    // Wait for up to 30 seconds for other processes to finish
+    lock.waitLock(30000);
+    
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(sheetName);
+    if (!sheet) {
+      sheet = ss.insertSheet(sheetName);
+      sheet.appendRow(Object.keys(dataObj));
     }
-    if (dataObj.Status_Siang) {
-      dataObj.Timestamp_Siang = formatDateValue(new Date(), 'Timestamp_Siang');
+
+    ensureHeaders(sheet, dataObj);
+    var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+
+    // Add Timestamp for Presensi sheet
+    if (sheetName === 'Presensi') {
+      if (dataObj.Status_Pagi) {
+        dataObj.Timestamp_Pagi = formatDateValue(new Date(), 'Timestamp_Pagi');
+      }
+      if (dataObj.Status_Siang) {
+        dataObj.Timestamp_Siang = formatDateValue(new Date(), 'Timestamp_Siang');
+      }
     }
+
+    var rowData = headers.map(function(header) {
+      var value = dataObj[header];
+      return value !== undefined && value !== null ? formatDateValue(value, header) : '';
+    });
+
+    sheet.appendRow(rowData);
+    return dataObj;
+  } finally {
+    // Always release the lock
+    lock.releaseLock();
   }
-
-  var rowData = headers.map(function(header) {
-    var value = dataObj[header];
-    return value !== undefined && value !== null ? formatDateValue(value, header) : '';
-  });
-
-  sheet.appendRow(rowData);
-  return dataObj;
 }
 
 function updateData(sheetName, id, updateObj) {
   sheetName = (sheetName || '').toString();
   if (!sheetName || id === undefined || id === null || !updateObj) return false;
 
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
-  if (!sheet) return false;
+  var lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(30000);
 
-  // Pastikan field baru masuk ke header jika ada
-  ensureHeaders(sheet, updateObj);
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
+    if (!sheet) return false;
 
-  var range = sheet.getDataRange();
-  var data = range.getValues();
-  if (data.length <= 1) return false;
+    ensureHeaders(sheet, updateObj);
 
-  var headers = data[0];
-  var headerMap = buildHeaderIndex(headers);
-  var pkIndex = 0; 
+    var range = sheet.getDataRange();
+    var data = range.getValues();
+    if (data.length <= 1) return false;
 
-  if (sheetName === 'Presensi' && updateObj.Status_Siang) {
-    updateObj.Timestamp_Siang = formatDateValue(new Date(), 'Timestamp_Siang');
-  }
+    var headers = data[0];
+    var headerMap = buildHeaderIndex(headers);
+    var pkIndex = 0; 
 
-  // Cari baris yang cocok
-  for (var i = 1; i < data.length; i++) {
-    if (data[i][pkIndex].toString() === id.toString()) {
-      var rowRange = sheet.getRange(i + 1, 1, 1, headers.length);
-      var rowValues = [data[i]]; // Ambil data baris saat ini
-      
-      for (var key in updateObj) {
-        if (updateObj.hasOwnProperty(key) && headerMap.hasOwnProperty(key)) {
-          var colIndex = headerMap[key];
-          rowValues[0][colIndex] = formatDateValue(updateObj[key], key);
-        }
-      }
-      // Simpan seluruh baris dengan 1 API call
-      rowRange.setValues(rowValues);
-      return true;
+    if (sheetName === 'Presensi' && updateObj.Status_Siang) {
+      updateObj.Timestamp_Siang = formatDateValue(new Date(), 'Timestamp_Siang');
     }
+
+    for (var i = 1; i < data.length; i++) {
+      if (data[i][pkIndex].toString() === id.toString()) {
+        var rowRange = sheet.getRange(i + 1, 1, 1, headers.length);
+        var rowValues = [data[i]]; 
+        
+        for (var key in updateObj) {
+          if (headerMap[key] !== undefined) {
+            rowValues[0][headerMap[key]] = formatDateValue(updateObj[key], key);
+          }
+        }
+        rowRange.setValues(rowValues);
+        return true;
+      }
+    }
+    return false;
+  } finally {
+    lock.releaseLock();
   }
-  return false;
 }
 
 
@@ -318,11 +332,13 @@ function bulkUpdatePresensi(dataList) {
     if (!itemId) return;
     var key = itemDate + '_' + itemId;
     var rowIdx = keyToRowMap[key];
+    var oldStatusPagi = '';
+    var oldStatusSiang = '';
 
     if (rowIdx !== undefined) {
       // Get old status to check for changes
-      var oldStatusPagi = (fullData[rowIdx][headerMap['Status_Pagi']] || '').toString();
-      var oldStatusSiang = (fullData[rowIdx][headerMap['Status_Siang']] || '').toString();
+      oldStatusPagi = (fullData[rowIdx][headerMap['Status_Pagi']] || '').toString();
+      oldStatusSiang = (fullData[rowIdx][headerMap['Status_Siang']] || '').toString();
 
       // Update existing row in fullData array
       for (var keyAttr in item) {
@@ -356,38 +372,52 @@ function bulkUpdatePresensi(dataList) {
       newRows.push(newRow);
     }
 
-    // --- INTEGRASI NOTIFIKASI ---
-    try {
-      var student = studentsData.find(function(s) { 
-        return s.ID_Siswa.toString() === item.ID_Siswa.toString(); 
-      });
-      
-      if (student && student.Email) {
-        var statusMsg = '';
-        var currentStatus = item.Status_Pagi || item.Status_Siang;
-        var studentName = student.Nama_Siswa || 'Siswa';
-        
-        if (currentStatus === 'S') {
-          statusMsg = 'Hallo, saya melihat ' + studentName + ' sedang sakit. Kami sekelas berharap kamu segera kembali sehat dan bersama-sama belajar. Semoga ' + studentName + ' lekas sembuh.';
-        } else if (item.Status_Pagi) {
-          statusMsg = 'Absensi Pagi telah dicatat: ' + item.Status_Pagi;
-        } else if (item.Status_Siang) {
-          statusMsg = 'Absensi Siang telah dicatat: ' + item.Status_Siang;
-        }
+        // --- INTEGRASI NOTIFIKASI ---
+        try {
+          var student = studentsData.find(function(s) { 
+            return s.ID_Siswa.toString() === item.ID_Siswa.toString(); 
+          });
+          
+          if (student && student.Email) {
+            var studentName = student.Nama_Siswa || 'Siswa';
+            var nowStr = Utilities.formatDate(new Date(), "GMT+7", "yyyy-MM-dd'T'HH:mm:ssXXX");
 
-        if (statusMsg) {
-          createNotification(
-            statusMsg, 
-            currentStatus === 'H' ? 'success' : (currentStatus === 'S' ? 'info' : 'info'), 
-            'Siswa', 
-            student.Email
-          );
+            // Notifikasi Pagi (Hanya jika ada PERUBAHAN status)
+            var newPagi = (item.Status_Pagi || '').toString();
+            if (newPagi && newPagi !== oldStatusPagi) {
+              var msgPagi = '';
+              if (newPagi === 'H') {
+                msgPagi = 'Terimakasih, ' + studentName + ' telah hadir. Selamat belajar.';
+              } else if (newPagi === 'S') {
+                msgPagi = 'Hallo, ' + studentName + ' terpantau sedang Sakit. Semoga lekas sembuh!';
+              } else {
+                msgPagi = 'Absensi Pagi ' + studentName + ' dicatat: ' + newPagi;
+              }
+              
+              createNotification(msgPagi, newPagi === 'H' ? 'success' : 'info', 'Siswa', student.Email);
+              // Tambahkan notifikasi untuk Wali Kelas (yang juga bisa dilihat Pengurus)
+              createNotification(msgPagi, 'info', 'Wali Kelas', '');
+            }
+
+            // Notifikasi Siang (Hanya jika ada PERUBAHAN status)
+            var newSiang = (item.Status_Siang || '').toString();
+            if (newSiang && newSiang !== oldStatusSiang) {
+              var msgSiang = '';
+              if (newSiang === 'H') {
+                msgSiang = 'Ok, Absensi siang ' + studentName + ' sudah di catat.';
+              } else {
+                msgSiang = 'Absensi Siang ' + studentName + ' dicatat: ' + newSiang;
+              }
+              
+              createNotification(msgSiang, newSiang === 'H' ? 'success' : 'info', 'Siswa', student.Email);
+              // Tambahkan notifikasi untuk Wali Kelas (yang juga bisa dilihat Pengurus)
+              createNotification(msgSiang, 'info', 'Wali Kelas', '');
+            }
+          }
+        } catch (e) {
+          Logger.log('Gagal membuat notifikasi absensi: ' + e.toString());
         }
-      }
-    } catch (e) {
-      Logger.log('Gagal membuat notifikasi absensi: ' + e.toString());
-    }
-    // ----------------------------
+        // ----------------------------
   });
 
   // Write back updated data
@@ -491,50 +521,62 @@ function bulkUpdateNilai(dataList) {
 }
 
 function bulkUpdateMasterHistory(dataList) {
-  if (!dataList || !Array.isArray(dataList)) throw new Error('Data harus berupa array.');
+  if (!dataList || !Array.isArray(dataList) || dataList.length === 0) return false;
   
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName('Master_Siswa');
-  if (!sheet) return false;
+  var lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(30000);
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName('Master_Siswa');
+    if (!sheet) return false;
 
-  var range = sheet.getDataRange();
-  var fullData = range.getValues();
-  var headers = fullData[0];
-  var headerMap = buildHeaderIndex(headers);
-  var idIdx = headerMap['ID_Siswa'] !== undefined ? headerMap['ID_Siswa'] : headerMap['NISN'];
-  
-  if (idIdx === undefined) throw new Error('Kolom identitas tidak ditemukan.');
+    // Pastikan header ada (ambil sampel dari item pertama)
+    ensureHeaders(sheet, dataList[0]);
 
-  // Create mapping for fast row lookup
-  var idToRowMap = {};
-  for (var i = 1; i < fullData.length; i++) {
-    var idVal = (fullData[i][idIdx] || '').toString();
-    if (idVal) idToRowMap[idVal] = i;
-  }
+    var range = sheet.getDataRange();
+    var fullData = range.getValues();
+    var headers = fullData[0];
+    var headerMap = buildHeaderIndex(headers);
+    
+    // Cari index kolom identitas
+    var idSiswaIdx = headerMap['ID_Siswa'];
+    var nisnIdx = headerMap['NISN'];
 
-  var updatedCount = 0;
-  dataList.forEach(function(item) {
-    var idVal = (item.ID_Siswa || item.NISN || '').toString();
-    if (!idVal) return;
-    var rowIdx = idToRowMap[idVal];
-
-    if (rowIdx !== undefined) {
-      for (var keyAttr in item) {
-        if (item.hasOwnProperty(keyAttr) && headerMap.hasOwnProperty(keyAttr) && keyAttr !== 'ID_Siswa' && keyAttr !== 'NISN') {
-          var colIdx = headerMap[keyAttr];
-          fullData[rowIdx][colIdx] = formatDateValue(item[keyAttr], keyAttr);
-        }
-      }
-      updatedCount++;
+    // Map baris berdasarkan ID_Siswa dan NISN untuk pencarian cepat
+    var rowLookup = {};
+    for (var i = 1; i < fullData.length; i++) {
+        var idVal = idSiswaIdx !== undefined ? (fullData[i][idSiswaIdx] || '').toString() : '';
+        var nisnVal = nisnIdx !== undefined ? (fullData[i][nisnIdx] || '').toString() : '';
+        if (idVal) rowLookup[idVal] = i;
+        if (nisnVal) rowLookup[nisnVal] = i;
     }
-  });
 
-  // Write all data back in one batch operation
-  if (updatedCount > 0) {
-    range.setValues(fullData);
+    var updatedCount = 0;
+    dataList.forEach(function(item) {
+      var searchKey = (item.ID_Siswa || item.NISN || '').toString();
+      if (!searchKey) return;
+      
+      var rowIdx = rowLookup[searchKey];
+
+      if (rowIdx !== undefined) {
+        for (var keyAttr in item) {
+          if (item.hasOwnProperty(keyAttr) && headerMap[keyAttr] !== undefined && keyAttr !== 'ID_Siswa' && keyAttr !== 'NISN') {
+            var colIdx = headerMap[keyAttr];
+            fullData[rowIdx][colIdx] = formatDateValue(item[keyAttr], keyAttr);
+          }
+        }
+        updatedCount++;
+      }
+    });
+
+    if (updatedCount > 0) {
+      range.setValues(fullData);
+      return true;
+    }
+    return false;
+  } finally {
+    lock.releaseLock();
   }
-
-  return true;
 }
 
 function loginWali(email) {
@@ -565,15 +607,32 @@ function getNotifications(role, email) {
   if (!all) return [];
 
   return all.filter(function(n) {
-    // Check role match
+    // Role Hierarchy & Mapping
     var nRole = (n.Target_Role || 'ALL').toString().toUpperCase();
     var uRole = (role || 'SISWA').toString().toUpperCase();
-    var roleMatch = nRole === 'ALL' || nRole === uRole;
-
-    // Check email match
+    
+    // Core check: Individual Email match
     var nEmail = (n.Target_Email || '').toString().toLowerCase();
     var uEmail = (email || '').toString().toLowerCase();
     var emailMatch = nEmail === '' || nEmail === uEmail;
+
+    // Role Match Logic:
+    // 1. ALL matches everyone
+    // 2. Exact role matches (Wali Kelas -> Wali Kelas)
+    // 3. Officers (Ketua, Bendahara, Sekre) can see notifications targeted to 'SISWA'
+    // 4. Wali Kelas can see everything except maybe highly private student stuff?
+    //    Actually, let Wali Kelas see 'SISWA' role notifications too.
+    var roleMatch = (nRole === 'ALL') || (nRole === uRole);
+    
+    if (!roleMatch) {
+      if (nRole === 'SISWA' || nRole === 'WALI KELAS') {
+        // Bendahara, Sekretaris, Ketua Kelas adalah Pengurus yang bisa melihat notifikasi umum
+        var officerRoles = ['KETUA KELAS', 'BENDAHARA', 'SEKRETARIS', 'WALI KELAS'];
+        if (officerRoles.indexOf(uRole) !== -1) {
+          roleMatch = true;
+        }
+      }
+    }
 
     return roleMatch && emailMatch;
   }).sort(function(a, b) {
@@ -589,7 +648,7 @@ function createNotification(message, type, targetRole, targetEmail) {
     Target_Role: targetRole || 'ALL',
     Target_Email: targetEmail || '',
     Is_Read: 'false',
-    Timestamp: new Date()
+    Timestamp: Utilities.formatDate(new Date(), "GMT+7", "yyyy-MM-dd'T'HH:mm:ssXXX")
   };
   appendData('Notifikasi', row);
   return row;
@@ -927,4 +986,36 @@ function resetDatabase(requesterEmail) {
   createNotification('Database telah direset sepenuhnya oleh ' + requesterEmail + '. Semua data siswa, transaksi, dan arsip telah dihapus.', 'alert', 'Wali Kelas', requesterEmail);
   
   return "Database berhasil direset. Seluruh records pada semua sheet telah dihapus, menyisakan header dan data Wali Kelas.";
+}
+
+function renameMapel(oldMapel, oldTopik, newName, newTopik, kategori) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('Daftar_Nilai');
+  if (!sheet) return false;
+  
+  var range = sheet.getDataRange();
+  var data = range.getValues();
+  var headers = data[0];
+  var hMap = buildHeaderIndex(headers);
+  var mapelIdx = hMap['Nama_Mapel'];
+  var topikIdx = hMap['Topik'];
+  var katIdx = hMap['Kategori_Mapel'];
+  
+  var updatedCount = 0;
+  for (var i = 1; i < data.length; i++) {
+    var m = (data[i][mapelIdx] || '').toString();
+    var t = (data[i][topikIdx] || '').toString();
+    var k = (data[i][katIdx] || '').toString();
+    
+    if (m === oldMapel && t === oldTopik && k === kategori) {
+      data[i][mapelIdx] = newName;
+      data[i][topikIdx] = newTopik;
+      updatedCount++;
+    }
+  }
+  
+  if (updatedCount > 0) {
+    range.setValues(data);
+  }
+  return updatedCount;
 }
