@@ -1,6 +1,6 @@
 # Siswa.Hub - Ekosistem Manajemen Kelas Digital Premium
 
-Siswa.Hub adalah platform revolusioner berbasis **Serverless** yang dirancang khusus untuk memodernisasi kinerja Wali Kelas dan sekolah dalam mengelola administrasi siswa. Mengusung konsep *Human-Centric Design*, aplikasi ini memadukan estetika antarmuka (UI) mutakhir dengan logika sistem yang cerdas, transparan, dan peduli.
+Siswa.Hub adalah platform revolusioner berbasis **Serverless** yang dirancang khusus untuk memodernisasi kinerja Wali Kelas dalam mengelola administrasi siswa. Mengusung konsep *Human-Centric Design*, aplikasi ini memadukan estetika antarmuka (UI) mutakhir dengan logika sistem yang cerdas, transparan, dan peduli.
 
 ---
 
@@ -8,77 +8,82 @@ Siswa.Hub adalah platform revolusioner berbasis **Serverless** yang dirancang kh
 
 ### 🖥️ Smart & Personal Dashboard
 *   **Contextual Greeting**: Penyambutan personal berdasarkan Role (Wali Kelas / Siswa).
-*   **Privacy-First Alerts**: Siswa hanya melihat status kedisiplinan miliknya sendiri, sementara Wali Kelas mengontrol seluruh kelas.
+*   **Privacy-First Alerts**: Siswa hanya melihat status kedisiplinan dan nilai miliknya sendiri.
 *   **Real-time Analytics**: Visualisasi kehadiran hari ini dan saldo kas mingguan secara instan.
 
-### ⏰ Presensi & Manajemen Kedisiplinan Terpadu
-*   **Dual-Session Attendance**: Pencatatan pagi dan siang untuk akurasi maksimal.
-*   **Automated Archive Integration**: Data otomatis digabungkan dari sheet aktif dan arsip historis (`Archive_*`) untuk laporan bulanan/semester yang utuh.
-*   **Smart Disciplinary Workflow**: Notifikasi "Siap Panggil" otomatis berubah menjadi status "Sudah Dipanggil" saat surat panggilan dibuat.
+### 📚 Administrasi Akademik & Kurikulum Merdeka
+*   **Leger Nilai (DKN)**: Modul pengelolaan nilai yang fleksibel dengan fitur **"Terapkan Susunan Mapel"** otomatis dan editor nama mata pelajaran dinamis.
+*   **Buku Klaper Digital**: Arsip data mutasi, ijazah, dan riwayat siswa yang rapi dan siap cetak.
+*   **Dual-Session Attendance**: Pencatatan presensi pagi dan siang untuk akurasi maksimal.
 
-### 💰 Keuangan & Tanggungan Transparan
-*   **4-Column Financial Report**: Laporan saldo transparan (Saldo Awal, Masuk, Keluar, Saldo Akhir).
-*   **Cumulative Balance**: Saldo kas tetap berlanjut meskipun periode bulan sudah diarsip.
-*   **Debtor Tracking**: Deteksi otomatis siswa yang memiliki tanggungan iuran kas kelas.
+### 💰 Keuangan & Kedisiplinan Terpadu
+*   **Laporan Kas 4 Kolom**: Transparansi dana kelas dengan deteksi otomatis siswa yang memiliki tanggungan (Debtor Tracking).
+*   **Smart Disciplinary Workflow**: Log panggilan resmi, home visit, dan integrasi Google Maps ke rumah siswa.
+*   **Integrated WhatsApp**: Pesan motivasi otomatis dan notifikasi resmi dengan formatting kode negara (62).
 
-
-### 📞 Log Panggilan & Pendampingan
-*   **Wali Kelas Exclusive**: Fitur pemanggilan resmi dan akses Google Maps rumah siswa hanya dapat diakses oleh Wali Kelas.
-*   **Premium Call History**: Tabel riwayat panggilan interaktif dengan pencarian instan, filter kategori (Home Visit/Teguran), dan animasi status yang modern.
-*   **Integrated WhatsApp**: Tombol chat langsung ke nomor Siswa atau nomor Wali dengan **Auto-formatting Kode Negara (62)** dan pesan motivasi otomatis.
-
-### 🛡️ Keamanan & Pemeliharaan Sistem
-*   **Database Reset Control**: Fitur pembersihan database menyeluruh (kecuali Profil Wali Kelas) dengan proteksi konfirmasi ganda "RESET" untuk keamanan data.
-*   **Student Self-Service Profile**: Siswa dapat melengkapi dan memperbarui data pribadi (No WA, Tempat/Tanggal Lahir, Alamat) secara mandiri.
-*   **Clean Database Policy**: Sistem memfilter data secara dinamis berdasarkan status keaktifan (hanya menampilkan siswa Aktif pada iuran kas dan presensi).
+### 🛡️ Registrasi & Keamanan
+*   **Self-Registration System**: Siswa baru dapat mendaftar mandiri via aplikasi yang langsung terhubung ke WhatsApp Wali Kelas.
+*   **Google OAuth 2.0**: Keamanan tingkat tinggi menggunakan akun Gmail resmi sekolah.
 
 ---
 
-## 🛠️ Panduan Instalasi (Development)
+## 🛠️ Panduan Instalasi (Mendetail)
 
-### 1. Prasyarat
-*   Node.js versi 18 ke atas.
-*   Akun Google (untuk Spreadsheet & Apps Script).
+### 1. Prasyarat Sistem
+*   **Node.js**: Versi 18 atau lebih tinggi.
+*   **Google Account**: Untuk mengelola Google Sheets dan Google Apps Script.
 
-### 2. Setup Database (Google Sheets)
-Buat Spreadsheet baru dan buat sheet dengan struktur kolom **PERSIS** seperti berikut:
+### 2. Persiapan Database (Google Sheets)
+1.  Buat Spreadsheet baru di Google Drive Anda.
+2.  Buat sheet-sheet berikut dengan nama dan struktur kolom (Baris 1) **HARUS PERSIS**:
 
-| Nama Sheet | Struktur Kolom (Header Baris 1) |
+| Nama Sheet | Struktur Kolom (Header) |
 | :--- | :--- |
 | **Profil_Wali_Kelas** | Id_Wali, Nama, Email, Bio, Gaya_Ajar, Kontak, Alamat, Latitude, Longitude, Lokasi, Nominal_Iuran, Kelas, Semester |
 | **Master_Siswa** | ID_Siswa, NISN, NIS, Nama_Siswa, L/P, Tempat_Lahir, Tanggal_Lahir, Email, Jabatan, No_WA_Siswa, Nama_Wali, No_WA_Wali, Alamat, Latitude, Longitude, Lokasi, Status_Aktif, Keterangan, Tanggal_Masuk_X, Tanggal_Naik_XI, Tanggal_Naik_XII, Tanggal_Tamat_Sekolah |
+| **Daftar_Nilai** | ID_Siswa, Kategori_Mapel, Nama_Mapel, Topik, Nilai, KKM |
 | **Presensi** | ID_Presensi, Tanggal, ID_Siswa, NISN, Sesi, Status, Keterangan |
 | **Keuangan** | ID_Transaksi, Tanggal, ID_Siswa, NISN, Tipe, Jumlah, Keterangan |
 | **Log_Panggilan** | ID_Panggilan, Tanggal, NISN, Kategori, Alasan, Hasil_Pertemuan, Status_Selesai |
 | **Notifikasi** | ID, Message, Type, Timestamp, Role, Email, Is_Read |
-| **Archive_Detail_Absensi** | (Sama dengan struktur sheet *Presensi*) |
-| **Archive_Rekap_Absensi** | ID_Siswa, Bulan, H, S, I, A, B |
-| **Archive_Rekap_Keuangan** | Bulan, Saldo_Awal, Total_Masuk, Total_Keluar, Saldo_Akhir |
 
-### 3. Deploy Backend (Google Apps Script)
-1.  Buka Spreadsheet > Menu **Extensions** > **Apps Script**.
-2.  Copy seluruh isi file `gas/Code.gs` ke editor Apps Script.
-3.  Klik **Deploy** > **New Deployment** > Type: **Web App**.
-4.  Set *Execute as:* **Me** dan *Who has access:* **Anyone**.
-5.  Catat **Web App URL** yang dihasilkan.
+### 3. Konfigurasi Google Apps Script (Backend)
+1.  Di Spreadsheet Anda, klik menu **Extensions** > **Apps Script**.
+2.  Hapus kode yang ada, lalu salin seluruh isi dari file `gas/Code.gs` di repository ini.
+3.  Simpan proyek dengan nama "Siswa.Hub Backend".
+4.  Klik tombol **Deploy** (biru) > **New Deployment**.
+    *   Select type: **Web App**.
+    *   Description: "Initial Deployment".
+    *   Execute as: **Me** (Email Anda).
+    *   Who has access: **Anyone**.
+5.  Klik **Deploy**, berikan izin (Authorize Access), dan salin **Web App URL** Anda.
 
-### 4. Setup Frontend
-1. Clone repository ini.
-2. Jalankan `npm install`.
-3. Buat file `.env` di root direktori:
-   ```env
-   VITE_GAS_URL=URL_WEB_APP_ANDA_DISINI
-   VITE_GOOGLE_CLIENT_ID=CLIENT_ID_GOOGLE_OAUTH_ANDA
-   ```
-4. Jalankan `npm run dev` untuk memulai server lokal.
+### 4. Konfigurasi Google Cloud (Untuk Login)
+1.  Buka [Google Cloud Console](https://console.cloud.google.com/).
+2.  Buat Proyek baru > Buka **APIs & Services** > **OAuth consent screen**.
+3.  Pilih **External**, isi data aplikasi, lalu tambahkan scope `./auth/userinfo.email` dan `./auth/userinfo.profile`.
+4.  Buka tab **Credentials** > **Create Credentials** > **OAuth client ID**.
+    *   Application type: **Web application**.
+    *   Authorized JavaScript origins: `http://localhost:5173` (untuk dev) dan URL hosting Anda.
+5.  Salin **Client ID** yang dihasilkan.
+
+### 5. Setup Frontend
+1.  Clone repository ini ke komputer Anda.
+2.  Jalankan perintah: `npm install`.
+3.  Buat file bernama `.env` di root folder aplikasi, lalu isi:
+    ```env
+    VITE_GAS_API_URL=MASUKKAN_WEB_APP_URL_GAS_DISINI
+    VITE_GOOGLE_CLIENT_ID=MASUKKAN_CLIENT_ID_GOOGLE_DISINI
+    ```
+4.  Jalankan aplikasi dengan: `npm run dev`.
 
 ---
 
-## 🎨 Tech Stack & UX
-*   **React 19 + Vite 6**: Performa kilat dan reaktivitas tinggi.
-*   **Vanilla CSS + Design Tokens**: Layout kustom dengan standar estetika premium dan responsif.
-*   **Indonesian Date Standard**: Seluruh aplikasi menggunakan format **DD MMMM YYYY** (contoh: 20 April 2026).
-*   **Caring Language**: Tone komunikasi yang memotivasi, peduli, dan tidak menghukum.
+## 🎨 Tech Stack
+*   **Frontend**: React 19, Vite 6, Tailwind CSS (Core Logic), Lucide React Icons.
+*   **Backend**: Google Apps Script (GAS).
+*   **Database**: Google Sheets API.
+*   **Security**: Google OAuth 2.0.
 
 ---
 
