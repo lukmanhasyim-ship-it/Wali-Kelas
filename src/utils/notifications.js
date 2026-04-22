@@ -64,10 +64,12 @@ export async function sendNotification(studentsList, options) {
           ID: 'NT' + Date.now() + Math.random().toString(36).substr(2, 4),
           Message: r.msg,
           Type: r.type || type,
+          Target_Email: r.email,
+          Is_Read: 'FALSE',
           Timestamp: new Date().toISOString(),
+          Target_Role: r.role,
           Role: r.role,
-          Email: r.email,
-          Is_Read: 'FALSE'
+          Email: r.email
         }
       }).catch(err => console.warn('Failed to send individual notification to', r.email, err))
     );

@@ -605,7 +605,7 @@ function getNotifications(role, email) {
   var sheet = ss.getSheetByName('Notifikasi');
   if (!sheet) {
     sheet = ss.insertSheet('Notifikasi');
-    sheet.appendRow(['ID', 'Message', 'Type', 'Target_Role', 'Target_Email', 'Is_Read', 'Timestamp']);
+    sheet.appendRow(['ID', 'Message', 'Type', 'Target_Email', 'Is_Read', 'Timestamp', 'Target_Role', 'Role', 'Email']);
     createNotification('Selamat datang di SISWA.HUB! Sistem manajemen kelas digital Anda sudah siap digunakan.', 'success', 'ALL');
   }
 
@@ -648,13 +648,15 @@ function getNotifications(role, email) {
 
 function createNotification(message, type, targetRole, targetEmail) {
   var row = {
-    ID: new Date().getTime().toString(),
+    ID: 'NT' + new Date().getTime().toString(),
     Message: message,
-    Type: type || 'info', // info, success, alert
-    Target_Role: targetRole || 'ALL',
+    Type: type || 'info', 
     Target_Email: targetEmail || '',
     Is_Read: 'false',
-    Timestamp: Utilities.formatDate(new Date(), "GMT+7", "yyyy-MM-dd'T'HH:mm:ssXXX")
+    Timestamp: Utilities.formatDate(new Date(), "GMT+7", "yyyy-MM-dd'T'HH:mm:ssXXX"),
+    Target_Role: targetRole || 'ALL',
+    Role: targetRole || 'ALL', // Sesuai schema 9 kolom
+    Email: targetEmail || ''    // Sesuai schema 9 kolom
   };
   appendData('Notifikasi', row);
   return row;

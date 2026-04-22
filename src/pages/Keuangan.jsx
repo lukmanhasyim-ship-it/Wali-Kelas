@@ -189,11 +189,32 @@ export default function Keuangan() {
 
   const handleDelete = useCallback(async (trxId) => {
     if (!canEdit) return;
+    
+    // Cari detail transaksi sebelum dihapus untuk kebutuhan notifikasi
+    const trx = keuangan.find(t => String(t.ID_Transaksi) === String(trxId));
+    if (!trx) return;
+
     if (!window.confirm('Apakah Anda yakin ingin membatalkan transaksi ini? Saldo akan disesuaikan kembali.')) return;
 
     setLoading(true);
     try {
       await fetchGAS('DELETE', { sheet: 'Keuangan', id: trxId });
+      
+      // Kirim notifikasi jika transaksi ini adalah pembayaran (Masuk)
+      if (trx.Tipe === 'Masuk' && trx.ID_Siswa) {
+        const studentName = activeStudents.find(s => String(s.ID_Siswa) === String(trx.ID_Siswa))?.Nama_Siswa || trx.ID_Siswa;
+        
+        await sendNotification(activeStudents, {
+          subjectId: trx.ID_Siswa,
+          targetRoles: ['Bendahara', 'Wali Kelas'],
+          message: `Otoritas Keuangan: Transaksi KAS dari ${studentName} sebesar ${formatIDR(trx.Jumlah)} telah dibatalkan/dihapus oleh pengelola.`,
+          selfMessage: `Info Pembatalan: Transaksi pembayaran KAS Anda sebesar ${formatIDR(trx.Jumlah)} telah dibatalkan oleh pengelola kelas. Silakan hubungi Bendahara jika ini adalah kekeliruan.`,
+          includeSelf: true,
+          type: 'warning',
+          waliEmail: user?.email
+        });
+      }
+
       showToast('Transaksi berhasil dibatalkan.', 'success');
       await loadKeuangan();
     } catch (error) {
@@ -202,7 +223,7 @@ export default function Keuangan() {
     } finally {
       setLoading(false);
     }
-  }, [canEdit, loadKeuangan, showToast]);
+  }, [canEdit, keuangan, activeStudents, loadKeuangan, showToast, user?.email]);
 
   if (loading) return <Loading message="Menyatukan aliran dana kelas..." />;
 
