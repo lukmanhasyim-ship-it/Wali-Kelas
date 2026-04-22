@@ -23,7 +23,7 @@ export default function Keuangan() {
   const [nominalIuran, setNominalIuran] = useState(0);
 
   const role = user?.role || 'Siswa';
-  const canEdit = ['Bendahara', 'Wali Kelas'].includes(role);
+  const canEdit = role === 'Bendahara';
 
   // Form State
   const [idSiswa, setIdSiswa] = useState('');

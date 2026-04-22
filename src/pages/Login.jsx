@@ -68,7 +68,7 @@ export default function Login() {
 
           login({
             token: tokenResponse.access_token,
-            name: userInfo.name,
+            name: matchingUser.Nama_Siswa || userInfo.name,
             email: userInfo.email,
             picture: userInfo.picture,
             managedClass: studentClass

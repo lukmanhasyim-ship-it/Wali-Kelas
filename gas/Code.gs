@@ -588,7 +588,9 @@ function bulkUpdateMasterHistory(dataList) {
 function loginWali(email) {
   if (!email) throw new Error('Email harus diisi.');
   var wali = readData('Profil_Wali_Kelas').find(function(item) {
-    return item.Email && item.Email.toString().toLowerCase() === email.toString().toLowerCase();
+    if (!item.Email) return false;
+    var emails = item.Email.toString().toLowerCase().split(',').map(function(e) { return e.trim(); });
+    return emails.indexOf(email.toString().toLowerCase()) !== -1;
   });
   if (!wali) throw new Error('Email wali kelas tidak ditemukan.');
   return wali;
@@ -736,12 +738,6 @@ function setupSpreadsheet() {
   
   var profil = ss.insertSheet('Profil_Wali_Kelas');
   profil.appendRow(['Id_Wali', 'Nama', 'Email', 'Bio', 'Gaya_Ajar', 'Kontak', 'Created_At', 'Nominal_Iuran', 'Kelas']);
-  
-  var queue = ss.insertSheet('Queue_Chat');
-  queue.appendRow(['ID_Queue', 'Email', 'ID_Siswa', 'Student_Name', 'Query', 'Attendance_Detail', 'Summary', 'Status', 'Response', 'Created_At', 'Processed_At']);
-  
-  var catatan = ss.insertSheet('Catatan_Siswa');
-  catatan.appendRow(['ID_Siswa', 'Nama_Siswa', 'Tanggal', 'Ringkasan_AI', 'Tindak_Lanjut', 'Created_By']);
 
   var lokasi = ss.insertSheet('Lokasi');
   lokasi.appendRow(['ID_Lokasi', 'Nama_Lokasi', 'Deskripsi', 'Alamat', 'Latitude', 'Longitude', 'Lokasi', 'Created_By', 'Created_By_Email', 'Created_At']);

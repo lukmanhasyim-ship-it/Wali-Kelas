@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Users, ClipboardList, CalendarCheck,
   Wallet, PhoneCall, LogOut, Sun, Moon, FileText,
   Edit3, User, Settings, Bell, BookOpen, LibraryBig,
-  ChevronLeft, ChevronRight, Search, Calendar
+  ChevronLeft, ChevronRight, Search, Calendar, Menu, X
 } from 'lucide-react';
 import Breadcrumbs from './Breadcrumbs';
 import { useAuth } from '../context/AuthContext';
@@ -14,10 +14,11 @@ import SearchModal from './SearchModal';
 import appLogo from '../assets/logo.png';
 import { fetchGAS } from '../utils/gasClient';
 
-function NavItem({ to, icon: Icon, label, collapsed }) {
+function NavItem({ to, icon: Icon, label, collapsed, onClick }) {
   return (
     <NavLink
       to={to}
+      onClick={onClick}
       className={({ isActive }) =>
         `flex items-center ${collapsed ? 'justify-center w-12 h-12 mx-auto' : 'gap-3 px-4 py-3'} rounded-2xl transition-all duration-300 group ${
           isActive
@@ -48,6 +49,7 @@ export default function Layout() {
 
   const [isNotifOpen, setIsNotifOpen] = React.useState(false);
   const [isSearchOpen, setIsSearchOpen] = React.useState(false);
+  const [isMobileOpen, setIsMobileOpen] = React.useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
     return localStorage.getItem('sidebarCollapsed') === 'true';
   });
@@ -174,15 +176,23 @@ export default function Layout() {
   };
 
   return (
-    <div className="flex flex-col md:flex-row min-h-screen bg-slate-50 font-sans">
-      {/* Sidebar for Desktop */}
+    <div className="flex flex-col md:flex-row min-h-screen bg-slate-50 font-sans relative overflow-hidden">
+      {/* Mobile Backdrop */}
+      {isMobileOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-900/50 z-[90] md:hidden backdrop-blur-sm transition-opacity"
+          onClick={() => setIsMobileOpen(false)}
+        />
+      )}
+
+      {/* Sidebar for Desktop and Mobile */}
       <aside 
-        className={`hidden md:flex flex-col bg-white border-r border-slate-100/50 z-[100] sticky top-0 h-screen transition-all duration-300 ease-in-out print:hidden ${isSidebarCollapsed ? 'w-20 shadow-sm' : 'w-72 shadow-xl'}`}
-        onMouseEnter={() => setIsSidebarCollapsed(false)}
-        onMouseLeave={() => setIsSidebarCollapsed(true)}
+        className={`fixed md:sticky inset-y-0 left-0 z-[100] h-screen bg-white border-r border-slate-100/50 transition-all duration-300 ease-in-out print:hidden flex flex-col ${
+          isMobileOpen ? 'translate-x-0 w-72 shadow-2xl' : '-translate-x-full md:translate-x-0'
+        } ${isSidebarCollapsed ? 'md:w-20 md:shadow-sm' : 'md:w-72 md:shadow-xl'}`}
       >
-        <div className={`p-4 ${isSidebarCollapsed ? 'md:p-4' : 'md:p-6'} mb-2 relative group`}>
-          <div className={`flex items-center ${isSidebarCollapsed ? 'justify-center' : 'gap-4'} transition-all duration-300`}>
+        <div className={`p-4 ${isSidebarCollapsed ? 'md:p-4' : 'md:p-6'} mb-2 relative flex items-center justify-between`}>
+          <div className={`flex items-center ${isSidebarCollapsed ? 'justify-center w-full' : 'gap-4'} transition-all duration-300`}>
             <div className={`bg-white p-2 rounded-2xl border border-slate-50 transition-all duration-300 ${isSidebarCollapsed ? 'shadow-sm' : ''}`}>
               <img src={appLogo} alt="Logo SMK" className="h-10 w-auto object-contain" />
             </div>
@@ -197,22 +207,38 @@ export default function Layout() {
               </div>
             )}
           </div>
+          
+          {/* Mobile Close Button */}
+          <button 
+            className="md:hidden p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg absolute right-4"
+            onClick={() => setIsMobileOpen(false)}
+          >
+            <X className="w-5 h-5" />
+          </button>
+
+          {/* Desktop Toggle Button */}
+          <button 
+            className="hidden md:flex absolute -right-3 top-8 bg-white border border-slate-200 text-slate-400 hover:text-[#008647] hover:border-[#008647] rounded-full p-1 shadow-sm transition-all z-10"
+            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+          >
+            {isSidebarCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+          </button>
         </div>
 
         <nav className={`flex-1 ${isSidebarCollapsed ? 'px-2' : 'px-4'} space-y-1 overflow-y-auto custom-scrollbar`}>
-          {access.dashboard && <NavItem to="dashboard" icon={LayoutDashboard} label="Dashboard" collapsed={isSidebarCollapsed} />}
-          {access.siswa && <NavItem to="master-siswa" icon={Users} label="Data Siswa" collapsed={isSidebarCollapsed} />}
-          {access.bukuKlaper && <NavItem to="buku-klaper" icon={BookOpen} label="Buku Klaper" collapsed={isSidebarCollapsed} />}
-          {access.dkn && <NavItem to="dkn" icon={LibraryBig} label="Leger" collapsed={isSidebarCollapsed} />}
-          {access.keuangan && <NavItem to="tanggungan" icon={ClipboardList} label="Tanggungan KAS" collapsed={isSidebarCollapsed} />}
+          {access.dashboard && <NavItem to="dashboard" icon={LayoutDashboard} label="Dashboard" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
+          {access.siswa && <NavItem to="master-siswa" icon={Users} label="Data Siswa" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
+          {access.bukuKlaper && <NavItem to="buku-klaper" icon={BookOpen} label="Buku Klaper" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
+          {access.dkn && <NavItem to="dkn" icon={LibraryBig} label="Leger" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
+          {access.keuangan && <NavItem to="tanggungan" icon={ClipboardList} label="Tanggungan KAS" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
 
-          {access.presensiPagi && <NavItem to="presensi-pagi" icon={Sun} label="Presensi Pagi" collapsed={isSidebarCollapsed} />}
-          {access.presensiSiang && <NavItem to="presensi-siang" icon={Moon} label="Presensi Siang" collapsed={isSidebarCollapsed} />}
-          <NavItem to="piket" icon={Calendar} label="Jadwal Piket" collapsed={isSidebarCollapsed} />
-          {access.laporan && <NavItem to="laporan" icon={FileText} label="Laporan Akhir" collapsed={isSidebarCollapsed} />}
-          {access.laporanHarian && <NavItem to="laporan-harian" icon={CalendarCheck} label="Laporan Harian" collapsed={isSidebarCollapsed} />}
-          {access.keuangan && <NavItem to="keuangan" icon={Wallet} label="KAS Kelas" collapsed={isSidebarCollapsed} />}
-          {access.panggilan && <NavItem to="panggilan" icon={PhoneCall} label="Log Panggilan" collapsed={isSidebarCollapsed} />}
+          {access.presensiPagi && <NavItem to="presensi-pagi" icon={Sun} label="Presensi Pagi" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
+          {access.presensiSiang && <NavItem to="presensi-siang" icon={Moon} label="Presensi Siang" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
+          <NavItem to="piket" icon={Calendar} label="Jadwal Piket" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />
+          {access.laporan && <NavItem to="laporan" icon={FileText} label="Laporan Akhir" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
+          {access.laporanHarian && <NavItem to="laporan-harian" icon={CalendarCheck} label="Laporan Harian" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
+          {access.keuangan && <NavItem to="keuangan" icon={Wallet} label="KAS Kelas" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
+          {access.panggilan && <NavItem to="panggilan" icon={PhoneCall} label="Log Panggilan" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
         </nav>
 
         <div className={`${isSidebarCollapsed ? 'p-2' : 'p-6'} mt-auto`}>
@@ -254,6 +280,12 @@ export default function Layout() {
         {/* Header Bar */}
         <header className="bg-white sticky top-0 z-20 px-4 md:px-8 py-4 border-b border-slate-100 flex items-center justify-between print:hidden">
           <div className="flex items-center gap-3">
+            <button 
+              className="md:hidden p-2 rounded-xl text-slate-500 hover:bg-slate-50 transition-colors"
+              onClick={() => setIsMobileOpen(true)}
+            >
+              <Menu className="w-5 h-5" />
+            </button>
             <div className="flex flex-col">
               <Breadcrumbs />
               <h2 className="hidden md:block text-sm font-black text-slate-800 uppercase tracking-tight">SISWA.HUB Platform</h2>
@@ -319,33 +351,19 @@ export default function Layout() {
           </div>
         </header>
 
-        <div className="p-4 sm:p-8 pb-24 md:pb-8">
+        <div className="p-4 sm:p-8 pb-8">
           <div className="max-w-[1600px] mx-auto space-y-8 animate-slide-up">
             <Outlet />
 
             <footer className="mt-20 pt-8 border-t border-slate-100 print:hidden">
               <div className="flex flex-col md:flex-row items-center justify-between gap-4 grayscale opacity-40 hover:grayscale-0 hover:opacity-100 transition-all duration-500">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Wali Kelas Digital Project &copy; 2026</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Wali Kelas Digital Project &copy; 2026 <span className="ml-1 px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">v4.8</span></p>
                 <p className="text-[10px] font-medium text-slate-500 italic">Designed with precision by Mohamad Lukman Nurhasyim, S.Kom, Gr.</p>
               </div>
             </footer>
           </div>
         </div>
       </main>
-
-      {/* Bottom Nav for Mobile */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white border-t border-slate-100 flex justify-around items-center px-2 z-50 print:hidden">
-        {access.dashboard && <NavItem to="dashboard" icon={LayoutDashboard} label="Home" />}
-        {access.presensiPagi && <NavItem to="presensi-pagi" icon={Sun} label="Pagi" />}
-        {access.presensiSiang && <NavItem to="presensi-siang" icon={Moon} label="Siang" />}
-        {access.keuangan && <NavItem to="keuangan" icon={Wallet} label="KAS" />}
-        <button
-          onClick={() => navigate('/profile')}
-          className="p-2 rounded-2xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors"
-        >
-          <User className="w-5 h-5" />
-        </button>
-      </nav>
 
       <SearchModal 
         isOpen={isSearchOpen} 

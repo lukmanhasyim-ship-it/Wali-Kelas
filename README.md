@@ -1,4 +1,4 @@
-# Siswa.Hub - Ekosistem Manajemen Kelas Digital Premium
+# Siswa.Hub v4.8 - Ekosistem Manajemen Kelas Digital Premium
 
 Siswa.Hub adalah platform revolusioner berbasis **Serverless** yang dirancang khusus untuk memodernisasi kinerja Wali Kelas dalam mengelola administrasi siswa. Mengusung konsep *Human-Centric Design*, aplikasi ini memadukan estetika antarmuka (UI) mutakhir dengan logika sistem yang cerdas, transparan, dan peduli.
 
@@ -7,10 +7,11 @@ Siswa.Hub adalah platform revolusioner berbasis **Serverless** yang dirancang kh
 ## ✨ Fitur Unggulan Utama
 
 ### 🖥️ Smart & Personal Dashboard
-*   **Contextual Greeting**: Penyambutan personal berdasarkan Role (Wali Kelas / Siswa).
+*   **Contextual Greeting**: Penyambutan personal berdasarkan Role (Wali Kelas / Siswa) dengan deteksi nama otomatis dari basis data (Master Siswa).
 *   **Privacy-First Alerts**: Siswa hanya melihat status kedisiplinan dan nilai miliknya sendiri.
 *   **Piket Hari Ini**: Tampilan otomatis jadwal kebersihan harian di dashboard.
 *   **Real-time Analytics**: Visualisasi kehadiran hari ini dan saldo kas mingguan secara instan.
+*   **Mobile-Ready Experience**: Antarmuka sidebar responsif penuh (full-sidebar) yang memudahkan penelusuran menu via smartphone.
 
 ### 📚 Administrasi Akademik & Kurikulum Merdeka
 *   **Jadwal Piket Otomatis**: Sistem manajemen regu kerja mingguan dengan fitur eliminasi siswa (satu siswa, satu jadwal) dan notifikasi otomatis.
@@ -20,12 +21,14 @@ Siswa.Hub adalah platform revolusioner berbasis **Serverless** yang dirancang kh
 
 ### 💰 Keuangan & Kedisiplinan Terpadu
 *   **Laporan Kas 4 Kolom**: Transparansi dana kelas dengan deteksi otomatis siswa yang memiliki tanggungan (Debtor Tracking).
+*   **Otoritas Eksklusif Bendahara**: Keamanan RBAC (Role-Based Access Control) di mana fitur input nominal kas dibatasi secara ketat hanya untuk Pengurus Bendahara.
 *   **Fail-Safe Financial Flow**: Fitur pembatalan transaksi (Undo) bagi Bendahara untuk mengoreksi kesalahan input data secara instan.
-*   **Smart Disciplinary Workflow**: Log panggilan resmi, home visit, dan integrasi Google Maps untuk pelacakan lokasi.
+*   **Smart Disciplinary Workflow**: Log panggilan resmi, home visit, dan integrasi pemetaan titik koordinat lokasi alamat rumah.
 *   **Integrated WhatsApp**: Pesan motivasi otomatis dan notifikasi resmi dengan formatting kode negara (62).
 
 ### 🛡️ Registrasi & Keamanan
 *   **Self-Registration System**: Siswa baru dapat mendaftar mandiri via aplikasi yang langsung terhubung ke WhatsApp Wali Kelas.
+*   **Multi-Account Login Wali Kelas**: Dukungan kolaborasi antar pengajar dengan memisahkan multi-email (koma) dalam satu profil kelas.
 *   **Google OAuth 2.0**: Keamanan tingkat tinggi menggunakan akun Gmail resmi sekolah.
 
 ---
@@ -42,19 +45,20 @@ Buat Spreadsheet baru di Google Drive Anda. Lalu buat sheet-sheet berikut dengan
 | Nama Sheet | Struktur Kolom (Header Baris 1) |
 | :--- | :--- |
 | **Master_Siswa** | ID_Siswa, NIS, NISN, Nama_Siswa, L/P, Email, Jabatan, Tempat_Lahir, Tanggal_Lahir, No_WA_Siswa, Nama_Wali, No_WA_Wali, Alamat |
+| **Presensi** | ID_Presensi, Tanggal, ID_Siswa, NISN, Status_Pagi, Timestamp_Pagi, Status_Siang, Timestamp_Siang, Keterangan |
+| **Keuangan** | ID_Transaksi, Tanggal, ID_Siswa, NISN, Tipe, Jumlah, Keterangan |
+| **Daftar_Nilai** | ID_Nilai, ID_Siswa, NISN, Jenjang, Semester, Kategori_Mapel, Nama_Mapel, Topik, Nilai, Timestamp |
+| **Log_Panggilan** | ID_Panggilan, Tanggal, ID_Siswa, NISN, Kategori, Alasan, Hasil_Pertemuan, Status_Selesai |
+| **Profil_Wali_Kelas** | Id_Wali, Nama, Email, Bio, Gaya_Ajar, Kontak, Created_At, Nominal_Iuran, Kelas |
+| **Lokasi** | ID_Lokasi, Nama_Lokasi, Deskripsi, Alamat, Latitude, Longitude, Lokasi, Created_By, Created_By_Email, Created_At |
+| **Notifikasi** | ID, Message, Type, Target_Email, Is_Read, Timestamp, Target_Role, Role, Email |
 | **Piket** | ID_Piket, Hari, ID_Siswa, Nama_Siswa, Email |
 | **Archive_Rekap_Absensi** | ID_Siswa, Bulan, H, I, S, A, B |
 | **Archive_Rekap_Keuangan** | Bulan, Saldo_Awal, Total_Masuk, Total_Keluar, Saldo_Akhir |
 | **Archive_Detail_Absensi** | ID_Presensi, Tanggal, ID_Siswa, NISN, Status_Pagi, Timestamp_Pagi, Status_Siang, Timestamp_Siang, Keterangan |
-| **Daftar_Nilai** | ID_Nilai, ID_Siswa, NISN, Jenjang, Semester, Kategori_Mapel, Nama_Mapel, Topik, Nilai, Timestamp |
-| **Presensi** | ID_Presensi, Tanggal, ID_Siswa, NISN, Status_Pagi, Timestamp_Pagi, Status_Siang, Timestamp_Siang, Keterangan |
-| **Log_Panggilan** | ID_Panggilan, Tanggal, ID_Siswa, NISN, Kategori, Alasan, Hasil_Pertemuan, Status_Selesai |
-| **Keuangan** | ID_Transaksi, Tanggal, ID_Siswa, NISN, Tipe, Jumlah, Keterangan |
-| **Profil_Wali_Kelas** | Id_Wali, Nama, Email, Bio, Gaya_Ajar, Kontak, Created_At, Nominal_Iuran, Kelas |
-| **Notifikasi** | ID, Message, Type, Target_Email, Is_Read, Timestamp, Target_Role, Role, Email |
 
 > [!TIP]
-> Tiga sheet terakhir (**Archive_...**) akan dibuat secara otomatis oleh sistem, namun menyiapkannya lebih awal dapat membantu integrasi data.
+> Tiga sheet terakhir (**Archive_...**) akan dibuat secara otomatis secara simultan oleh sistem, menyiapkannya lebih awal dapat membantu integrasi data arsip.
 
 ### 3. Konfigurasi Google Apps Script (Backend)
 1.  Di Spreadsheet Anda, klik menu **Extensions** > **Apps Script**.
