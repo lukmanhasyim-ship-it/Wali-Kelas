@@ -8,7 +8,7 @@ import Loading from '../components/Loading';
 import Skeleton, { SkeletonStats, SkeletonTable } from '../components/Skeleton';
 import EmptyState from '../components/EmptyState';
 import PageGuide from '../components/PageGuide';
-import { History, Users } from 'lucide-react';
+import { History, Users, Trash2 } from 'lucide-react';
 import { sendNotification } from '../utils/notifications';
 
 
@@ -23,7 +23,7 @@ export default function Keuangan() {
   const [nominalIuran, setNominalIuran] = useState(0);
 
   const role = user?.role || 'Siswa';
-  const canEdit = ['Bendahara'].includes(role);
+  const canEdit = ['Bendahara', 'Wali Kelas'].includes(role);
 
   // Form State
   const [idSiswa, setIdSiswa] = useState('');
@@ -186,6 +186,23 @@ export default function Keuangan() {
       setSaving(false);
     }
   }, [idSiswa, amountValue, tipe, keterangan, showToast, loadKeuangan]);
+
+  const handleDelete = useCallback(async (trxId) => {
+    if (!canEdit) return;
+    if (!window.confirm('Apakah Anda yakin ingin membatalkan transaksi ini? Saldo akan disesuaikan kembali.')) return;
+
+    setLoading(true);
+    try {
+      await fetchGAS('DELETE', { sheet: 'Keuangan', id: trxId });
+      showToast('Transaksi berhasil dibatalkan.', 'success');
+      await loadKeuangan();
+    } catch (error) {
+      console.error('Batal transaksi gagal:', error);
+      showToast('Gagal membatalkan transaksi.', 'error');
+    } finally {
+      setLoading(false);
+    }
+  }, [canEdit, loadKeuangan, showToast]);
 
   if (loading) return <Loading message="Menyatukan aliran dana kelas..." />;
 
@@ -433,6 +450,7 @@ export default function Keuangan() {
                     <th>Tipe</th>
                     <th>Jumlah</th>
                     <th>Keterangan</th>
+                    {canEdit && <th className="text-center">Aksi</th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -450,6 +468,17 @@ export default function Keuangan() {
                         </td>
                         <td className="px-4 py-3 font-medium">{formatIDR(trx.Jumlah)}</td>
                         <td className="px-4 py-3 text-xs">{trx.Keterangan || '-'}</td>
+                        {canEdit && (
+                          <td className="px-4 py-3 text-center">
+                            <button
+                              onClick={() => handleDelete(trx.ID_Transaksi)}
+                              className="p-2 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"
+                              title="Batalkan Transaksi"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </td>
+                        )}
                       </tr>
                     );
                   })}

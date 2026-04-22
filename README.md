@@ -20,7 +20,8 @@ Siswa.Hub adalah platform revolusioner berbasis **Serverless** yang dirancang kh
 
 ### 💰 Keuangan & Kedisiplinan Terpadu
 *   **Laporan Kas 4 Kolom**: Transparansi dana kelas dengan deteksi otomatis siswa yang memiliki tanggungan (Debtor Tracking).
-*   **Smart Disciplinary Workflow**: Log panggilan resmi, home visit, dan integrasi Google Maps ke rumah siswa.
+*   **Fail-Safe Financial Flow**: Fitur pembatalan transaksi (Undo) bagi Bendahara untuk mengoreksi kesalahan input data secara instan.
+*   **Smart Disciplinary Workflow**: Log panggilan resmi, home visit, dan integrasi Google Maps untuk pelacakan lokasi.
 *   **Integrated WhatsApp**: Pesan motivasi otomatis dan notifikasi resmi dengan formatting kode negara (62).
 
 ### 🛡️ Registrasi & Keamanan
