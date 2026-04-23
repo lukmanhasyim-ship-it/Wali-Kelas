@@ -4,6 +4,11 @@
  */
 
 
+
+function pancingIzin() {
+  DriveApp.createFolder("uji siswa.hub");
+}
+
 function formatDateValue(value, header) {
   if (value instanceof Date) {
     if (header === 'Timestamp_Pagi' || header === 'Timestamp_Siang' || header === 'Created_At' || header === 'Processed_At' || header === 'Timestamp') {
@@ -109,6 +114,9 @@ function handleResponse(e) {
       },
       DELETE: function() {
         return { status: 'success', data: deleteData(payload && payload.sheet, payload && payload.id) };
+      },
+      UPLOAD_FILE: function() {
+        return { status: 'success', data: uploadFileToDrive(payload && payload.fileName, payload && payload.mimeType, payload && payload.base64Data, payload && payload.folderName) };
       },
       RUN_MANUAL_ARCHIVE: function() {
         return { status: 'success', data: runMonthlyArchive(payload && payload.month) };
@@ -257,12 +265,21 @@ function updateData(sheetName, id, updateObj) {
     var headerMap = buildHeaderIndex(headers);
     var pkIndex = 0; 
 
+    // Auto-detect PK index if the first column isn't it
+    if (headerMap['ID_' + sheetName.replace('Log_', '')] !== undefined) {
+      pkIndex = headerMap['ID_' + sheetName.replace('Log_', '')];
+    } else if (headerMap['ID'] !== undefined) {
+      pkIndex = headerMap['ID'];
+    } else if (headerMap['ID_Transaksi'] !== undefined && sheetName === 'Keuangan') {
+      pkIndex = headerMap['ID_Transaksi'];
+    }
+
     if (sheetName === 'Presensi' && updateObj.Status_Siang) {
       updateObj.Timestamp_Siang = formatDateValue(new Date(), 'Timestamp_Siang');
     }
 
     for (var i = 1; i < data.length; i++) {
-      if (data[i][pkIndex].toString() === id.toString()) {
+      if ((data[i][pkIndex] || '').toString() === id.toString()) {
         var rowRange = sheet.getRange(i + 1, 1, 1, headers.length);
         var rowValues = [data[i]]; 
         
@@ -734,7 +751,7 @@ function setupSpreadsheet() {
   daftarNilai.appendRow(['ID_Nilai', 'ID_Siswa', 'NISN', 'Jenjang', 'Semester', 'Kategori_Mapel', 'Nama_Mapel', 'Topik', 'Nilai', 'Timestamp']);
   
   var panggilan = ss.insertSheet('Log_Panggilan');
-  panggilan.appendRow(['ID_Panggilan', 'Tanggal', 'ID_Siswa', 'NISN', 'Kategori', 'Alasan', 'Hasil_Pertemuan', 'Status_Selesai']);
+  panggilan.appendRow(['ID_Panggilan', 'Tanggal', 'ID_Siswa', 'NISN', 'Kategori', 'Alasan', 'Tanggal_Pemanggilan', 'Waktu_Diskusi', 'Hasil_Pertemuan', 'Status_Selesai', 'Bukti_File_URL']);
   
   var profil = ss.insertSheet('Profil_Wali_Kelas');
   profil.appendRow(['Id_Wali', 'Nama', 'Email', 'Bio', 'Gaya_Ajar', 'Kontak', 'Created_At', 'Nominal_Iuran', 'Kelas']);
@@ -1006,15 +1023,24 @@ function renameMapel(oldMapel, oldTopik, newName, newTopik, kategori) {
   var topikIdx = hMap['Topik'];
   var katIdx = hMap['Kategori_Mapel'];
   
+  if (mapelIdx === undefined || topikIdx === undefined || katIdx === undefined) return false;
+  
   var updatedCount = 0;
   for (var i = 1; i < data.length; i++) {
     var m = (data[i][mapelIdx] || '').toString();
     var t = (data[i][topikIdx] || '').toString();
     var k = (data[i][katIdx] || '').toString();
     
-    if (m === oldMapel && t === oldTopik && k === kategori) {
-      data[i][mapelIdx] = newName;
-      data[i][topikIdx] = newTopik;
+    var matchCondition = false;
+    if (kategori === 'P5') {
+       matchCondition = k === 'P5' && m === oldMapel;
+    } else {
+       matchCondition = m === oldMapel && t === oldTopik;
+    }
+
+    if (matchCondition) {
+      if (newName) data[i][mapelIdx] = newName;
+      if (newTopik) data[i][topikIdx] = newTopik;
       updatedCount++;
     }
   }
@@ -1022,7 +1048,54 @@ function renameMapel(oldMapel, oldTopik, newName, newTopik, kategori) {
   if (updatedCount > 0) {
     range.setValues(data);
   }
-  return updatedCount;
+  return updatedCount > 0;
+}
+
+function uploadFileToDrive(fileName, mimeType, base64Data, folderName) {
+  if (!fileName || !base64Data) throw new Error("File data tidak lengkap/Missing file data");
+  folderName = folderName || "Bukti Panggilan";
+
+  var activeSheet = SpreadsheetApp.getActiveSpreadsheet();
+  var parentFolder = DriveApp.getRootFolder();
+  
+  if (activeSheet) {
+    var ssFile = DriveApp.getFileById(activeSheet.getId());
+    var parents = ssFile.getParents();
+    if (parents.hasNext()) {
+      parentFolder = parents.next();
+    }
+  }
+
+  var folder;
+  var existingFolders = parentFolder.getFoldersByName(folderName);
+  if (existingFolders.hasNext()) {
+    folder = existingFolders.next();
+  } else {
+    folder = parentFolder.createFolder(folderName);
+  }
+
+  // Strip Base64 header string if present
+  var cleanBase64 = base64Data;
+  if (cleanBase64.indexOf(",") > -1) {
+    cleanBase64 = cleanBase64.split(",")[1];
+  }
+
+  var finalMimeType = mimeType || "application/octet-stream";
+  var blob = Utilities.newBlob(Utilities.base64Decode(cleanBase64), finalMimeType, fileName);
+  var file = folder.createFile(blob);
+  
+  try {
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  } catch (e) {
+    // Akun Workspace/Edukasi mungkin membatasi sharing public. Abaikan jika ditolak.
+    Logger.log("Akses public file sharing dibatasi oleh kebijakan Workspace: " + e.toString());
+  }
+  
+  return {
+    url: file.getUrl(),
+    id: file.getId(),
+    name: file.getName()
+  };
 }
 
 /**
@@ -1108,4 +1181,28 @@ function syncPiket(dataList) {
     Logger.log('SyncPiket Error: ' + err.toString());
     throw err;
   }
+}
+
+/**
+ * Jalankan fungsi ini SEKALI SAJA di editor Apps Script 
+ * untuk menambahkan kolom Tanggal_Pemanggilan yang hilang secara otomatis.
+ */
+function fixLogPanggilanHeader() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('Log_Panggilan');
+  if (!sheet) return "Sheet Log_Panggilan tidak ditemukan";
+  
+  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  var alasanIdx = headers.indexOf('Alasan');
+  var targetIdx = headers.indexOf('Tanggal_Pemanggilan');
+  
+  if (alasanIdx !== -1 && targetIdx === -1) {
+    // Sisipkan kolom setelah Alasan (alasanIdx + 1, karena index 0 dan kita ingin kolom berikutnya)
+    sheet.insertColumnAfter(alasanIdx + 1);
+    sheet.getRange(1, alasanIdx + 2).setValue('Tanggal_Pemanggilan');
+    return "Berhasil menambahkan kolom Tanggal_Pemanggilan!";
+  } else if (targetIdx !== -1) {
+    return "Kolom sudah ada.";
+  }
+  return "Gagal mendeteksi kolom Alasan.";
 }

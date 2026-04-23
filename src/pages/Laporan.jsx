@@ -351,6 +351,13 @@ export default function Laporan() {
     return siswa.filter(s => s.Status_Aktif === 'Keluar');
   }, [siswa]);
 
+  // Komposisi Siswa (Jenis Kelamin)
+  const komposisiSiswa = useMemo(() => {
+    const LKCount = activeStudents.filter(s => s.jk === 'L' || s['L/P'] === 'L').length;
+    const PRCount = activeStudents.filter(s => s.jk === 'P' || s['L/P'] === 'P').length;
+    return { LK: LKCount, PR: PRCount, total: LKCount + PRCount };
+  }, [activeStudents]);
+
   // 1.5 Trend Data (Attendance counts per date)
   const trendData = useMemo(() => {
     const days = eachDayOfInterval({ start: dateRange.start, end: dateRange.end });
@@ -444,15 +451,16 @@ export default function Laporan() {
       <style>{`
         @media print {
           @page {
-            size: A4;
-            margin: 15mm;
+            size: A4 portrait;
+            margin: 5mm 5mm 5mm 10mm;
           }
-          /* Hide everything except report manually to allow proper flow */
+          @page :nth(2) {
+            margin-top: 15mm;
+          }
           .no-print, aside, header, nav, footer, button, .sidebar-class, .navbar-class {
             display: none !important;
           }
           
-          /* Reset root and parents for multi-page flow */
           html, body, #root, main, .max-w-6xl, .space-y-8 {
             height: auto !important;
             overflow: visible !important;
@@ -495,11 +503,76 @@ export default function Laporan() {
             -webkit-print-color-adjust: exact !important;
           }
           
-          .grid.grid-cols-2, .h-\[260px\], .h-\[240px\], section, .space-y-12 > div {
-            page-break-inside: avoid !important;
-            display: block !important;
-            margin-bottom: 20px !important;
+          .bg-slate-50, .bg-slate-100, .bg-slate-200, [style*="background-color: #f8fafc"] {
+            background-color: white !important;
           }
+          
+          .modern-table tbody tr:nth-child(even) {
+            background-color: white !important;
+          }
+          
+          .grid.grid-cols-2, section, .space-y-12 > div {
+            page-break-inside: avoid !important;
+            margin-bottom: 15px !important;
+          }
+
+          .print-page-2 {
+            margin-top: 15mm !important;
+            padding-top: 10mm !important;
+          }
+
+          .print-chart-container {
+            height: 150px !important;
+            min-height: 150px !important;
+          }
+
+          .print-grid-cols-2 {
+            display: grid !important;
+            grid-template-columns: 1fr 1fr !important;
+            gap: 8px !important;
+            min-height: 120px !important;
+          }
+
+          .print-grid-cols-2 > div {
+            min-height: 120px !important;
+            height: 120px !important;
+          }
+
+          .recharts-wrapper,
+          .recharts-responsive-container,
+          .recharts-responsive-container > div {
+            width: 100% !important;
+            height: 100% !important;
+          }
+
+          .recharts-responsive-container svg {
+            width: 100% !important;
+            height: 100% !important;
+            max-width: 100% !important;
+            max-height: 100% !important;
+          }
+        }
+
+        .report-section-title {
+          position: relative;
+          padding-left: 1rem;
+        }
+        .report-section-title::before {
+          content: '';
+          position: absolute;
+          left: 0;
+          top: 0;
+          bottom: 0;
+          width: 4px;
+          border-radius: 4px;
+        }
+
+        .modern-table thead th {
+          border-bottom: 2px solid #e2e8f0;
+          padding: 0.75rem 1rem;
+        }
+        .modern-table tbody tr:nth-child(even) {
+          background-color: #f8fafc;
         }
       `}</style>
 
@@ -579,91 +652,109 @@ export default function Laporan() {
       />
 
       <div ref={reportRef} id="printable-report" className="bg-white p-8 md:p-12 rounded-2xl border border-slate-100 shadow-xl space-y-12">
-        {/* Simple Title */}
+        {/* Simplified Header for Report */}
         <div className="border-b-2 border-slate-900 pb-4 flex justify-between items-end">
           <div>
-            <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">
-              Laporan {filterType === 'month'
+            <h1 className="text-2xl font-black text-slate-900 uppercase tracking-tight leading-tight">Laporan Siswa.Hub</h1>
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">SMKS AL AZHAR SEMPU</p>
+          </div>
+          <div className="text-right">
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Kelas:</p>
+            <p className="text-xl font-black text-slate-900 leading-none mt-1">{user?.managedClass || '-'}</p>
+          </div>
+        </div>
+
+        <div className="flex justify-between items-center bg-slate-50/50 px-4 py-2 rounded-lg border border-slate-100 text-[10px]">
+          <div>
+            <span className="font-bold text-slate-400 uppercase ml-1">Periode: </span>
+            <span className="font-black text-slate-700">
+              {filterType === 'month'
                 ? academicMonths.find(m => m.value === selectedMonth)?.label
                 : `${formatDateIndo(dateRange.start)} - ${formatDateIndo(dateRange.end)}`}
-            </h2>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-1">Sistem Informasi Wali Kelas Digital</p>
+            </span>
           </div>
-          {user?.managedClass && (
-            <div className="text-right">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Kelas</p>
-              <p className="text-lg font-black text-slate-900 uppercase tracking-tight">{user.managedClass}</p>
+          <div className="text-slate-400 font-bold uppercase tracking-widest">
+            Unduh: {formatDateIndo(new Date())}
+          </div>
+        </div>
+
+        {/* SECTION 0: KOMPOSISI SISWA */}
+        <div className="space-y-6">
+          <h3 className="text-sm font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2 report-section-title before:bg-blue-600">
+            I. Komposisi Kelas
+          </h3>
+          <div className="grid grid-cols-3 gap-4">
+            <div className="bg-blue-50 p-4 rounded-2xl border border-white shadow-sm flex flex-col items-center justify-center text-center">
+              <span className="text-2xl font-black text-blue-600">{komposisiSiswa.total}</span>
+              <span className="text-[8px] font-black uppercase tracking-widest text-slate-400 mt-1">Total Siswa Aktif</span>
             </div>
-          )}
+            <div className="bg-slate-50 p-4 rounded-2xl border border-white shadow-sm flex flex-col items-center justify-center text-center">
+              <span className="text-2xl font-black text-slate-700">{komposisiSiswa.LK}</span>
+              <span className="text-[8px] font-black uppercase tracking-widest text-slate-400 mt-1">Laki-Laki (L)</span>
+            </div>
+            <div className="bg-rose-50 p-4 rounded-2xl border border-white shadow-sm flex flex-col items-center justify-center text-center">
+              <span className="text-2xl font-black text-rose-600">{komposisiSiswa.PR}</span>
+              <span className="text-[8px] font-black uppercase tracking-widest text-slate-400 mt-1">Perempuan (P)</span>
+            </div>
+          </div>
         </div>
 
         {/* SECTION 1: REKAP ABSENSI UMUM */}
         <div className="space-y-6">
-          <h3 className="text-sm font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2">
-            <div className="w-1.5 h-4 bg-emerald-600 rounded-full" />
-            I. Ringkasan Kehadiran
+          <h3 className="text-sm font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2 report-section-title before:bg-emerald-600">
+            II. Ringkasan Kehadiran
           </h3>
-          <div className="grid grid-cols-5 gap-4">
+          <div className="grid grid-cols-5 gap-2 px-1">
             {[
-              { label: 'Hadir', val: generalStats.H, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-              { label: 'Sakit', val: generalStats.S, color: 'text-amber-600', bg: 'bg-amber-50' },
-              { label: 'Izin', val: generalStats.I, color: 'text-blue-600', bg: 'bg-blue-50' },
-              { label: 'Alfa', val: generalStats.A, color: 'text-rose-600', bg: 'bg-rose-50' },
-              { label: 'Bolos', val: generalStats.B, color: 'text-purple-600', bg: 'bg-purple-50' },
+              { label: 'Hadir', val: generalStats.H, color: 'emerald' },
+              { label: 'Sakit', val: generalStats.S, color: 'blue' },
+              { label: 'Izin', val: generalStats.I, color: 'amber' },
+              { label: 'Alfa', val: generalStats.A, color: 'rose' },
+              { label: 'Bolos', val: generalStats.B, color: 'slate' }
             ].map((s, i) => (
-              <div key={i} className={`${s.bg} p-4 rounded-2xl border border-white shadow-sm flex flex-col items-center justify-center text-center`}>
-                <span className="text-2xl font-black tracking-tighter">{s.val}</span>
-                <span className="text-[8px] font-black uppercase tracking-widest text-slate-400 mt-0.5">{s.label}</span>
+              <div key={i} className="bg-white p-2 rounded-lg border border-slate-100 shadow-sm flex flex-col items-center justify-center">
+                <p className="text-[14px] font-black text-slate-900 leading-none">{s.val}</p>
+                <p className={`text-[7px] font-black uppercase tracking-widest mt-1 text-${s.color}-600`}>{s.label}</p>
               </div>
             ))}
           </div>
 
-          <div className="grid grid-cols-2 gap-8 h-[240px]">
-            <div className="bg-slate-50/50 rounded-2xl border border-slate-100 p-4">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={chartDataGeneral}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={45}
-                    outerRadius={65}
-                    paddingAngle={5}
-                    dataKey="value"
-                    stroke="none"
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  >
-                    {chartDataGeneral.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                    formatter={(value, name) => [`${value} Siswa-Hari`, name]}
-                  />
-                  <Legend iconType="circle" wrapperStyle={{ fontSize: '9px', fontWeight: 'bold', paddingTop: '10px' }} />
-                </PieChart>
-              </ResponsiveContainer>
+          <div className="grid grid-cols-2 gap-3 h-[200px] print-grid-cols-2">
+            <div className="bg-slate-50/50 rounded-2xl border border-slate-100 p-2">
+              <PieChart width="100%" height="100%">
+                <Pie
+                  data={chartDataGeneral}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={25}
+                  outerRadius={45}
+                  paddingAngle={3}
+                  dataKey="value"
+                  stroke="none"
+                >
+                  {chartDataGeneral.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
+                </Pie>
+                <Tooltip />
+                <Legend iconType="circle" wrapperStyle={{ fontSize: '7px', paddingTop: '2px' }} />
+              </PieChart>
             </div>
-            <div className="bg-slate-50/50 rounded-2xl border border-slate-100 p-4">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartDataGeneral}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 9, fontWeight: 800, fill: '#64748b' }} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fontWeight: 800, fill: '#64748b' }} />
-                  <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} />
-                  <Bar dataKey="value" radius={[8, 8, 0, 0]} barSize={30}>
-                    {chartDataGeneral.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+            <div className="bg-slate-50/50 rounded-2xl border border-slate-100 p-2">
+              <BarChart data={chartDataGeneral} width="100%" height="100%">
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 7, fontWeight: 800, fill: '#64748b' }} interval={0} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 7, fontWeight: 800, fill: '#64748b' }} width={20} />
+                <Tooltip />
+                <Bar dataKey="value" fill="#64748b" radius={[3, 3, 0, 0]} />
+              </BarChart>
             </div>
           </div>
 
           {/* New Trend Chart */}
-          <div className="bg-slate-50/50 rounded-2xl border border-slate-100 p-6 h-[260px]">
-            <div className="flex items-center justify-between mb-4">
+          <div className="bg-slate-50/50 rounded-2xl border border-slate-100 p-4 h-[220px] print-chart-container">
+            <div className="flex items-center justify-between mb-2">
               <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Trend Kehadiran Periodik</h4>
             </div>
-            <ResponsiveContainer width="100%" height="90%">
+            <ResponsiveContainer width="100%" height="85%">
               <LineChart data={trendData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 8, fontWeight: 800, fill: '#94a3b8' }} />
@@ -681,10 +772,9 @@ export default function Laporan() {
         </div>
 
         {/* SECTION 2: REKAP SISWA TIDAK MASUK */}
-        <div className="space-y-6">
-          <h3 className="text-sm font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2">
-            <div className="w-1.5 h-4 bg-rose-600 rounded-full" />
-            II. Detail Ketidakhadiran
+        <div className="space-y-6" style={{ pageBreakBefore: 'always' }}>
+          <h3 className="text-sm font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2 report-section-title before:bg-rose-600">
+            III. Detail Ketidakhadiran
           </h3>
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm">
             <table className="modern-table">
@@ -748,10 +838,9 @@ export default function Laporan() {
         </div>
 
         {/* SECTION 3: KEUANGAN */}
-        <div className="space-y-6">
-          <h3 className="text-sm font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2">
-            <div className="w-1.5 h-4 bg-indigo-600 rounded-full" />
-            III. Rekapitulasi Keuangan
+        <div className="space-y-6 print-page-2">
+          <h3 className="text-sm font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2 report-section-title before:bg-indigo-600">
+            IV. Rekapitulasi Keuangan
           </h3>
           <div className="grid grid-cols-4 gap-4">
             <div className="bg-slate-50 p-4 rounded-2xl border border-white shadow-sm">
@@ -819,10 +908,9 @@ export default function Laporan() {
         </div>
 
         {/* SECTION 4: PANGGILAN & HOME VISIT */}
-        <div className="space-y-6">
-          <h3 className="text-sm font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2">
-            <div className="w-1.5 h-4 bg-amber-600 rounded-full" />
-            IV. Rekapitulasi Panggilan & Home Visit
+        <div className="space-y-6 print-page-2">
+          <h3 className="text-sm font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2 report-section-title before:bg-amber-600">
+            V. Rekapitulasi Panggilan & Home Visit
           </h3>
           <div className="grid grid-cols-4 gap-4">
             {[
@@ -838,57 +926,187 @@ export default function Laporan() {
             ))}
           </div>
 
-          <div className="bg-white rounded-2xl border border-slate-200">
-            <table className="modern-table">
-              <thead>
-                <tr>
-                  <th className="text-left w-12">No.</th>
-                  <th className="text-left">Nama Siswa</th>
-                  <th className="text-center">Tgl</th>
-                  <th className="text-center">Kategori</th>
-                  <th className="text-left">Alasan / Kasus</th>
-                  <th className="text-center">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filteredPanggilan.length > 0 ? filteredPanggilan.map((pg, i) => {
-                  const s = siswa.find(item =>
-                    item.ID_Siswa === pg.ID_Siswa ||
-                    String(item.NISN) === String(pg.NISN)
-                  );
-                  return (
-                    <tr key={i} className="hover:bg-slate-50 transition-colors text-center font-bold">
-                      <td className="text-slate-400 font-black text-[10px] text-center">{i + 1}</td>
-                      <td className="text-left">
-                        <p className="text-slate-800">{s?.Nama_Siswa || pg.NISN || pg.ID_Siswa}</p>
-                        <p className="text-[8px] text-slate-400 font-black mt-0.5">{pg.NISN || pg.ID_Siswa}</p>
-                      </td>
-                      <td className="text-slate-500">{format(parseISO(pg.Tanggal), 'dd/MM/yy')}</td>
-                      <td>
-                        <span className={`px-2 py-0.5 rounded text-[8px] uppercase ${pg.Kategori === 'Home Visit' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}`}>
-                          {pg.Kategori}
-                        </span>
-                      </td>
-                      <td className="text-slate-600 italic font-medium text-left">{pg.Alasan}</td>
-                      <td>
-                        <span className={`px-2 py-0.5 rounded text-[8px] uppercase ${pg.Status_Selesai === 'Selesai' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
-                          {pg.Status_Selesai}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                }) : (
-                  <tr><td colSpan="5" className="py-8 text-center text-slate-300 font-black uppercase tracking-widest text-xs">Tidak ada data panggilan periodik</td></tr>
-                )}
-              </tbody>
-            </table>
+          {/* VERSI 1: REKAP RINGKAS */}
+          <div className="mt-8">
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">A. Versi Rekapitulasi Ringkas (Berdasarkan Siswa)</p>
+            <div className="bg-white rounded-2xl border border-slate-200">
+              <table className="modern-table">
+                <thead>
+                  <tr>
+                    <th className="text-left w-12">No.</th>
+                    <th className="text-left">Nama Siswa</th>
+                    <th className="text-left">Tanggal Pemanggilan (Rencana)</th>
+                    <th className="text-center">Total Panggilan / Visit</th>
+                    <th className="text-center">Selesai Ditindaklanjuti</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {(() => {
+                    const studentCallCounts = {};
+                    filteredPanggilan.forEach(pg => {
+                      const id = String(pg.NISN || pg.ID_Siswa);
+                      if (!studentCallCounts[id]) {
+                        studentCallCounts[id] = { total: 0, selesai: 0, dates: [] };
+                      }
+                      studentCallCounts[id].total++;
+                      if (pg.Status_Selesai === 'Selesai') studentCallCounts[id].selesai++;
+                      studentCallCounts[id].dates.push(pg.Tanggal_Pemanggilan || pg.Tanggal);
+                    });
+
+                    const groupedData = Object.entries(studentCallCounts)
+                      .map(([id, counts]) => {
+                        const s = siswa.find(item => String(item.ID_Siswa) === id || String(item.NISN) === id);
+                        return { id, name: s?.Nama_Siswa || id, ...counts };
+                      })
+                      .sort((a, b) => b.total - a.total);
+
+                    if (groupedData.length === 0) {
+                      return <tr><td colSpan="5" className="py-8 text-center text-slate-300 font-black uppercase tracking-widest text-xs">Tidak ada data panggilan periodik</td></tr>;
+                    }
+
+                    return groupedData.map((data, i) => (
+                      <tr key={i} className="hover:bg-slate-50 transition-colors font-bold">
+                        <td className="text-slate-400 font-black text-[10px] text-center">{i + 1}</td>
+                        <td className="text-left">
+                          <p className="text-slate-800">{data.name}</p>
+                          <p className="text-[8px] text-slate-400 font-black mt-0.5 uppercase">{data.id}</p>
+                        </td>
+                        <td className="text-left">
+                          <div className="flex flex-wrap gap-1">
+                            {data.dates.map((d, didx) => (
+                              <span key={didx} className="text-[9px] bg-amber-50 text-amber-700 border border-amber-100 px-2 py-1 rounded-md font-bold whitespace-nowrap">
+                                {formatDateIndo(d)}
+                              </span>
+                            ))}
+                          </div>
+                        </td>
+                        <td className="text-center">
+                          <span className="px-3 py-1 rounded-full text-[10px] font-black bg-indigo-100 text-indigo-700">
+                            {data.total} Kali
+                          </span>
+                        </td>
+                        <td className="text-center">
+                          <span className={`px-3 py-1 rounded-full text-[10px] font-black ${data.selesai === data.total ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                            {data.selesai} / {data.total}
+                          </span>
+                        </td>
+                      </tr>
+                    ));
+                  })()}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* VERSI 2: DETAIL */}
+          <div className="mt-8">
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">B. Versi Detail Panggilan & Home Visit</p>
+            <div className="bg-white rounded-2xl border border-slate-200">
+              <table className="modern-table">
+                <thead>
+                  <tr>
+                    <th className="text-left w-8 px-1 py-2">No.</th>
+                    <th className="text-left w-36 px-2 py-2">Nama Siswa</th>
+                    <th className="text-center w-12 px-1 py-2">Freq</th>
+                    <th className="text-center w-20 px-1 py-2">Kategori</th>
+                    <th className="text-left px-2 py-2">Alasan</th>
+                    <th className="text-left px-2 py-2">Tindak Lanjut</th>
+                    <th className="text-center w-28 px-1 py-2">Bukti</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {(() => {
+                    let studentCounters = {};
+                    const sortedAllPanggilan = [...panggilan].sort((a, b) => new Date(a.Tanggal) - new Date(b.Tanggal));
+                    sortedAllPanggilan.forEach(pg => {
+                      const id = String(pg.NISN || pg.ID_Siswa);
+                      if (!studentCounters[id]) studentCounters[id] = 0;
+                      studentCounters[id]++;
+                      pg._callIndex = studentCounters[id];
+                    });
+
+                    if (filteredPanggilan.length === 0) {
+                      return <tr><td colSpan="7" className="py-8 text-center text-slate-300 font-black uppercase tracking-widest text-xs">Tidak ada data panggilan periodik</td></tr>;
+                    }
+
+                    return filteredPanggilan.map((pg, i) => {
+                      const s = siswa.find(item => item.ID_Siswa === pg.ID_Siswa || String(item.NISN) === String(pg.NISN));
+                      return (
+                        <tr key={i} className="hover:bg-slate-50 transition-colors font-bold text-[10px]">
+                          <td className="text-slate-400 font-bold text-[10px] text-center px-1">{i + 1}</td>
+                          <td className="text-left py-2 px-2 align-top break-words">
+                            <p className="text-slate-800 leading-none font-bold text-[9px]">{s?.Nama_Siswa || pg.NISN || pg.ID_Siswa}</p>
+                            <p className="text-[7px] text-emerald-600 font-extrabold mt-1 uppercase leading-none">Jadwal: {formatDateIndo(pg.Tanggal_Pemanggilan || pg.Tanggal)}</p>
+                          </td>
+                          <td className="text-center py-2 px-1 align-top">
+                            <span className="px-1 py-0.5 rounded text-[7px] font-black uppercase bg-slate-50 text-slate-400 border border-slate-200">
+                              #{pg._callIndex || 1}
+                            </span>
+                          </td>
+                          <td className="text-center py-2 px-1 align-top">
+                            <span className={`px-1 py-0.5 rounded text-[7px] uppercase font-black ${pg.Kategori === 'Home Visit' ? 'bg-amber-50 text-amber-600 border border-amber-100' : 'bg-blue-50 text-blue-600 border border-blue-100'}`}>
+                              {pg.Kategori === 'Panggilan Wali' ? 'Panggilan' : pg.Kategori}
+                            </span>
+                          </td>
+                          <td className="text-slate-600 italic font-medium text-left text-[9px] leading-tight py-2 px-2 align-top break-words">
+                            {pg.Alasan}
+                          </td>
+                          <td className="text-left align-top py-2 px-2 break-words">
+                            <p className="text-[9px] font-medium text-slate-700 leading-tight">
+                              {pg.Hasil_Pertemuan && pg.Hasil_Pertemuan !== 'Belum Selesai' ? pg.Hasil_Pertemuan : '-'}
+                            </p>
+                            {pg.Waktu_Diskusi && (
+                              <p className="text-[7px] font-black uppercase text-indigo-500 mt-1 flex items-center gap-1 opacity-60">
+                                {formatDateIndo((pg.Waktu_Diskusi || '').split('T')[0])}
+                              </p>
+                            )}
+                          </td>
+                          <td className="text-center align-top py-2 px-1">
+                            {pg.Bukti_File_URL ? (
+                              <div className="flex flex-wrap justify-center gap-1 max-w-[100px] mx-auto">
+                                {(pg.Bukti_File_URL || '').split(',').filter(Boolean).map((url, uIdx) => {
+                                  const driveIdMatch = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+                                  const driveId = driveIdMatch ? driveIdMatch[1] : null;
+                                  const isImage = url.match(/\.(jpeg|jpg|gif|png|webp)$/i) || driveId;
+
+                                  return (
+                                    <div key={uIdx} className="relative">
+                                      {isImage ? (
+                                        <a href={url} target="_blank" rel="noreferrer" className="block">
+                                          <img
+                                            src={driveId ? `https://drive.google.com/thumbnail?id=${driveId}&sz=w200-h200` : url}
+                                            className="h-10 w-12 object-cover rounded shadow-sm border border-slate-200"
+                                            alt="Bukti"
+                                            onError={(e) => { e.target.style.display = 'none'; if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex'; }}
+                                          />
+                                          <div className="hidden h-10 w-12 items-center justify-center bg-slate-50 border rounded text-[7px] font-bold">IMG</div>
+                                        </a>
+                                      ) : (
+                                        <a href={url} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center w-8 h-8 bg-slate-50 text-slate-400 rounded border border-slate-200 text-[8px] font-bold">
+                                          #{uIdx + 1}
+                                        </a>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            ) : (
+                              <span className="text-[9px] text-slate-400 font-bold bg-slate-50 px-2 py-1 rounded block mt-1 w-full text-center border border-slate-100 border-dashed">-</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    });
+                  })()}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
         {/* SECTION 5: SISWA KELUAR */}
-        <div className="space-y-6">
-          <h3 className="text-sm font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2">
-            <div className="w-1.5 h-4 bg-slate-400 rounded-full" />
-            V. Rekapitulasi Siswa Keluar
+        <div className="space-y-6 print-page-2">
+          <h3 className="text-sm font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2 report-section-title before:bg-slate-400">
+            VI. Rekapitulasi Siswa Keluar
           </h3>
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm">
             <table className="modern-table">
@@ -925,9 +1143,6 @@ export default function Laporan() {
           </div>
         </div>
 
-        <div className="pt-8 border-t border-slate-100 text-center">
-          <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.5em]">Laporan Digital Terverifikasi</p>
-        </div>
       </div>
     </div>
   );

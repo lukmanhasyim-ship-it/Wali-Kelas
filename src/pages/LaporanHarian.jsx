@@ -146,7 +146,7 @@ export default function LaporanHarian() {
     <div className="space-y-8 pb-12 animate-fade-in">
       <style>{`
         @media print {
-          @page { size: A4; margin: 15mm; }
+          @page { size: A4; margin: 5mm 5mm 5mm 10mm; }
           .no-print, aside, header, nav, footer, button { display: none !important; }
           html, body, #root, main, .max-w-6xl {
             height: auto !important;
@@ -165,6 +165,7 @@ export default function LaporanHarian() {
           table { width: 100% !important; border-collapse: collapse !important; }
           th, td { border: 1px solid #e2e8f0 !important; }
           .bg-slate-900 { background-color: #0f172a !important; color: white !important; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+          .bg-slate-50, .bg-slate-100, .bg-slate-200 { background-color: white !important; }
         }
       `}</style>
 

@@ -1,121 +1,125 @@
-# Siswa.Hub v4.8 - Ekosistem Manajemen Kelas Digital Premium
+# Siswa.Hub v4.9.0 - Ekosistem Manajemen Kelas Digital Premium
 
-Siswa.Hub adalah platform revolusioner berbasis **Serverless** yang dirancang khusus untuk memodernisasi kinerja Wali Kelas dalam mengelola administrasi siswa. Mengusung konsep *Human-Centric Design*, aplikasi ini memadukan estetika antarmuka (UI) mutakhir dengan logika sistem yang cerdas, transparan, dan peduli.
+![License](https://img.shields.io/badge/License-Private-red.svg)
+![Version](https://img.shields.io/badge/Version-4.9.0-emerald.svg)
+![React](https://img.shields.io/badge/Frontend-React%2019-blue.svg)
+![Backend](https://img.shields.io/badge/Backend-Google%20Apps%20Script-orange.svg)
 
----
-
-## ✨ Fitur Unggulan Utama
-
-### 🖥️ Smart & Personal Dashboard
-*   **Contextual Greeting**: Penyambutan personal berdasarkan Role (Wali Kelas / Siswa) dengan deteksi nama otomatis dari basis data (Master Siswa).
-*   **Privacy-First Alerts**: Siswa hanya melihat status kedisiplinan dan nilai miliknya sendiri.
-*   **Piket Hari Ini**: Tampilan otomatis jadwal kebersihan harian di dashboard.
-*   **Real-time Analytics**: Visualisasi kehadiran hari ini dan saldo kas mingguan secara instan.
-*   **Mobile-Ready Experience**: Antarmuka sidebar responsif penuh (full-sidebar) yang memudahkan penelusuran menu via smartphone.
-
-### 📚 Administrasi Akademik & Kurikulum Merdeka
-*   **Jadwal Piket Otomatis**: Sistem manajemen regu kerja mingguan dengan fitur eliminasi siswa (satu siswa, satu jadwal) dan notifikasi otomatis.
-*   **Leger Nilai (DKN)**: Modul pengelolaan nilai yang fleksibel dengan fitur **"Terapkan Susunan Mapel"** otomatis dan editor nama mata pelajaran dinamis.
-*   **Buku Klaper Digital**: Arsip data mutasi, ijazah, dan riwayat siswa yang rapi dan siap cetak.
-*   **Dual-Session Attendance**: Pencatatan presensi pagi dan siang untuk akurasi maksimal.
-
-### 💰 Keuangan & Kedisiplinan Terpadu
-*   **Laporan Kas 4 Kolom**: Transparansi dana kelas dengan deteksi otomatis siswa yang memiliki tanggungan (Debtor Tracking).
-*   **Otoritas Eksklusif Bendahara**: Keamanan RBAC (Role-Based Access Control) di mana fitur input nominal kas dibatasi secara ketat hanya untuk Pengurus Bendahara.
-*   **Fail-Safe Financial Flow**: Fitur pembatalan transaksi (Undo) bagi Bendahara untuk mengoreksi kesalahan input data secara instan.
-*   **Smart Disciplinary Workflow**: Log panggilan resmi, home visit, dan integrasi pemetaan titik koordinat lokasi alamat rumah.
-*   **Integrated WhatsApp**: Pesan motivasi otomatis dan notifikasi resmi dengan formatting kode negara (62).
-
-### 🛡️ Registrasi & Keamanan
-*   **Self-Registration System**: Siswa baru dapat mendaftar mandiri via aplikasi yang langsung terhubung ke WhatsApp Wali Kelas.
-*   **Multi-Account Login Wali Kelas**: Dukungan kolaborasi antar pengajar dengan memisahkan multi-email (koma) dalam satu profil kelas.
-*   **Google OAuth 2.0**: Keamanan tingkat tinggi menggunakan akun Gmail resmi sekolah.
+**Siswa.Hub** adalah platform manajemen kelas revolusioner berbasis *Serverless* yang dirancang untuk mentransformasi kinerja Wali Kelas. Aplikasi ini menggabungkan keindahan desain modern dengan sistem backend yang tangguh menggunakan Google Workspace Ecosystem, memberikan pengalaman pengelolaan administrasi siswa yang cerdas, transparan, dan sangat efisien.
 
 ---
 
-## 🛠️ Panduan Instalasi (Mendetail)
+## 🚀 Fitur Unggulan
 
-### 1. Prasyarat Sistem
-*   **Node.js**: Versi 18 atau lebih tinggi.
-*   **Google Account**: Untuk mengelola Google Sheets dan Google Apps Script.
+### 📊 Dashboard Analitik Cerdas
+*   **Real-time Monitoring**: Visualisasi instan kehadiran harian, saldo kas, dan statistik kedisiplinan.
+*   **Role-Based Experience**: Antarmuka yang dipersonalisasi untuk Wali Kelas, Pengurus Kelas (Ketua, Sekretaris, Bendahara), dan Siswa.
+*   **Privacy-First Design**: Siswa hanya dapat melihat data pribadi mereka (nilai dan presensi), sementara Wali Kelas memiliki kendali penuh atas seluruh data kelas.
 
-### 2. Persiapan Database (Google Sheets)
-Buat Spreadsheet baru di Google Drive Anda. Lalu buat sheet-sheet berikut dengan nama dan struktur kolom (Header di Baris 1) **HARUS PERSIS**:
+### 📝 Administrasi Akademik & Presensi
+*   **Presensi Dual-Session**: Pencatatan kehadiran pagi dan siang dengan *timestamp* otomatis untuk akurasi maksimal.
+*   **Daftar Nilai (DKN) Dinamis**: Sistem pengelolaan nilai yang fleksibel dengan fitur "Terapkan Susunan Mapel" otomatis dan editor kategori yang mudah.
+*   **Buku Klaper Digital**: Arsip data mutasi dan riwayat siswa yang siap cetak kapan saja.
+
+### 💰 Manajemen Keuangan (Kas Kelas)
+*   **Laporan Kas 4 Kolom**: Transparansi penuh dengan pencatatan masuk, keluar, dan saldo akhir secara otomatis.
+*   **Smart Debtor Tracking**: Sistem otomatis mendeteksi siswa yang memiliki tanggungan iuran berdasarkan nominal yang ditetapkan Wali Kelas.
+*   **Otoritas Bendahara**: Fitur input keuangan yang diamankan secara khusus hanya untuk akun Google Bendahara yang terdaftar.
+
+### 🏠 Layanan Konseling & Home Visit (NEW v4.9)
+*   **Digital Call Log**: Pendataan panggilan siswa secara sistematis mulai dari kategori hingga alasan detail.
+*   **Home Visit Evidence**: Fitur unggahan foto bukti kunjungan rumah langsung ke Google Drive melalui aplikasi, terintegrasi dengan laporan perkembangan siswa.
+*   **Automated Notifications**: Kirim pesan motivasi dan pengingat resmi secara otomatis kepada siswa dan pengurus kelas.
+
+---
+
+## 🛠️ Panduan Instalasi (Langkah demi Langkah)
+
+### 1. Persiapan Basis Data (Google Sheets)
+Buat sebuah Google Spreadsheet baru. Tambahkan sheet-sheet berikut dengan nama dan struktur kolom yang **WAJIB SAMA** (Header di Baris 1):
 
 | Nama Sheet | Struktur Kolom (Header Baris 1) |
 | :--- | :--- |
-| **Master_Siswa** | ID_Siswa, NIS, NISN, Nama_Siswa, L/P, Email, Jabatan, Tempat_Lahir, Tanggal_Lahir, No_WA_Siswa, Nama_Wali, No_WA_Wali, Alamat |
+| **Master_Siswa** | ID_Siswa, NIS, NISN, Nama_Siswa, L/P, Email, Jabatan, Tempat_Lahir, Tanggal_Lahir, No_WA_Siswa, Nama_Wali, No_WA_Wali, Alamat, Picture |
 | **Presensi** | ID_Presensi, Tanggal, ID_Siswa, NISN, Status_Pagi, Timestamp_Pagi, Status_Siang, Timestamp_Siang, Keterangan |
 | **Keuangan** | ID_Transaksi, Tanggal, ID_Siswa, NISN, Tipe, Jumlah, Keterangan |
 | **Daftar_Nilai** | ID_Nilai, ID_Siswa, NISN, Jenjang, Semester, Kategori_Mapel, Nama_Mapel, Topik, Nilai, Timestamp |
-| **Log_Panggilan** | ID_Panggilan, Tanggal, ID_Siswa, NISN, Kategori, Alasan, Hasil_Pertemuan, Status_Selesai |
+| **Log_Panggilan** | ID_Panggilan, Tanggal, ID_Siswa, NISN, Kategori, Alasan, Tanggal_Pemanggilan, Waktu_Diskusi, Hasil_Pertemuan, Status_Selesai, Bukti_File_URL |
 | **Profil_Wali_Kelas** | Id_Wali, Nama, Email, Bio, Gaya_Ajar, Kontak, Created_At, Nominal_Iuran, Kelas |
-| **Lokasi** | ID_Lokasi, Nama_Lokasi, Deskripsi, Alamat, Latitude, Longitude, Lokasi, Created_By, Created_By_Email, Created_At |
-| **Notifikasi** | ID, Message, Type, Target_Email, Is_Read, Timestamp, Target_Role, Role, Email |
 | **Piket** | ID_Piket, Hari, ID_Siswa, Nama_Siswa, Email |
-| **Archive_Rekap_Absensi** | ID_Siswa, Bulan, H, I, S, A, B |
-| **Archive_Rekap_Keuangan** | Bulan, Saldo_Awal, Total_Masuk, Total_Keluar, Saldo_Akhir |
-| **Archive_Detail_Absensi** | ID_Presensi, Tanggal, ID_Siswa, NISN, Status_Pagi, Timestamp_Pagi, Status_Siang, Timestamp_Siang, Keterangan |
+| **Notifikasi** | ID, Message, Type, Target_Email, Is_Read, Timestamp, Target_Role, Role, Email |
+| **Lokasi** | ID_Lokasi, Nama_Lokasi, Deskripsi, Alamat, Latitude, Longitude, Lokasi, Created_By, Created_By_Email, Created_At |
 
-> [!TIP]
-> Tiga sheet terakhir (**Archive_...**) akan dibuat secara otomatis secara simultan oleh sistem, menyiapkannya lebih awal dapat membantu integrasi data arsip.
+> [!IMPORTANT]
+> Pastikan kolom `Bukti_File_URL` di sheet `Log_Panggilan` tersedia untuk menyimpan link foto dokumentasi dari Google Drive.
 
-### 3. Konfigurasi Google Apps Script (Backend)
-1.  Di Spreadsheet Anda, klik menu **Extensions** > **Apps Script**.
-2.  Hapus kode yang ada, lalu salin seluruh isi dari file `gas/Code.gs` di repository ini.
-3.  Simpan proyek dengan nama "Siswa.Hub Backend".
-4.  Klik tombol **Deploy** (biru) > **New Deployment**.
+### 2. Konfigurasi Backend (Google Apps Script)
+1.  Buka Spreadsheet Anda, arahkan ke **Extensions** > **Apps Script**.
+2.  Hapus semua kode bawaan, lalu salin seluruh isi dari file `gas/Code.gs` dari repository ini.
+3.  Simpan proyek dengan nama `SiswaHub_API`.
+4.  **Pengaturan Izin**: Jalankan fungsi `pancingIzin` satu kali di editor script untuk mengizinkan aplikasi mengakses Google Drive (untuk fitur upload foto).
+5.  **Deployment**:
+    *   Klik **Deploy** > **New Deployment**.
     *   Select type: **Web App**.
-    *   Description: "Initial Deployment".
     *   Execute as: **Me** (Email Anda).
     *   Who has access: **Anyone**.
-5.  Klik **Deploy**, berikan izin (Authorize Access), dan salin **Web App URL** Anda.
+    *   Salin **Web App URL** yang muncul (ini adalah API URL Anda).
 
-### 4. Konfigurasi Google Cloud (Untuk Login)
+### 3. Konfigurasi Autentikasi (Google Cloud Console)
 1.  Buka [Google Cloud Console](https://console.cloud.google.com/).
-2.  Buat Proyek baru > Buka **APIs & Services** > **OAuth consent screen**.
-3.  Pilih **External**, isi data aplikasi, lalu tambahkan scope `./auth/userinfo.email` dan `./auth/userinfo.profile`.
-4.  Buka tab **Credentials** > **Create Credentials** > **OAuth client ID**.
-    *   Application type: **Web application**.
-    *   Authorized JavaScript origins: `http://localhost:5173` (untuk dev) dan URL hosting Anda.
-5.  Salin **Client ID** yang dihasilkan.
+2.  Buat proyek baru atau pilih proyek yang sudah ada.
+3.  Pergi ke **APIs & Services** > **Credentials**.
+4.  Klik **Create Credentials** > **OAuth client ID**.
+5.  Pilih Application Type: **Web application**.
+6.  Pada **Authorized JavaScript origins**, tambahkan:
+    *   `http://localhost:5173` (untuk pengembangan lokal)
+    *   URL Domain tempat Anda melakukan hosting aplikasi (jika sudah ada).
+7.  Simpan dan salin **Client ID** yang diberikan.
 
-### 5. Setup Frontend (Via GitHub)
-Jika Anda ingin memasang aplikasi ini di PC baru atau berpindah perangkat, ikuti langkah berikut:
-
-1.  **Clone Repository**: 
-    Buka terminal/command prompt, lalu arahkan ke folder tujuan dan jalankan:
+### 4. Setup Frontend (Lokal)
+1.  **Clone Repository**:
     ```bash
-    git clone https://github.com/username-anda/Siswa.Hub.git
-    cd Siswa.Hub
+    git clone https://github.com/lukmanhasyim-ship-it/Wali-Kelas.git
+    cd Wali-Kelas
     ```
-2.  **Install Dependencies**:
-    Jalankan perintah berikut untuk memasang semua library yang dibutuhkan:
+2.  **Install Library**:
     ```bash
     npm install
     ```
 3.  **Konfigurasi Environment**:
-    Karena file `.env` biasanya tidak ikut diunggah ke GitHub demi keamanan, Anda wajib membuat file baru bernama `.env` di root folder dan menginput kembali variabel backend Anda:
+    Buat file `.env` di root folder dan isi dengan data yang sudah Anda dapatkan:
     ```env
+    VITE_GOOGLE_CLIENT_ID=MASUKKAN_CLIENT_ID_ANDA
     VITE_GAS_API_URL=MASUKKAN_WEB_APP_URL_GAS_ANDA
-    VITE_GOOGLE_CLIENT_ID=MASUKKAN_CLIENT_ID_GOOGLE_ANDA
     ```
-4.  **Menjalankan Aplikasi**:
+4.  **Jalankan Aplikasi**:
     ```bash
     npm run dev
     ```
-5.  **Sinkronisasi Update**:
-    Jika ada perubahan kode dari PC lain yang sudah di-*push* ke GitHub, cukup jalankan `git pull origin main` di PC saat ini.
 
 ---
 
-## 🎨 Tech Stack
-*   **Frontend**: React 19, Vite 6, Tailwind CSS (Core Logic), Lucide React Icons.
-*   **Backend**: Google Apps Script (GAS).
-*   **Database**: Google Sheets API.
-*   **Security**: Google OAuth 2.0.
+## 💻 Tech Stack
+
+*   **Framework**: [React 19](https://react.dev/)
+*   **Build Tool**: [Vite 6](https://vitejs.dev/)
+*   **Styling**: [Tailwind CSS 3.4](https://tailwindcss.com/)
+*   **Icons**: [Lucide React](https://lucide.dev/)
+*   **Storage & Database**: Google Sheets via [Google Apps Script](https://developers.google.com/apps-script)
+*   **Auth**: Google OAuth 2.0
+*   **Export Engine**: jsPDF, xlsx (SheetJS), html2canvas
 
 ---
 
-> **Siswa.Hub © 2026.**  
-> *Didesain dengan presisi dan kepedulian oleh Mohamad Lukman Nurhasyim, S.Kom, Gr.*
+## 🛡️ Keamanan & Privasi
+Siswa.Hub menggunakan autentikasi resmi Google. Data Anda tersimpan sepenuhnya di Google Drive Anda sendiri. Kami sangat menyarankan untuk:
+1.  Tidak membagikan file `.env` ke publik.
+2.  Memasukkan email Pengurus Kelas di sheet `Master_Siswa` untuk memberikan hak akses tertentu secara otomatis.
+3.  Secara berkala melakukan backup/ekspor data nilai ke format Excel melalui fitur yang disediakan di dalam aplikasi.
+
+---
+
+> **Didesain dengan ❤️ oleh Mohamad Lukman Nurhasyim, S.Kom, Gr.**  
+> *Membangun ekosistem pendidikan yang lebih baik, satu baris kode dalam satu waktu.*
+
+© 2026 Siswa.Hub. All rights reserved.man Nurhasyim, S.Kom, Gr.*

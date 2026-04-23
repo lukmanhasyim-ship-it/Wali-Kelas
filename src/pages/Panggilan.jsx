@@ -15,13 +15,17 @@ import {
   FileText,
   PlusCircle,
   History,
-  Info
+  Info,
+  X,
+  Upload,
+  Trash2
 } from 'lucide-react';
 import Loading from '../components/Loading';
 import { sendNotification } from '../utils/notifications';
 import { formatDateIndo } from '../utils/logic';
 
 export default function Panggilan() {
+
   const { user } = useAuth();
   const { showToast } = useToast();
   const location = useLocation();
@@ -35,6 +39,19 @@ export default function Panggilan() {
   const [alasan, setAlasan] = useState('Lainnya');
   const [keteranganLainnya, setKeteranganLainnya] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [isTindakLanjutOpen, setIsTindakLanjutOpen] = useState(false);
+  const [activeCallId, setActiveCallId] = useState(null);
+  const [tindakLanjutNote, setTindakLanjutNote] = useState('');
+  const [tindakLanjutFiles, setTindakLanjutFiles] = useState([]); // Now supports multiple files (up to 2)
+  const [isUploading, setIsUploading] = useState(false);
+  const [tanggalRencana, setTanggalRencana] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [confirmInput, setConfirmInput] = useState('');
+  const [deleting, setDeleting] = useState(false);
+  const [selectedLogs, setSelectedLogs] = useState([]);
+  const [selectAll, setSelectAll] = useState(false);
+  const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
 
   // Handle incoming state (from dashboard alerts)
   useEffect(() => {
@@ -81,6 +98,7 @@ export default function Panggilan() {
       NISN: nisn,
       Kategori: kategori,
       Alasan: finalAlasan,
+      Tanggal_Pemanggilan: tanggalRencana,
       Hasil_Pertemuan: 'Belum Selesai',
       Status_Selesai: 'Pending'
     };
@@ -90,7 +108,7 @@ export default function Panggilan() {
 
       // Notify Student and Officers via Centralized Utility
       const calledStudentName = siswa.find(s => String(s.NISN) === String(nisn))?.Nama_Siswa || nisn;
-      
+
       await sendNotification(siswa, {
         subjectId: nisn,
         targetRoles: ['Ketua Kelas', 'Sekretaris', 'Bendahara', 'Wali Kelas'],
@@ -105,13 +123,70 @@ export default function Panggilan() {
       showToast('Surat panggilan berhasil dibuat.', 'success');
       setNisn('');
       setKeteranganLainnya('');
+      setTanggalRencana(format(new Date(), 'yyyy-MM-dd'));
     } catch (error) {
       console.error('Buat panggilan gagal:', error);
       showToast('Gagal membuat surat panggilan.', 'error');
     } finally {
       setIsSaving(false);
     }
-  }, [nisn, alasan, keteranganLainnya, kategori, showToast]);
+  }, [nisn, alasan, keteranganLainnya, kategori, showToast, tanggalRencana, siswa, user]);
+
+
+  const handleSaveTindakLanjut = async (e) => {
+    e.preventDefault();
+    if (!activeCallId) return;
+
+    setIsUploading(true);
+    try {
+      let fileUrl = '';
+      if (tindakLanjutFiles.length > 0) {
+        const uploadedUrls = [];
+        for (const file of tindakLanjutFiles) {
+          if (!file) continue;
+          const reader = new FileReader();
+          const base64Promise = new Promise((resolve) => {
+            reader.onload = () => resolve(reader.result);
+            reader.readAsDataURL(file);
+          });
+          const base64 = await base64Promise;
+          const uploadRes = await fetchGAS('UPLOAD_FILE', {
+            fileName: `Bukti_${activeCallId}_${file.name}`,
+            mimeType: file.type,
+            base64Data: base64
+          });
+          uploadedUrls.push(uploadRes.data.url);
+        }
+        fileUrl = uploadedUrls.join(',');
+      }
+
+      await fetchGAS('UPDATE', {
+        sheet: 'Log_Panggilan',
+        id: activeCallId,
+        data: {
+          Hasil_Pertemuan: tindakLanjutNote,
+          Status_Selesai: 'Selesai',
+          Bukti_File_URL: fileUrl
+        }
+      });
+
+      setLog(prev => prev.map(item =>
+        item.ID_Panggilan === activeCallId
+          ? { ...item, Hasil_Pertemuan: tindakLanjutNote, Status_Selesai: 'Selesai', Bukti_File_URL: fileUrl }
+          : item
+      ));
+
+      showToast('Tindak lanjut berhasil disimpan.', 'success');
+      setIsTindakLanjutOpen(false);
+      setTindakLanjutNote('');
+      setTindakLanjutFiles([]);
+    } catch (error) {
+      console.error('Save tindak lanjut error:', error);
+      showToast('Gagal menyimpan tindak lanjut.', 'error');
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const handleUpdateStatus = useCallback(async (id, status) => {
     try {
@@ -124,6 +199,31 @@ export default function Panggilan() {
     }
   }, [showToast]);
 
+  const handleDeleteLog = useCallback((item) => {
+    setDeleteTarget(item);
+    setShowDeleteModal(true);
+    setConfirmInput('');
+  }, []);
+
+  const confirmDeleteLog = useCallback(async () => {
+    if (!deleteTarget || confirmInput !== 'HAPUS') return;
+
+    setDeleting(true);
+    try {
+      await fetchGAS('DELETE', { sheet: 'Log_Panggilan', id: deleteTarget.ID_Panggilan });
+      setLog(prev => prev.filter(log => log.ID_Panggilan !== deleteTarget.ID_Panggilan));
+      showToast('Log panggilan berhasil dihapus.', 'success');
+      setShowDeleteModal(false);
+      setDeleteTarget(null);
+      setConfirmInput('');
+    } catch (error) {
+      console.error('Delete log gagal:', error);
+      showToast('Gagal menghapus log panggilan.', 'error');
+    } finally {
+      setDeleting(false);
+    }
+  }, [deleteTarget, confirmInput, showToast]);
+
   if (loading) return <Loading message="Menyiapkan data log panggilan..." />;
 
   const stats = {
@@ -135,9 +235,9 @@ export default function Panggilan() {
 
   const filteredLog = log.filter(item => {
     const s = siswa.find(s => String(s.NISN) === String(item.NISN));
-    const searchStr = (s?.Nama_Siswa || item.NISN || '').toLowerCase() + 
-                      (item.Kategori || '').toLowerCase() + 
-                      (item.Alasan || '').toLowerCase();
+    const searchStr = (s?.Nama_Siswa || item.NISN || '').toLowerCase() +
+      (item.Kategori || '').toLowerCase() +
+      (item.Alasan || '').toLowerCase();
     return searchStr.includes(searchTerm.toLowerCase());
   });
 
@@ -240,6 +340,17 @@ export default function Panggilan() {
                   />
                 </div>
               )}
+              <div className="space-y-1.5">
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-2">Tanggal Rencana Pemanggilan</label>
+                <input
+                  type="date"
+                  className="input-field"
+                  value={tanggalRencana}
+                  onChange={e => setTanggalRencana(e.target.value)}
+                  required
+                />
+              </div>
+
 
               <button
                 type="submit"
@@ -261,11 +372,26 @@ export default function Panggilan() {
 
         {/* History Table Container */}
         <div className="lg:col-span-2 space-y-4">
-            <div className="flex items-center justify-between px-2">
-              <div className="flex items-center gap-2">
-                <History className="w-5 h-5 text-slate-400" />
-                <h3 className="text-lg font-black text-slate-800">Riwayat Panggilan</h3>
-              </div>
+          <div className="flex items-center justify-between px-2">
+            <div className="flex items-center gap-2">
+              <History className="w-5 h-5 text-slate-400" />
+              <h3 className="text-lg font-black text-slate-800">Riwayat Panggilan</h3>
+              {selectedLogs.length > 0 && (
+                <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 text-[10px] font-black rounded-full">
+                  {selectedLogs.length} dipilih
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-3">
+              {selectedLogs.length > 0 && (
+                <button
+                  onClick={() => setShowBulkDeleteModal(true)}
+                  className="px-4 py-2 bg-red-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-700 transition-all shadow-lg shadow-red-200 active:scale-95 flex items-center gap-2"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  Hapus Terpilih
+                </button>
+              )}
               <div className="relative w-64">
                 <input
                   type="text"
@@ -277,102 +403,382 @@ export default function Panggilan() {
                 <Info className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               </div>
             </div>
+          </div>
 
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-xl overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse">
-                  <thead>
-                    <tr className="bg-slate-50/50 border-b border-slate-100">
-                      <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Waktu</th>
-                      <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Siswa</th>
-                      <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Topik & Alasan</th>
-                      <th className="px-8 py-5 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-xl overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="bg-slate-100 border-b border-slate-300">
+                    <th className="px-4 py-3 text-center text-[10px] font-black text-slate-500 uppercase tracking-widest border-r border-slate-200 w-12">
+                      <input
+                        type="checkbox"
+                        className="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                        checked={selectAll && filteredLog.length > 0}
+                        ref={(el) => { if (el) el.indeterminate = selectedLogs.length > 0 && selectedLogs.length < filteredLog.length; }}
+                        onChange={(e) => {
+                          setSelectAll(e.target.checked);
+                          if (e.target.checked) {
+                            setSelectedLogs(filteredLog.map(item => item.ID_Panggilan));
+                          } else {
+                            setSelectedLogs([]);
+                          }
+                        }}
+                      />
+                    </th>
+                    <th className="px-4 py-3 text-center text-[10px] font-black text-slate-500 uppercase tracking-widest border-r border-slate-200 w-12">No</th>
+                    <th className="px-6 py-3 text-left text-[10px] font-black text-slate-500 uppercase tracking-widest border-r border-slate-200">Jadwal & Log</th>
+                    <th className="px-6 py-3 text-left text-[10px] font-black text-slate-500 uppercase tracking-widest border-r border-slate-200">Data Siswa</th>
+                    <th className="px-6 py-3 text-left text-[10px] font-black text-slate-500 uppercase tracking-widest border-r border-slate-200">Kasus / Alasan</th>
+                    <th className="px-6 py-3 text-center text-[10px] font-black text-slate-500 uppercase tracking-widest">Aksi</th>
+                  </tr>
+                  <tr className="bg-slate-50/50">
+                    {[1, 2, 3, 4, 5, 6].map(num => (
+                      <th key={num} className="py-1 text-center text-[8px] font-bold border-r border-slate-200 last:border-0 text-slate-400">{num}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {filteredLog.length === 0 ? (
+                    <tr>
+                      <td colSpan="6" className="px-8 py-20 text-center">
+                        <div className="flex flex-col items-center justify-center space-y-4 grayscale opacity-40">
+                          <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center">
+                            <PhoneCall className="w-8 h-8 text-slate-300" />
+                          </div>
+                          <div className="space-y-1">
+                            <p className="text-sm font-black text-slate-400 uppercase tracking-widest">Belum ada rekaman</p>
+                            <p className="text-xs font-medium text-slate-400">Gunakan form di samping untuk membuat laporan baru.</p>
+                          </div>
+                        </div>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-50">
-                    {filteredLog.length === 0 ? (
-                      <tr>
-                        <td colSpan="4" className="px-8 py-20 text-center">
-                          <div className="flex flex-col items-center justify-center space-y-4 grayscale opacity-40">
-                            <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center">
-                              <PhoneCall className="w-8 h-8 text-slate-300" />
+                  ) : filteredLog.slice(0, 5).map((item, idx) => {
+                    const s = siswa.find(s => String(s.NISN) === String(item.NISN));
+                    const isSelesai = item.Status_Selesai === 'Selesai';
+                    const isSelected = selectedLogs.includes(item.ID_Panggilan);
+                    return (
+                      <tr key={item.ID_Panggilan} className={`hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-0 ${isSelected ? 'bg-red-50/30' : ''}`}>
+                        <td className="px-4 py-4 text-center border-r border-slate-100">
+                          <input
+                            type="checkbox"
+                            className="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                            checked={isSelected}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedLogs(prev => [...prev, item.ID_Panggilan]);
+                              } else {
+                                setSelectedLogs(prev => prev.filter(id => id !== item.ID_Panggilan));
+                              }
+                            }}
+                          />
+                        </td>
+                        <td className="px-4 py-4 text-center text-[10px] font-bold text-slate-400 italic border-r border-slate-100">{idx + 1}</td>
+                        <td className="px-6 py-4 border-r border-slate-100">
+                          <div className="flex flex-col">
+                            <div className="flex flex-col gap-0.5">
+                              <div className="flex items-center gap-1.5">
+                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                                <span className="text-[10px] font-black text-emerald-600 uppercase tracking-tight">Jadwal Rencana:</span>
+                              </div>
+                              <span className="text-[12px] font-black text-slate-800 ml-3">{item.Tanggal_Pemanggilan ? formatDateIndo(item.Tanggal_Pemanggilan) : 'Belum Diatur'}</span>
+                              <span className="text-[8px] font-bold text-slate-400 uppercase mt-1 tracking-widest ml-3 opacity-60">Dibuat: {formatDateIndo(item.Tanggal)}</span>
                             </div>
-                            <div className="space-y-1">
-                              <p className="text-sm font-black text-slate-400 uppercase tracking-widest">Belum ada rekaman</p>
-                              <p className="text-xs font-medium text-slate-400">Gunakan form di samping untuk membuat laporan baru.</p>
+                            <div className="mt-2 text-[9px] font-black bg-slate-100 text-slate-500 px-2 py-0.5 rounded w-fit">{item.ID_Panggilan}</div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 border-r border-slate-100">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-xs font-black text-slate-400 border border-white shadow-sm overflow-hidden shrink-0">
+                              {s?.Picture ? <img src={s.Picture} className="w-full h-full object-cover" /> : (s?.Nama_Siswa?.charAt(0) || '?')}
+                            </div>
+                            <div className="flex flex-col min-w-0">
+                              <span className="text-[11px] font-black text-slate-800 truncate">{s ? s.Nama_Siswa : item.NISN}</span>
+                              <span className="text-[9px] font-bold text-slate-400">{item.NISN}</span>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 border-r border-slate-100">
+                          <div className="space-y-1.5">
+                            <div className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[8px] font-black uppercase ${item.Kategori === 'Home Visit' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'
+                              }`}>
+                              {item.Kategori}
+                            </div>
+                            <p className="text-[10px] font-bold text-slate-600 leading-tight">{item.Alasan}</p>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex flex-col gap-2">
+                            {isSelesai ? (
+                              <div className="flex flex-col gap-1.5">
+                                <div className="px-3 py-1.5 bg-emerald-50 text-emerald-600 rounded-lg border border-emerald-100 flex items-center justify-center gap-2">
+                                  <CheckCircle2 className="w-3 h-3" />
+                                  <span className="text-[9px] font-black uppercase tracking-widest">Selesai</span>
+                                </div>
+                                {item.Hasil_Pertemuan && (
+                                  <div className="p-2 bg-slate-50 rounded-lg border border-slate-100">
+                                    <p className="text-[9px] text-slate-500 italic leading-tight line-clamp-2">{item.Hasil_Pertemuan}</p>
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => { setActiveCallId(item.ID_Panggilan); setIsTindakLanjutOpen(true); }}
+                                className="w-full py-2 bg-indigo-600 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-600/20 active:scale-95 flex items-center justify-center gap-2"
+                              >
+                                Tindak Lanjut
+                                <FileText className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => handleUpdateStatus(item.ID_Panggilan, isSelesai ? 'Pending' : 'Selesai')}
+                                className="flex-1 text-[8px] font-bold text-slate-400 hover:text-emerald-500 uppercase tracking-tighter transition-colors text-center"
+                              >
+                                {isSelesai ? 'Batalkan Selesai' : 'Tandai Selesai'}
+                              </button>
+                              <button
+                                onClick={() => handleDeleteLog(item)}
+                                className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"
+                                title="Hapus Log"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
                             </div>
                           </div>
                         </td>
                       </tr>
-                    ) : filteredLog.map(item => {
-                      const s = siswa.find(s => String(s.NISN) === String(item.NISN));
-                      const isSelesai = item.Status_Selesai === 'Selesai';
-                      return (
-                        <tr key={item.ID_Panggilan} className="group hover:bg-slate-50/80 transition-all duration-300">
-                        <td className="px-8 py-6">
-                          <div className="flex flex-col">
-                            <span className="font-black text-slate-900">{formatDateIndo(item.Tanggal)}</span>
-                            <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">{item.ID_Panggilan}</span>
-                          </div>
-                        </td>
-                          <td className="px-8 py-6">
-                            <div className="flex items-center gap-4">
-                              <div className="relative">
-                                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-lg font-black text-slate-400 border border-white shadow-sm overflow-hidden">
-                                  {s?.Picture ? (
-                                    <img src={s.Picture} alt="" className="w-full h-full object-cover" />
-                                  ) : (
-                                    s?.Nama_Siswa?.charAt(0) || '?'
-                                  )}
-                                </div>
-                                <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-lg border-2 border-white shadow-sm ${isSelesai ? 'bg-emerald-500' : 'bg-rose-500'}`} />
-                              </div>
-                              <div className="flex flex-col">
-                                <span className="font-black text-slate-800 leading-tight group-hover:text-emerald-600 transition-colors">{s ? s.Nama_Siswa : item.NISN}</span>
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mt-1">{item.NISN}</span>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-8 py-6">
-                            <div className="space-y-2">
-                              <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest ${
-                                item.Kategori === 'Home Visit' 
-                                  ? 'bg-amber-100 text-amber-700 border border-amber-200' 
-                                  : item.Kategori === 'Teguran'
-                                  ? 'bg-rose-100 text-rose-700 border border-rose-200'
-                                  : 'bg-emerald-100 text-emerald-700 border border-emerald-200'
-                                }`}>
-                                {item.Kategori === 'Home Visit' ? <MapPin className="w-3 h-3" /> : <PhoneCall className="w-3 h-3" />}
-                                {item.Kategori}
-                              </div>
-                              <p className="text-xs font-bold text-slate-600 leading-relaxed max-w-[200px]">{item.Alasan}</p>
-                            </div>
-                          </td>
-                          <td className="px-8 py-6 text-right">
-                            <button
-                              onClick={() => handleUpdateStatus(item.ID_Panggilan, isSelesai ? 'Pending' : 'Selesai')}
-                              className={`group/btn relative inline-flex items-center gap-3 pl-5 pr-4 py-3 text-[10px] font-black uppercase tracking-[0.15em] rounded-2xl border-2 transition-all active:scale-95 ${
-                                isSelesai
-                                  ? 'bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-100 hover:border-emerald-200'
-                                  : 'bg-white text-slate-400 border-slate-100 hover:border-rose-200 hover:text-rose-600 hover:bg-rose-50'
-                                }`}
-                            >
-                              <div className={`w-2 h-2 rounded-full ring-4 ${
-                                isSelesai ? 'bg-emerald-500 ring-emerald-500/20' : 'bg-slate-200 ring-slate-100 group-hover/btn:bg-rose-500 group-hover/btn:ring-rose-200'
-                              }`} />
-                              {item.Status_Selesai}
-                              <ChevronRight className={`w-4 h-4 transition-transform group-hover/btn:translate-x-1 ${isSelesai ? 'text-emerald-400' : 'text-slate-300'}`} />
-                            </button>
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
       </div>
-    );
-  }
+
+      {/* Modal Tindak Lanjut */}
+      {isTindakLanjutOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 z-[110] backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-300">
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center">
+                  <FileText className="w-4 h-4" />
+                </div>
+                <h3 className="text-lg font-black text-slate-900 tracking-tight">Tindak Lanjut</h3>
+              </div>
+              <button onClick={() => setIsTindakLanjutOpen(false)} className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveTindakLanjut} className="p-6 space-y-5">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Catatan Hasil / Solusi</label>
+                <textarea
+                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-sm font-medium text-slate-700 min-h-[120px] resize-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-none"
+                  placeholder="Tuliskan komitmen siswa, kesepakatan pertemuan dengan orang tua, dll..."
+                  value={tindakLanjutNote}
+                  onChange={e => setTindakLanjutNote(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Upload Bukti Fisik <span className="text-slate-400 normal-case tracking-normal font-medium">(Maks. 2 Foto)</span></label>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  {[0, 1].map((idx) => (
+                    <div key={idx} className="relative border-2 border-dashed border-slate-200 rounded-2xl p-4 flex flex-col items-center justify-center bg-white hover:bg-slate-50 hover:border-indigo-300 transition-colors cursor-pointer group h-32">
+                      <input
+                        type="file"
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        onChange={e => {
+                          const file = e.target.files[0];
+                          if (file) {
+                            setTindakLanjutFiles(prev => {
+                              const next = [...prev];
+                              next[idx] = file;
+                              return next;
+                            });
+                          }
+                        }}
+                        accept="image/*"
+                      />
+                      {tindakLanjutFiles[idx] ? (
+                        <div className="relative w-full h-full rounded-xl overflow-hidden shadow-sm">
+                          <img src={URL.createObjectURL(tindakLanjutFiles[idx])} className="w-full h-full object-cover" alt={`Preview ${idx + 1}`} />
+                          <div className="absolute inset-x-0 bottom-0 bg-slate-900/60 p-1">
+                             <p className="text-[8px] text-white font-black truncate text-center">{tindakLanjutFiles[idx].name}</p>
+                          </div>
+                          <button 
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setTindakLanjutFiles(prev => {
+                                const next = [...prev];
+                                next[idx] = null;
+                                return next;
+                              });
+                            }}
+                            className="absolute top-1 right-1 bg-rose-500 text-white p-1 rounded-lg hover:bg-rose-600 transition-colors shadow-lg"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center group-hover:bg-indigo-100 transition-colors mb-2">
+                             <PlusCircle className="w-4 h-4 text-slate-400 group-hover:text-indigo-600 transition-colors" />
+                          </div>
+                          <span className="text-[9px] font-bold text-slate-400 text-center uppercase tracking-tighter">
+                            Foto {idx + 1}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <p className="text-[10px] text-slate-400 mt-2 font-medium italic">* Anda dapat mengupload hingga 2 foto dokumentasi kunjungan.</p>
+              </div>
+
+              <div className="pt-4 flex gap-3">
+                <button type="button" onClick={() => setIsTindakLanjutOpen(false)} className="px-6 py-4 bg-slate-100 text-slate-500 rounded-2xl text-xs font-black uppercase tracking-widest flex-1 hover:bg-slate-200 hover:text-slate-700 transition-colors">Batal</button>
+                <button type="submit" disabled={isUploading} className="px-6 py-4 bg-indigo-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest flex-1 hover:bg-indigo-700 transition-all disabled:opacity-50 flex items-center justify-center shadow-lg shadow-indigo-600/20 active:scale-95">
+                  {isUploading ? <div className="w-5 h-5 border-2 border-white/50 border-t-white rounded-full animate-spin" /> : 'Simpan Detail'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Konfirmasi Hapus Log Panggilan */}
+      {showDeleteModal && deleteTarget && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-300 border border-slate-100">
+            <div className="p-8 text-center">
+              <div className="w-20 h-20 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner animate-pulse">
+                <Trash2 className="w-10 h-10" />
+              </div>
+              <h3 className="text-2xl font-bold text-slate-800 mb-2">Hapus Log Panggilan?</h3>
+              <p className="text-slate-500 mb-4 text-sm leading-relaxed">
+                Anda akan menghapus log panggilan untuk <strong>{siswa.find(s => String(s.NISN) === String(deleteTarget.NISN))?.Nama_Siswa || deleteTarget.NISN}</strong>.
+              </p>
+              <p className="text-slate-500 mb-6 text-sm leading-relaxed">
+                Tindakan ini akan <span className="text-red-600 font-bold underline">MEMPENGARUHI LAPORAN AKHIR WALI</span> dan <span className="text-red-600 font-bold underline">TIDAK DAPAT DIBATALKAN</span>.
+              </p>
+
+              <div className="mb-8">
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Ketik "HAPUS" untuk konfirmasi</label>
+                <input
+                  type="text"
+                  className="input-field text-center font-bold tracking-[0.5em] focus:border-red-500 focus:ring-red-500/20"
+                  placeholder="HAPUS"
+                  value={confirmInput}
+                  onChange={(e) => setConfirmInput(e.target.value.toUpperCase())}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => { setShowDeleteModal(false); setDeleteTarget(null); setConfirmInput(''); }}
+                  className="px-6 py-4 bg-slate-100 text-slate-500 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-slate-200 hover:text-slate-700 transition-colors"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  disabled={confirmInput !== 'HAPUS' || deleting}
+                  onClick={confirmDeleteLog}
+                  className={`px-6 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-lg ${
+                    confirmInput !== 'HAPUS' || deleting
+                      ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                      : 'bg-red-600 text-white hover:bg-red-700 shadow-lg shadow-red-200 active:scale-95'
+                  }`}
+                >
+                  {deleting ? 'Menghapus...' : 'Hapus Log'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Konfirmasi Hapus Massal */}
+      {showBulkDeleteModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-300 border border-slate-100">
+            <div className="p-8 text-center">
+              <div className="w-20 h-20 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner animate-pulse">
+                <Trash2 className="w-10 h-10" />
+              </div>
+              <h3 className="text-2xl font-bold text-slate-800 mb-2">Hapus {selectedLogs.length} Log Panggilan?</h3>
+              <p className="text-slate-500 mb-4 text-sm leading-relaxed">
+                Anda akan menghapus <strong>{selectedLogs.length} log panggilan</strong> sekaligus.
+              </p>
+              <p className="text-slate-500 mb-6 text-sm leading-relaxed">
+                Tindakan ini akan <span className="text-red-600 font-bold underline">MEMPENGARUHI LAPORAN AKHIR WALI</span> dan <span className="text-red-600 font-bold underline">TIDAK DAPAT DIBATALKAN</span>.
+              </p>
+
+              <div className="mb-8">
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Ketik "HAPUS" untuk konfirmasi</label>
+                <input
+                  type="text"
+                  className="input-field text-center font-bold tracking-[0.5em] focus:border-red-500 focus:ring-red-500/20"
+                  placeholder="HAPUS"
+                  value={confirmInput}
+                  onChange={(e) => setConfirmInput(e.target.value.toUpperCase())}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => { setShowBulkDeleteModal(false); setConfirmInput(''); }}
+                  className="px-6 py-4 bg-slate-100 text-slate-500 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-slate-200 hover:text-slate-700 transition-colors"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  disabled={confirmInput !== 'HAPUS' || deleting}
+                  onClick={async () => {
+                    if (confirmInput !== 'HAPUS') return;
+                    setDeleting(true);
+                    try {
+                      for (const id of selectedLogs) {
+                        await fetchGAS('DELETE', { sheet: 'Log_Panggilan', id });
+                      }
+                      setLog(prev => prev.filter(item => !selectedLogs.includes(item.ID_Panggilan)));
+                      showToast(`${selectedLogs.length} log panggilan berhasil dihapus.`, 'success');
+                      setShowBulkDeleteModal(false);
+                      setSelectedLogs([]);
+                      setSelectAll(false);
+                      setConfirmInput('');
+                    } catch (error) {
+                      console.error('Bulk delete gagal:', error);
+                      showToast('Gagal menghapus log panggilan.', 'error');
+                    } finally {
+                      setDeleting(false);
+                    }
+                  }}
+                  className={`px-6 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-lg ${
+                    confirmInput !== 'HAPUS' || deleting
+                      ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                      : 'bg-red-600 text-white hover:bg-red-700 shadow-lg shadow-red-200 active:scale-95'
+                  }`}
+                >
+                  {deleting ? 'Menghapus...' : 'Hapus Semua'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

@@ -187,7 +187,7 @@ export default function Layout() {
 
       {/* Sidebar for Desktop and Mobile */}
       <aside 
-        className={`fixed md:sticky inset-y-0 left-0 z-[100] h-screen bg-white border-r border-slate-100/50 transition-all duration-300 ease-in-out print:hidden flex flex-col ${
+        className={`fixed inset-y-0 left-0 z-[100] h-screen bg-white border-r border-slate-100/50 transition-all duration-300 ease-in-out print:hidden flex flex-col ${
           isMobileOpen ? 'translate-x-0 w-72 shadow-2xl' : '-translate-x-full md:translate-x-0'
         } ${isSidebarCollapsed ? 'md:w-20 md:shadow-sm' : 'md:w-72 md:shadow-xl'}`}
       >
@@ -227,17 +227,31 @@ export default function Layout() {
 
         <nav className={`flex-1 ${isSidebarCollapsed ? 'px-2' : 'px-4'} space-y-1 overflow-y-auto custom-scrollbar`}>
           {access.dashboard && <NavItem to="dashboard" icon={LayoutDashboard} label="Dashboard" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
+          
+          <div className={`${isSidebarCollapsed ? 'my-2 mx-auto w-8' : 'my-4 px-4'} h-px bg-slate-200`} />
+          <span className={`${isSidebarCollapsed ? 'hidden' : 'block'} text-[9px] font-black text-slate-300 uppercase tracking-widest px-4`}>Manajemen Data</span>
           {access.siswa && <NavItem to="master-siswa" icon={Users} label="Data Siswa" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
           {access.bukuKlaper && <NavItem to="buku-klaper" icon={BookOpen} label="Buku Klaper" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
           {access.dkn && <NavItem to="dkn" icon={LibraryBig} label="Leger" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
-          {access.keuangan && <NavItem to="tanggungan" icon={ClipboardList} label="Tanggungan KAS" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
 
+          <div className={`${isSidebarCollapsed ? 'my-2 mx-auto w-8' : 'my-4 px-4'} h-px bg-slate-200`} />
+          <span className={`${isSidebarCollapsed ? 'hidden' : 'block'} text-[9px] font-black text-slate-300 uppercase tracking-widest px-4`}>Keuangan</span>
+          {access.keuangan && <NavItem to="tanggungan" icon={ClipboardList} label="Tanggungan KAS" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
+          {access.keuangan && <NavItem to="keuangan" icon={Wallet} label="KAS Kelas" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
+
+          <div className={`${isSidebarCollapsed ? 'my-2 mx-auto w-8' : 'my-4 px-4'} h-px bg-slate-200`} />
+          <span className={`${isSidebarCollapsed ? 'hidden' : 'block'} text-[9px] font-black text-slate-300 uppercase tracking-widest px-4`}>Presensi</span>
           {access.presensiPagi && <NavItem to="presensi-pagi" icon={Sun} label="Presensi Pagi" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
           {access.presensiSiang && <NavItem to="presensi-siang" icon={Moon} label="Presensi Siang" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
           <NavItem to="piket" icon={Calendar} label="Jadwal Piket" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />
+
+          <div className={`${isSidebarCollapsed ? 'my-2 mx-auto w-8' : 'my-4 px-4'} h-px bg-slate-200`} />
+          <span className={`${isSidebarCollapsed ? 'hidden' : 'block'} text-[9px] font-black text-slate-300 uppercase tracking-widest px-4`}>Pelaporan</span>
           {access.laporan && <NavItem to="laporan" icon={FileText} label="Laporan Akhir" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
           {access.laporanHarian && <NavItem to="laporan-harian" icon={CalendarCheck} label="Laporan Harian" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
-          {access.keuangan && <NavItem to="keuangan" icon={Wallet} label="KAS Kelas" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
+
+          <div className={`${isSidebarCollapsed ? 'my-2 mx-auto w-8' : 'my-4 px-4'} h-px bg-slate-200`} />
+          <span className={`${isSidebarCollapsed ? 'hidden' : 'block'} text-[9px] font-black text-slate-300 uppercase tracking-widest px-4`}>Komunikasi</span>
           {access.panggilan && <NavItem to="panggilan" icon={PhoneCall} label="Log Panggilan" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
         </nav>
 
@@ -276,9 +290,9 @@ export default function Layout() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 min-h-screen overflow-x-hidden">
+      <main className={`flex-1 transition-all duration-300 min-h-screen overflow-x-hidden ${isSidebarCollapsed ? 'md:ml-20' : 'md:ml-72'}`}>
         {/* Header Bar */}
-        <header className="bg-white sticky top-0 z-20 px-4 md:px-8 py-4 border-b border-slate-100 flex items-center justify-between print:hidden">
+        <header className="bg-white sticky top-0 z-50 px-4 md:px-8 py-4 border-b border-slate-100 flex items-center justify-between print:hidden">
           <div className="flex items-center gap-3">
             <button 
               className="md:hidden p-2 rounded-xl text-slate-500 hover:bg-slate-50 transition-colors"
@@ -357,7 +371,7 @@ export default function Layout() {
 
             <footer className="mt-20 pt-8 border-t border-slate-100 print:hidden">
               <div className="flex flex-col md:flex-row items-center justify-between gap-4 grayscale opacity-40 hover:grayscale-0 hover:opacity-100 transition-all duration-500">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Wali Kelas Digital Project &copy; 2026 <span className="ml-1 px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">v4.8</span></p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Wali Kelas Digital Project &copy; 2026 <span className="ml-1 px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">v4.9</span></p>
                 <p className="text-[10px] font-medium text-slate-500 italic">Designed with precision by Mohamad Lukman Nurhasyim, S.Kom, Gr.</p>
               </div>
             </footer>

@@ -8,7 +8,7 @@ import Loading from '../components/Loading';
 import Skeleton, { SkeletonStats, SkeletonTable } from '../components/Skeleton';
 import EmptyState from '../components/EmptyState';
 import PageGuide from '../components/PageGuide';
-import { History, Users, Trash2 } from 'lucide-react';
+import { History, Users, Trash2, Edit2, X } from 'lucide-react';
 import { sendNotification } from '../utils/notifications';
 
 
@@ -30,6 +30,8 @@ export default function Keuangan() {
   const [jumlahInput, setJumlahInput] = useState('');
   const [tipe, setTipe] = useState('Masuk');
   const [keterangan, setKeterangan] = useState('');
+  const [tanggal, setTanggal] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [editingTrx, setEditingTrx] = useState(null);
 
   const loadKeuangan = useCallback(async () => {
     setLoading(true);
@@ -133,51 +135,102 @@ export default function Keuangan() {
       .sort((a, b) => (a.Nama_Siswa || '').localeCompare(b.Nama_Siswa || ''));
   }, [activeStudents, studentSearch]);
 
+  const cancelEdit = useCallback(() => {
+    setEditingTrx(null);
+    setIdSiswa('');
+    setJumlahInput('');
+    setTipe('Masuk');
+    setKeterangan('');
+    setTanggal(format(new Date(), 'yyyy-MM-dd'));
+    setStudentSearch('');
+  }, []);
+
+  const handleEdit = useCallback((trx) => {
+    setEditingTrx(trx);
+    setIdSiswa(trx.ID_Siswa);
+    setJumlahInput(String(trx.Jumlah));
+    setTipe(trx.Tipe);
+    setKeterangan(trx.Keterangan || '');
+    setTanggal(typeof trx.Tanggal === 'string' ? trx.Tanggal : new Date(trx.Tanggal).toISOString().split('T')[0]);
+    
+    // Scroll to form
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
   const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
     if (!idSiswa || amountValue <= 0 || isAmountWarning) return;
 
     const selectedStudent = activeStudents.find(s => String(s.ID_Siswa) === String(idSiswa));
     
-    const newTrx = {
-      ID_Transaksi: 'K' + Date.now(),
-      Tanggal: format(new Date(), 'yyyy-MM-dd'),
-      ID_Siswa: idSiswa,
-      NISN: selectedStudent?.NISN || '', // Pastikan NISN ikut tersimpan
-      Tipe: tipe,
-      Jumlah: amountValue,
-      Keterangan: keterangan
-    };
-
     setSaving(true);
     try {
-      await fetchGAS('CREATE', { sheet: 'Keuangan', data: newTrx });
+      if (editingTrx) {
+        const updatedData = {
+          ID_Siswa: idSiswa,
+          NISN: selectedStudent?.NISN || '',
+          Tipe: tipe,
+          Jumlah: amountValue,
+          Keterangan: keterangan,
+          Tanggal: tanggal
+        };
 
-      // Notify relevant parties via utility
-      const payerName = activeStudents.find(s => String(s.ID_Siswa) === String(idSiswa))?.Nama_Siswa || idSiswa;
-      const isUnderpaid = tipe === 'Masuk' && amountValue < nominalIuran;
+        await fetchGAS('UPDATE', { 
+          sheet: 'Keuangan', 
+          id: editingTrx.ID_Transaksi, 
+          data: updatedData 
+        });
 
-      await sendNotification(activeStudents, {
-        subjectId: idSiswa,
-        targetRoles: ['Bendahara', 'Ketua Kelas', 'Wali Kelas'],
-        message: tipe === 'Masuk'
-          ? `Halo! Ada kontribusi KAS baru nih dari ${payerName} sebesar ${formatIDR(amountValue)}${isUnderpaid ? ' (Belum Lunas)' : ''}. Dompet kelas makin sehat!`
-          : `Info Pengeluaran: Ada dana kelas yang digunakan sebesar ${formatIDR(amountValue)} untuk ${keterangan || 'kebutuhan kelas'}.`,
-        selfMessage: tipe === 'Masuk'
-          ? (isUnderpaid 
-              ? `Terima kasih ya, ${payerName}! Kamu sudah mencicil KAS sebesar ${formatIDR(amountValue)}. Yuk semangat melunasi sisanya pelan-pelan!`
-              : `Terima kasih ya, ${payerName}! Partisipasi KAS sebesar ${formatIDR(amountValue)} sudah kami terima. Kontribusimu sangat berarti untuk kegiatan kelas kita!`)
-          : `Info Pengeluaran: Dana kelas digunakan sebesar ${formatIDR(amountValue)}.`,
-        includeSelf: tipe === 'Masuk',
-        type: isUnderpaid ? 'info' : 'success',
-        waliEmail: user?.email
-      });
+        // Notify relevant parties about the update
+        const payerName = selectedStudent?.Nama_Siswa || idSiswa;
+        await sendNotification(activeStudents, {
+          subjectId: idSiswa,
+          targetRoles: ['Bendahara', 'Wali Kelas'],
+          message: `Update Keuangan: Transaksi ${payerName} sebesar ${formatIDR(amountValue)} telah diperbarui.`,
+          selfMessage: `Info Keuangan: Transaksi pembayaran Anda sebesar ${formatIDR(amountValue)} telah diperbarui oleh Bendahara.`,
+          includeSelf: true,
+          type: 'info',
+          waliEmail: user?.email
+        });
 
-      showToast('Transaksi berhasil disimpan.', 'success');
-      setIdSiswa('');
-      setJumlahInput('');
-      setKeterangan('');
-      setStudentSearch('');
+        showToast('Transaksi berhasil diperbarui.', 'success');
+      } else {
+        const newTrx = {
+          ID_Transaksi: 'K' + Date.now(),
+          Tanggal: tanggal,
+          ID_Siswa: idSiswa,
+          NISN: selectedStudent?.NISN || '', 
+          Tipe: tipe,
+          Jumlah: amountValue,
+          Keterangan: keterangan
+        };
+
+        await fetchGAS('CREATE', { sheet: 'Keuangan', data: newTrx });
+
+        // Notify relevant parties via utility
+        const payerName = selectedStudent?.Nama_Siswa || idSiswa;
+        const isUnderpaid = tipe === 'Masuk' && amountValue < nominalIuran;
+
+        await sendNotification(activeStudents, {
+          subjectId: idSiswa,
+          targetRoles: ['Bendahara', 'Ketua Kelas', 'Wali Kelas'],
+          message: tipe === 'Masuk'
+            ? `Halo! Ada kontribusi KAS baru nih dari ${payerName} sebesar ${formatIDR(amountValue)}${isUnderpaid ? ' (Belum Lunas)' : ''}. Dompet kelas makin sehat!`
+            : `Info Pengeluaran: Ada dana kelas yang digunakan sebesar ${formatIDR(amountValue)} untuk ${keterangan || 'kebutuhan kelas'}.`,
+          selfMessage: tipe === 'Masuk'
+            ? (isUnderpaid 
+                ? `Terima kasih ya, ${payerName}! Kamu sudah mencicil KAS sebesar ${formatIDR(amountValue)}. Yuk semangat melunasi sisanya pelan-pelan!`
+                : `Terima kasih ya, ${payerName}! Partisipasi KAS sebesar ${formatIDR(amountValue)} sudah kami terima. Kontribusimu sangat berarti untuk kegiatan kelas kita!`)
+            : `Info Pengeluaran: Dana kelas digunakan sebesar ${formatIDR(amountValue)}.`,
+          includeSelf: tipe === 'Masuk',
+          type: isUnderpaid ? 'info' : 'success',
+          waliEmail: user?.email
+        });
+
+        showToast('Transaksi berhasil disimpan.', 'success');
+      }
+
+      cancelEdit();
       await loadKeuangan();
     } catch (error) {
       console.error('Simpan transaksi gagal:', error);
@@ -185,7 +238,7 @@ export default function Keuangan() {
     } finally {
       setSaving(false);
     }
-  }, [idSiswa, amountValue, tipe, keterangan, showToast, loadKeuangan]);
+  }, [idSiswa, amountValue, tipe, keterangan, tanggal, editingTrx, activeStudents, user?.email, nominalIuran, loadKeuangan, showToast, cancelEdit]);
 
   const handleDelete = useCallback(async (trxId) => {
     if (!canEdit) return;
@@ -367,8 +420,19 @@ export default function Keuangan() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Form Input */}
-        <div className="card lg:col-span-1 h-fit">
-          <h3 className="font-semibold text-slate-800 mb-4 border-b pb-2">Input Transaksi</h3>
+        <div className="card lg:col-span-1 h-fit relative">
+          <div className="flex items-center justify-between mb-4 border-b pb-2">
+            <h3 className="font-semibold text-slate-800">{editingTrx ? 'Edit Transaksi' : 'Input Transaksi'}</h3>
+            {editingTrx && (
+              <button 
+                onClick={cancelEdit}
+                className="p-1 text-slate-400 hover:text-rose-500 transition-colors"
+                title="Batal Edit"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            )}
+          </div>
           {!canEdit ? (
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
               Hanya Bendahara yang dapat menambah atau mengubah transaksi kas. Wali Kelas dan Ketua Kelas dapat melihat riwayat tanpa mengubah data.
@@ -401,6 +465,16 @@ export default function Keuangan() {
               </div>
 
               <div className="flex gap-2">
+                <div className="flex-1">
+                  <label className="block text-xs font-medium text-slate-700 mb-1">Tanggal</label>
+                  <input
+                    type="date"
+                    className="input-field"
+                    value={tanggal}
+                    onChange={(e) => setTanggal(e.target.value)}
+                    required
+                  />
+                </div>
                 <div className="flex-1">
                   <label className="block text-xs font-medium text-slate-700 mb-1">Tipe</label>
                   <select className="input-field" value={tipe} onChange={(e) => setTipe(e.target.value)}>
@@ -446,9 +520,16 @@ export default function Keuangan() {
                 />
               </div>
 
-              <button type="submit" className="btn-primary w-full" disabled={saving || isAmountWarning}>
-                {saving ? 'Menyimpan...' : 'Simpan Transaksi'}
-              </button>
+               <div className="flex gap-2">
+                <button type="submit" className="btn-primary flex-1" disabled={saving || isAmountWarning}>
+                  {saving ? 'Menyimpan...' : (editingTrx ? 'Update Transaksi' : 'Simpan Transaksi')}
+                </button>
+                {editingTrx && (
+                  <button type="button" onClick={cancelEdit} className="px-4 py-2 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition-colors">
+                    Batal
+                  </button>
+                )}
+              </div>
             </form>
           )}
         </div>
@@ -491,13 +572,22 @@ export default function Keuangan() {
                         <td className="px-4 py-3 text-xs">{trx.Keterangan || '-'}</td>
                         {canEdit && (
                           <td className="px-4 py-3 text-center">
-                            <button
-                              onClick={() => handleDelete(trx.ID_Transaksi)}
-                              className="p-2 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"
-                              title="Batalkan Transaksi"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                            <div className="flex items-center justify-center gap-1">
+                              <button
+                                onClick={() => handleEdit(trx)}
+                                className="p-2 text-brand-500 hover:bg-brand-50 rounded-lg transition-colors"
+                                title="Edit Transaksi"
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDelete(trx.ID_Transaksi)}
+                                className="p-2 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"
+                                title="Batalkan Transaksi"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
                           </td>
                         )}
                       </tr>

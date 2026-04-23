@@ -117,6 +117,7 @@ export default function BukuKlaper() {
           table { width: 100% !important; border-collapse: collapse !important; table-layout: auto !important; font-size: 8pt !important; }
           th, td { border: 1px solid black !important; padding: 2px 4px !important; word-break: break-word; vertical-align: middle; }
           thead th { background-color: #d6ffe4ff !important; -webkit-print-color-adjust: exact; font-weight: bold; }
+          .bg-slate-100, .bg-slate-50, .bg-slate-200 { background-color: white !important; }
           .line-through { text-decoration: line-through !important; }
           .print-hidden { display: none !important; }
         }
