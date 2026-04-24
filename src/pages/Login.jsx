@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useGoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../context/AuthContext';
 import { fetchGAS } from '../utils/gasClient';
+import { getCurrentVersion } from '../utils/version';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { ShieldAlert, Loader2 } from 'lucide-react';
 import loginIllustration from '../assets/login_illustration.png';
@@ -181,7 +182,7 @@ export default function Login() {
                 )}
               </button>
 
-              <div className="flex items-center mt-6">
+<div className="flex items-center mt-6">
                 <input type="checkbox" id="remember" className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 mr-2" defaultChecked />
                 <label htmlFor="remember" className="text-xs text-slate-600">Ingat perangkat ini</label>
               </div>
@@ -189,6 +190,11 @@ export default function Login() {
               <p className="text-left text-[11px] text-slate-400 mt-6 pt-4 border-t border-slate-100 leading-relaxed">
                 Dengan melanjutkan, kamu menerima <button onClick={() => navigate('/terms')} className="text-blue-500 hover:underline">Syarat Penggunaan</button> dan <button onClick={() => navigate('/privacy')} className="text-blue-500 hover:underline">Kebijakan Privasi</button> kami.
               </p>
+
+              <div className="mt-8 pt-6 border-t border-slate-100 flex flex-col md:flex-row items-center justify-between gap-3 text-[10px]">
+                <p className="font-bold uppercase tracking-widest text-slate-400">Wali Kelas Digital Project &copy; 2026 v<span className="font-mono">{getCurrentVersion()}</span></p>
+                <p className="text-slate-400 italic">Designed with precision by Mohamad Lukman Nurhasyim, S.Kom, Gr.</p>
+              </div>
             </div>
           </div>
         </div>

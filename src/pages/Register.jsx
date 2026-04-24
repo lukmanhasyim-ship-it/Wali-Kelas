@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { fetchGAS } from '../utils/gasClient';
+import { getCurrentVersion } from '../utils/version';
 import { UserPlus, ArrowLeft, Send, Mail, User } from 'lucide-react';
 import appLogo from '../assets/logo.png';
 
@@ -127,7 +128,10 @@ export default function Register() {
             <button onClick={() => navigate('/terms')} className="text-[10px] text-blue-500 hover:underline font-bold">Syarat Penggunaan</button>
             <button onClick={() => navigate('/privacy')} className="text-[10px] text-blue-500 hover:underline font-bold">Kebijakan Privasi</button>
           </div>
-          <p className="text-[9px] text-slate-400 font-medium">© 2026 Siswa.Hub - Monitoring Presisi, Masa Depan Gemilang</p>
+          <div className="flex flex-col md:flex-row items-center justify-center gap-3 text-[10px]">
+            <p className="font-bold uppercase tracking-widest text-slate-400">Wali Kelas Digital Project &copy; 2026 v<span className="font-mono">{getCurrentVersion()}</span></p>
+            <p className="text-slate-400 italic">Designed with precision by Mohamad Lukman Nurhasyim, S.Kom, Gr.</p>
+          </div>
         </div>
       </div>
     </div>
