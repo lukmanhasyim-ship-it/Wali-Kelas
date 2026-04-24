@@ -7,6 +7,7 @@ import Loading from '../components/Loading';
 import { formatPhoneNumber } from '../utils/logic';
 import Skeleton from '../components/Skeleton';
 import PageGuide from '../components/PageGuide';
+import UpdateCheck from '../components/UpdateCheck';
 
 export default function Profile() {
   const { user } = useAuth();
@@ -290,6 +291,8 @@ export default function Profile() {
           Kembali ke Dashboard
         </button>
       </div>
+
+      {isWaliKelas && <UpdateCheck />}
 
       {error && <div className="text-sm text-red-600">{error}</div>}
 
