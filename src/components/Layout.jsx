@@ -13,6 +13,7 @@ import NotificationDrawer from './NotificationDrawer';
 import SearchModal from './SearchModal';
 import appLogo from '../assets/logo.png';
 import { fetchGAS } from '../utils/gasClient';
+import { getCurrentVersion } from '../utils/version';
 
 function NavItem({ to, icon: Icon, label, collapsed, onClick }) {
   return (
@@ -371,7 +372,7 @@ export default function Layout() {
 
             <footer className="mt-20 pt-8 border-t border-slate-100 print:hidden">
               <div className="flex flex-col md:flex-row items-center justify-between gap-4 grayscale opacity-40 hover:grayscale-0 hover:opacity-100 transition-all duration-500">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Wali Kelas Digital Project &copy; 2026 <span className="ml-1 px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">v4.9</span></p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Wali Kelas Digital Project &copy; 2026 <span className="ml-1 px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">v{getCurrentVersion()}</span></p>
                 <p className="text-[10px] font-medium text-slate-500 italic">Designed with precision by Mohamad Lukman Nurhasyim, S.Kom, Gr.</p>
               </div>
             </footer>
