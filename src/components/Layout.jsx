@@ -4,7 +4,8 @@ import {
   LayoutDashboard, Users, ClipboardList, CalendarCheck,
   Wallet, PhoneCall, LogOut, Sun, Moon, FileText,
   Edit3, User, Settings, Bell, BookOpen, LibraryBig,
-  ChevronLeft, ChevronRight, Search, Calendar, Menu, X
+  ChevronLeft, ChevronRight, Search, Calendar, Menu, X,
+  MessageCircle
 } from 'lucide-react';
 import Breadcrumbs from './Breadcrumbs';
 import { useAuth } from '../context/AuthContext';
@@ -174,6 +175,7 @@ export default function Layout() {
     keuangan: ['Wali Kelas', 'Ketua Kelas', 'Bendahara'].includes(role),
     panggilan: ['Wali Kelas'].includes(role),
     laporanHarian: ['Wali Kelas'].includes(role),
+    feedback: ['Wali Kelas', 'Ketua Kelas', 'Bendahara', 'Sekretaris', 'Siswa'].includes(role),
   };
 
   return (
@@ -254,6 +256,7 @@ export default function Layout() {
           <div className={`${isSidebarCollapsed ? 'my-2 mx-auto w-8' : 'my-4 px-4'} h-px bg-slate-200`} />
           <span className={`${isSidebarCollapsed ? 'hidden' : 'block'} text-[9px] font-black text-slate-300 uppercase tracking-widest px-4`}>Komunikasi</span>
           {access.panggilan && <NavItem to="panggilan" icon={PhoneCall} label="Log Panggilan" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
+          <NavItem to="feedback" icon={MessageCircle} label="Feedback" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />
         </nav>
 
         <div className={`${isSidebarCollapsed ? 'p-2' : 'p-6'} mt-auto`}>

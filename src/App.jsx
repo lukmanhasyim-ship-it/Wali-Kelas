@@ -24,6 +24,7 @@ import Register from './pages/Register';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import Piket from './pages/Piket';
+import Feedback from './pages/Feedback';
 
 // Google OAuth Client ID dari .env
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
@@ -156,6 +157,7 @@ function AppRoutes() {
         />
         <Route path="piket" element={<Piket key={location.key} />} />
         <Route path="notifications" element={<Notifications key={location.key} />} />
+        <Route path="feedback" element={<Feedback key={location.key} />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
