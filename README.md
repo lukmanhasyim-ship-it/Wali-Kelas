@@ -108,6 +108,23 @@ Buat sebuah Google Spreadsheet baru. Tambahkan sheet-sheet berikut dengan nama d
     npm run dev
     ```
 
+### 5. Deployment Serverless (Firebase Hosting)
+Aplikasi telah dikonfigurasi untuk mendukung rilis publik secara cepat (*Single-Page Application routing*) ke layanan **Firebase Hosting**.
+1.  **Build File Produksi**:
+    ```bash
+    npm run build
+    ```
+2.  **Akses via CLI & Sambungkan Project**:
+    ```bash
+    npx firebase-tools login
+    npx firebase-tools use --add
+    ```
+3.  **Eksekusi Deploy**:
+    ```bash
+    npx firebase-tools deploy --only hosting
+    ```
+    *Aplikasi Anda kini sudah mengudara dan URL rilis akan muncul di layar terminal.*
+
 ---
 
 ## 💻 Tech Stack
