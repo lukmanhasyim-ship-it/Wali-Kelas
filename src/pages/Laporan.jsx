@@ -579,7 +579,7 @@ export default function Laporan() {
       {/* Header & Filters (Web Only) */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 bg-white p-6 rounded-2xl border border-slate-100 shadow-sm no-print">
         <div className="flex flex-col gap-3">
-          <div className="flex items-center gap-2 text-emerald-600">
+          <div className="flex items-center gap-2 text-emerald-800">
             <FileText className="w-5 h-5" />
             <span className="text-xs font-black uppercase tracking-[0.2em]">Wali Kelas Center</span>
           </div>
@@ -595,13 +595,13 @@ export default function Laporan() {
           <div className="flex bg-slate-100 p-1 rounded-xl">
             <button
               onClick={() => setFilterType('month')}
-              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${filterType === 'month' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${filterType === 'month' ? 'bg-white text-emerald-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
             >
               Bulanan
             </button>
             <button
               onClick={() => setFilterType('week')}
-              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${filterType === 'week' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${filterType === 'week' ? 'bg-white text-emerald-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
             >
               Mingguan
             </button>
@@ -632,7 +632,7 @@ export default function Laporan() {
 
             <button
               onClick={handleDownload}
-              className="p-2.5 bg-emerald-600 text-white rounded-xl shadow-lg shadow-emerald-200 hover:bg-emerald-700 transition-all group"
+              className="p-2.5 bg-emerald-900 text-white rounded-xl shadow-lg shadow-emerald-900/20 hover:bg-emerald-950 transition-all group"
               title="Cetak Laporan"
             >
               <Download className="w-5 h-5 group-hover:scale-110 transition-transform" />
@@ -720,32 +720,53 @@ export default function Laporan() {
           </div>
 
           <div className="grid grid-cols-2 gap-3 h-[200px] print-grid-cols-2">
-            <div className="bg-slate-50/50 rounded-2xl border border-slate-100 p-2">
-              <PieChart width="100%" height="100%">
-                <Pie
-                  data={chartDataGeneral}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={25}
-                  outerRadius={45}
-                  paddingAngle={3}
-                  dataKey="value"
-                  stroke="none"
-                >
-                  {chartDataGeneral.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
-                </Pie>
-                <Tooltip />
-                <Legend iconType="circle" wrapperStyle={{ fontSize: '7px', paddingTop: '2px' }} />
-              </PieChart>
+            <div className="bg-slate-50/50 rounded-2xl border border-slate-100 p-3 flex flex-col">
+              <h4 className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Persentase Kehadiran</h4>
+              <div className="flex-1">
+                <PieChart width="100%" height="100%">
+                  <Pie
+                    data={chartDataGeneral}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={25}
+                    outerRadius={45}
+                    paddingAngle={3}
+                    dataKey="value"
+                    stroke="none"
+                  >
+                    {chartDataGeneral.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
+                  </Pie>
+                  <Tooltip />
+                  <Legend iconType="circle" wrapperStyle={{ fontSize: '7px', paddingTop: '2px' }} />
+                </PieChart>
+              </div>
             </div>
-            <div className="bg-slate-50/50 rounded-2xl border border-slate-100 p-2">
-              <BarChart data={chartDataGeneral} width="100%" height="100%">
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 7, fontWeight: 800, fill: '#64748b' }} interval={0} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 7, fontWeight: 800, fill: '#64748b' }} width={20} />
-                <Tooltip />
-                <Bar dataKey="value" fill="#64748b" radius={[3, 3, 0, 0]} />
-              </BarChart>
+            <div className="bg-slate-50/50 rounded-2xl border border-slate-100 p-3 flex flex-col">
+              <h4 className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-2">Perbandingan Status</h4>
+              <div className="flex-1 flex flex-col justify-center space-y-2">
+                {chartDataGeneral.map((entry, idx) => {
+                  const maxVal = Math.max(...chartDataGeneral.map(d => d.value), 1);
+                  const percentage = (entry.value / maxVal) * 100;
+                  return (
+                    <div key={idx} className="space-y-1">
+                      <div className="flex justify-between items-center text-[7px] font-black uppercase tracking-widest px-0.5">
+                        <span className="text-slate-500">{entry.name}</span>
+                        <span className="text-slate-900">{entry.value}</span>
+                      </div>
+                      <div className="h-2 w-full bg-slate-200/50 rounded-full overflow-hidden border border-slate-100">
+                        <div
+                          className="h-full rounded-full transition-all duration-1000 ease-out shadow-sm"
+                          style={{
+                            width: `${percentage}%`,
+                            backgroundColor: entry.color,
+                            boxShadow: `0 0 10px ${entry.color}40`
+                          }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
 
@@ -776,19 +797,19 @@ export default function Laporan() {
           <h3 className="text-sm font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2 report-section-title before:bg-rose-600">
             III. Detail Ketidakhadiran
           </h3>
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm">
-            <table className="modern-table">
-              <thead>
-                <tr>
-                  <th className="text-left w-12">No.</th>
-                  <th className="text-left">Nama Siswa</th>
-                  <th className="text-center">Sakit (S)</th>
-                  <th className="text-center">Izin (I)</th>
-                  <th className="text-center">Alpha (A)</th>
-                  <th className="text-center">Bolos (B)</th>
-                  <th className="text-center">Total</th>
-                </tr>
-              </thead>
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden overflow-x-auto">
+              <table className="modern-table w-full">
+                <thead>
+                  <tr className="bg-slate-50/50">
+                    <th className="text-left w-10 px-4">No.</th>
+                    <th className="text-left min-w-[150px]">Nama Siswa</th>
+                    <th className="text-center w-16">Sakit</th>
+                    <th className="text-center w-16">Izin</th>
+                    <th className="text-center w-16">Alfa</th>
+                    <th className="text-center w-16">Bolos</th>
+                    <th className="text-center w-20">Total</th>
+                  </tr>
+                </thead>
               <tbody className="divide-y divide-slate-100">
                 {(() => {
                   const filtered = siswa
@@ -929,15 +950,15 @@ export default function Laporan() {
           {/* VERSI 1: REKAP RINGKAS */}
           <div className="mt-8">
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">A. Versi Rekapitulasi Ringkas (Berdasarkan Siswa)</p>
-            <div className="bg-white rounded-2xl border border-slate-200">
-              <table className="modern-table">
+            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden overflow-x-auto">
+              <table className="modern-table w-full">
                 <thead>
-                  <tr>
-                    <th className="text-left w-12">No.</th>
-                    <th className="text-left">Nama Siswa</th>
+                  <tr className="bg-slate-50/50">
+                    <th className="text-left w-10 px-4">No.</th>
+                    <th className="text-left min-w-[150px]">Nama Siswa</th>
                     <th className="text-left">Tanggal Pemanggilan (Rencana)</th>
-                    <th className="text-center">Total Panggilan / Visit</th>
-                    <th className="text-center">Selesai Ditindaklanjuti</th>
+                    <th className="text-center w-24">Total</th>
+                    <th className="text-center w-28">Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -1001,10 +1022,10 @@ export default function Laporan() {
           {/* VERSI 2: DETAIL */}
           <div className="mt-8">
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">B. Versi Detail Panggilan & Home Visit</p>
-            <div className="bg-white rounded-2xl border border-slate-200">
-              <table className="modern-table">
+            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden overflow-x-auto">
+              <table className="modern-table w-full">
                 <thead>
-                  <tr>
+                  <tr className="bg-slate-50/50">
                     <th className="text-left w-8 px-1 py-2">No.</th>
                     <th className="text-left w-36 px-2 py-2">Nama Siswa</th>
                     <th className="text-center w-12 px-1 py-2">Freq</th>

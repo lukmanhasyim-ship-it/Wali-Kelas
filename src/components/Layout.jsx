@@ -24,8 +24,8 @@ function NavItem({ to, icon: Icon, label, collapsed, onClick }) {
       className={({ isActive }) =>
         `flex items-center ${collapsed ? 'justify-center w-12 h-12 mx-auto' : 'gap-3 px-4 py-3'} rounded-2xl transition-all duration-300 group ${
           isActive
-            ? 'bg-emerald-50 text-[#008647]'
-            : 'text-slate-500 hover:bg-emerald-50 hover:text-[#008647]'
+            ? 'bg-emerald-50 text-emerald-900'
+            : 'text-slate-500 hover:bg-emerald-50 hover:text-emerald-900'
         }`
       }
       title={collapsed ? label : ''}
@@ -202,7 +202,7 @@ export default function Layout() {
             {!isSidebarCollapsed && (
               <div className="flex flex-col animate-in fade-in slide-in-from-left-2 duration-300 whitespace-nowrap overflow-hidden">
                 <h1 className="text-xl font-black text-slate-900 tracking-tighter leading-none">
-                  SISWA<span className="text-[#008647]">.HUB</span>
+                  SISWA<span className="text-emerald-800">.HUB</span>
                 </h1>
                 <p className="text-[8px] text-slate-400 font-bold uppercase tracking-widest mt-1">
                   SMKS AL AZHAR SEMPU
@@ -221,7 +221,7 @@ export default function Layout() {
 
           {/* Desktop Toggle Button */}
           <button 
-            className="hidden md:flex absolute -right-3 top-8 bg-white border border-slate-200 text-slate-400 hover:text-[#008647] hover:border-[#008647] rounded-full p-1 shadow-sm transition-all z-10"
+            className="hidden md:flex absolute -right-3 top-8 bg-white border border-slate-200 text-slate-400 hover:text-emerald-800 hover:border-emerald-800 rounded-full p-1 shadow-sm transition-all z-10"
             onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
           >
             {isSidebarCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
@@ -270,7 +270,7 @@ export default function Layout() {
               {user?.picture ? (
                 <img src={user.picture} alt="User" className="w-10 h-10 rounded-2xl shadow-sm border-2 border-white" />
               ) : (
-                <div className="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center font-bold text-sm uppercase">
+                <div className="w-10 h-10 bg-emerald-100 text-emerald-900 rounded-2xl flex items-center justify-center font-bold text-sm uppercase">
                   {user?.name?.charAt(0)}
                 </div>
               )}
@@ -322,7 +322,7 @@ export default function Layout() {
             <div className="relative">
               <button
                 onClick={() => setIsNotifOpen(!isNotifOpen)}
-                className={`relative p-2 rounded-xl transition-all ${isNotifOpen ? 'bg-emerald-50 text-[#008647]' : 'hover:bg-slate-50 hover:text-slate-400'}`}
+                className={`relative p-2 rounded-xl transition-all ${isNotifOpen ? 'bg-emerald-100 text-emerald-900' : 'hover:bg-slate-50 hover:text-slate-400'}`}
               >
                 <Bell className="w-5 h-5 transition-transform group-hover:rotate-12" />
                 {notifications.some(n => !n.isRead) && (
@@ -348,7 +348,7 @@ export default function Layout() {
                 {user?.managedClass && (
                   <>
                     <span className="text-[8px] text-slate-300">•</span>
-                    <span className="bg-emerald-50 text-[#008647] px-1.5 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest border border-emerald-100/50">
+                    <span className="bg-emerald-100 text-emerald-900 px-1.5 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest border border-emerald-200/50">
                       Kelas {user.managedClass}
                     </span>
                   </>

@@ -278,12 +278,12 @@ export default function Dashboard() {
         </div>
 
         {/* Card Saldo Minggu Ini */}
-        <div className="card bg-gradient-to-br from-indigo-600 to-indigo-800 text-white border-none">
+        <div className="card bg-gradient-to-br from-emerald-800 to-emerald-950 text-white border-none shadow-lg shadow-emerald-900/20">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-indigo-100 text-sm font-medium">Saldo Kas</p>
-              <h3 className="text-3xl font-bold mt-2">{formatIDR(stats.saldoMingguIni)}</h3>
-              <p className="text-sm text-indigo-100 mt-1">
+              <p className="text-emerald-100 text-sm font-medium">Saldo Kas</p>
+              <h3 className="text-3xl font-bold mt-2 text-white">{formatIDR(stats.saldoMingguIni)}</h3>
+              <p className="text-sm text-emerald-100/80 mt-1">
                 +{formatIDR(stats.kasWeekMasuk)} / -{formatIDR(stats.kasWeekKeluar)}
               </p>
             </div>
@@ -329,7 +329,7 @@ export default function Dashboard() {
            {isTeacher && (
              <button 
                onClick={() => navigate('/piket')}
-               className="mt-6 flex items-center gap-2 text-[10px] font-black text-indigo-600 uppercase tracking-widest hover:gap-3 transition-all"
+               className="mt-6 flex items-center gap-2 text-[10px] font-black text-emerald-800 uppercase tracking-widest hover:gap-3 transition-all"
              >
                Kelola Jadwal Piket <ChevronRight className="w-3 h-3" />
              </button>

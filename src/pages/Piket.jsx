@@ -134,7 +134,7 @@ export default function Piket() {
           <div className="xl:col-span-1 space-y-4">
             <div className="card sticky top-24">
               <div className="flex items-center gap-2 mb-4">
-                <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
+                <div className="p-2 bg-emerald-50 text-emerald-700 rounded-xl">
                   <UserPlus className="w-5 h-5" />
                 </div>
                 <h3 className="font-black text-sm uppercase tracking-widest text-slate-700">Daftar Siswa</h3>
@@ -156,8 +156,8 @@ export default function Piket() {
                         onClick={() => setSelectedDay(day)}
                         className={`px-2 py-2 rounded-lg text-[10px] font-black uppercase transition-all border ${
                           selectedDay === day 
-                            ? 'bg-indigo-600 border-indigo-600 text-white shadow-md' 
-                            : 'bg-white border-slate-100 text-slate-500 hover:border-indigo-200'
+                            ? 'bg-emerald-900 border-emerald-900 text-white shadow-md' 
+                            : 'bg-white border-slate-100 text-slate-500 hover:border-emerald-200'
                         }`}
                       >
                         {day}
@@ -207,13 +207,13 @@ export default function Piket() {
                     {students.length - piketData.length} <span className="text-sm text-slate-400">/ {students.length}</span>
                   </p>
                 </div>
-                <div className="p-2 bg-indigo-100 text-indigo-600 rounded-lg">
+                <div className="p-2 bg-emerald-100 text-emerald-900 rounded-lg">
                   <Calendar className="w-5 h-5" />
                 </div>
               </div>
               <div className="mt-2 h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
                 <div 
-                  className="h-full bg-indigo-500 transition-all duration-500" 
+                  className="h-full bg-emerald-600 transition-all duration-500 shadow-sm shadow-emerald-200" 
                   style={{ width: `${((students.length - piketData.length) / students.length) * 100}%` }}
                 />
               </div>
