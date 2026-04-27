@@ -272,7 +272,7 @@ export default function PresensiPagi() {
               <th className="w-16 text-center">No</th>
               <th>Nama Lengkap</th>
               <th className="text-center">Status Kehadiran</th>
-              <th className="hidden md:table-cell">Catatan / Keterangan</th>
+              <th>Catatan / Keterangan</th>
             </tr>
           </thead>
           <tbody>
@@ -331,7 +331,7 @@ export default function PresensiPagi() {
                       })}
                     </div>
                   </td>
-                  <td className="hidden md:table-cell">
+                  <td>
                     <input
                       type="text"
                       value={currentKeterangan}

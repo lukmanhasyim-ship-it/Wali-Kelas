@@ -543,7 +543,7 @@ export default function Keuangan() {
             />
           ) : (
           <div className="table-container">
-              <table className="modern-table">
+              <table className="modern-table min-w-[800px] md:min-w-full">
                 <thead>
                   <tr>
                     <th>Tanggal</th>

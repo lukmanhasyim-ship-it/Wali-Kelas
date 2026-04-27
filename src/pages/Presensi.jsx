@@ -275,8 +275,8 @@ export default function Presensi() {
         ]}
       />
 
-      <div className="card overflow-x-auto p-0">
-        <table className="w-full text-left text-sm text-slate-600">
+      <div className="table-container shadow-2xl shadow-emerald-100/20">
+        <table className="modern-table min-w-[900px] md:min-w-full">
           <thead className="bg-slate-50 text-slate-700 uppercase text-xs">
             <tr>
               <th className="px-4 py-3 border-b">Nama Siswa</th>

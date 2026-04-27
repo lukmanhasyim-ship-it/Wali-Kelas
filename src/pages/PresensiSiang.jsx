@@ -288,7 +288,7 @@ export default function PresensiSiang() {
               <th>Informasi Siswa</th>
               <th className="text-center w-32">Status Pagi</th>
               <th className="text-center">Input Siang</th>
-              <th className="hidden md:table-cell">Keterangan</th>
+              <th>Keterangan</th>
             </tr>
           </thead>
           <tbody>
@@ -353,7 +353,7 @@ export default function PresensiSiang() {
                       })}
                     </div>
                   </td>
-                  <td className="hidden md:table-cell">
+                  <td>
                     <input
                       type="text"
                       value={currentKeterangan}
