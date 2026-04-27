@@ -1,7 +1,7 @@
-# Siswa.Hub v4.9.1 - Ekosistem Manajemen Kelas Digital Premium
+# Siswa.Hub v4.9.2 - Ekosistem Manajemen Kelas Digital Premium
 
 ![License](https://img.shields.io/badge/License-Private-red.svg)
-![Version](https://img.shields.io/badge/Version-4.9.1-emerald.svg)
+![Version](https://img.shields.io/badge/Version-4.9.2-emerald.svg)
 ![React](https://img.shields.io/badge/Frontend-React%2019-blue.svg)
 ![Backend](https://img.shields.io/badge/Backend-Google%20Apps%20Script-orange.svg)
 
@@ -30,6 +30,17 @@
 *   **Digital Call Log**: Pendataan panggilan siswa secara sistematis mulai dari kategori hingga alasan detail.
 *   **Home Visit Evidence**: Fitur unggahan foto bukti kunjungan rumah langsung ke Google Drive melalui aplikasi, terintegrasi dengan laporan perkembangan siswa.
 *   **Automated Notifications**: Kirim pesan motivasi dan pengingat resmi secara otomatis kepada siswa dan pengurus kelas.
+
+---
+
+## 📦 Riwayat Pembaruan (Changelog)
+
+### v4.9.2 (Update Utama)
+*   **Perbaikan Koneksi Database**: Mengatasi peringatan kegagalan akses data ("Gagal memuat data siswa") dengan menyempurnakan rute endpoint konfigurasi *environment*.
+*   **Pencegahan Duplikasi Jabatan**: Menambahkan sistem "Eliminasi Pilihan" secara *real-time* di halaman Master Siswa. Siswa baru tidak dapat memilih jabatan khusus (Ketua Kelas, Bendahara, dll) yang sudah berstatus terisi (*disabled*) atau diklaim oleh siswa lain.
+*   **Optimalisasi Tampilan Mobile (UI/UX)**: 
+    *   Seluruh tabel kini memiliki *Scroll Horizontal* presisi yang mencegah tampilan hancur/terhimpit (*squishing*) di layar sempit.
+    *   Kolom "Keterangan" pada proses Absensi (Pagi & Siang) kini *terbuka* penuh secara bawaan di layar HP model *portrait*.
 
 ---
 
