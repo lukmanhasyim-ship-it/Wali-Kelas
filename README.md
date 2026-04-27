@@ -1,7 +1,7 @@
-# Siswa.Hub v4.9.2 - Ekosistem Manajemen Kelas Digital Premium
+# Siswa.Hub v4.9.3 - Ekosistem Manajemen Kelas Digital Premium
 
 ![License](https://img.shields.io/badge/License-Private-red.svg)
-![Version](https://img.shields.io/badge/Version-4.9.2-emerald.svg)
+![Version](https://img.shields.io/badge/Version-4.9.3-emerald.svg)
 ![React](https://img.shields.io/badge/Frontend-React%2019-blue.svg)
 ![Backend](https://img.shields.io/badge/Backend-Google%20Apps%20Script-orange.svg)
 
@@ -19,14 +19,14 @@
 ### 📝 Administrasi Akademik & Presensi
 *   **Presensi Dual-Session**: Pencatatan kehadiran pagi dan siang dengan *timestamp* otomatis untuk akurasi maksimal.
 *   **Daftar Nilai (DKN) Dinamis**: Sistem pengelolaan nilai yang fleksibel dengan fitur "Terapkan Susunan Mapel" otomatis dan editor kategori yang mudah.
-*   **Buku Klaper Digital**: Arsip data mutasi dan riwayat siswa yang siap cetak kapan saja.
+*   **Buku Klaper Digital**: Arsip data mutasi dan riwayat siswa yang siap cetak kapan saja dengan fitur **Ekspor ke Excel**.
 
 ### 💰 Manajemen Keuangan (Kas Kelas)
 *   **Laporan Kas 4 Kolom**: Transparansi penuh dengan pencatatan masuk, keluar, dan saldo akhir secara otomatis.
 *   **Smart Debtor Tracking**: Sistem otomatis mendeteksi siswa yang memiliki tanggungan iuran berdasarkan nominal yang ditetapkan Wali Kelas.
 *   **Otoritas Bendahara**: Fitur input keuangan yang diamankan secara khusus hanya untuk akun Google Bendahara dan Wakil Bendahara yang terdaftar.
 
-### 🏠 Layanan Konseling & Home Visit (NEW v4.9)
+### 🏠 Layanan Konseling & Home Visit (v4.9)
 *   **Digital Call Log**: Pendataan panggilan siswa secara sistematis mulai dari kategori hingga alasan detail.
 *   **Home Visit Evidence**: Fitur unggahan foto bukti kunjungan rumah langsung ke Google Drive melalui aplikasi, terintegrasi dengan laporan perkembangan siswa.
 *   **Automated Notifications**: Kirim pesan motivasi dan pengingat resmi secara otomatis kepada siswa dan pengurus kelas.
@@ -35,12 +35,20 @@
 
 ## 📦 Riwayat Pembaruan (Changelog)
 
-### v4.9.2 (Update Utama)
-*   **Perbaikan Koneksi Database**: Mengatasi peringatan kegagalan akses data ("Gagal memuat data siswa") dengan menyempurnakan rute endpoint konfigurasi *environment*.
-*   **Pencegahan Duplikasi Jabatan**: Menambahkan sistem "Eliminasi Pilihan" secara *real-time* di halaman Master Siswa. Siswa baru tidak dapat memilih jabatan khusus (Ketua Kelas, Bendahara, dll) yang sudah berstatus terisi (*disabled*) atau diklaim oleh siswa lain.
-*   **Optimalisasi Tampilan Mobile (UI/UX)**: 
-    *   Seluruh tabel kini memiliki *Scroll Horizontal* presisi yang mencegah tampilan hancur/terhimpit (*squishing*) di layar sempit.
-    *   Kolom "Keterangan" pada proses Absensi (Pagi & Siang) kini *terbuka* penuh secara bawaan di layar HP model *portrait*.
+### v4.9.3 (Update Identitas & Optimalisasi Laporan)
+*   **Transformasi Brand Identity**: Pembaruan total skema warna aplikasi menjadi **Dark Green (Emerald 900)** yang selaras dengan logo institusi untuk tampilan yang lebih premium.
+*   **Fitur Ekspor MS Excel**: Menambahkan tombol "Export to Excel" pada menu Buku Klaper untuk mempermudah pengelolaan data master siswa secara offline.
+*   **Penyempurnaan Print Layout (A4 Landscape)**: 
+    *   Implementasi sistem *Fixed Table Layout* & *Colgroup* pada Buku Klaper untuk memastikan seluruh 14 kolom tampil sempurna dalam satu halaman tanpa terpotong.
+    *   Optimalisasi *line-height* dan *padding* pada PDF report untuk mencegah teks saling menindih.
+*   **Modernisasi Visual Laporan**:
+    *   Konversi bagan perbandingan status dari Column Bar menjadi **Dynamic Progress Bars** dengan efek glow.
+    *   Penambahan judul deskriptif pada setiap Chart untuk mempermudah stakeholders dalam membaca data.
+
+### v4.9.2
+*   **Pencegahan Duplikasi Jabatan**: Sistem eliminasi pilihan jabatan secara real-time di halaman Master Siswa.
+*   **Optimalisasi Mobile Table**: Implementasi *Scroll Horizontal* presisi pada seluruh tabel administrasi.
+*   **Database Access Fix**: Penyempurnaan rute endpoint konfigurasi untuk kestabilan pengambilan data dari Google Sheets.
 
 ---
 
@@ -150,4 +158,4 @@ Siswa.Hub menggunakan autentikasi resmi Google. Data Anda tersimpan sepenuhnya d
 > **Didesain dengan ❤️ oleh Mohamad Lukman Nurhasyim, S.Kom, Gr.**  
 > *Membangun ekosistem pendidikan yang lebih baik, satu baris kode dalam satu waktu.*
 
-© 2026 Siswa.Hub. All rights reserved.man Nurhasyim, S.Kom, Gr.*
+© 2026 Siswa.Hub. All rights reserved.

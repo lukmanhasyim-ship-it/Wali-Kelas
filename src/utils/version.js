@@ -1,4 +1,4 @@
-export const getCurrentVersion = () => "4.9.2";
+export const getCurrentVersion = () => "4.9.3";
 
 export const checkForUpdate = async () => {
   try {
@@ -6,7 +6,7 @@ export const checkForUpdate = async () => {
     // For now, returning no update
     return { 
       hasUpdate: false, 
-      latestVersion: "4.9.2",
+      latestVersion: "4.9.3",
       description: "Sistem sudah dalam versi terbaru." 
     };
   } catch (error) {
