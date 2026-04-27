@@ -78,7 +78,7 @@ function AppRoutes() {
         <Route
           path="tanggungan"
           element={
-            <RoleProtectedRoute allowedRoles={['Wali Kelas', 'Bendahara']}>
+            <RoleProtectedRoute allowedRoles={['Wali Kelas', 'Bendahara', 'Wakil Bendahara']}>
               <Tanggungan key={location.key} />
             </RoleProtectedRoute>
           }
@@ -86,7 +86,7 @@ function AppRoutes() {
         <Route
           path="presensi-pagi"
           element={
-            <RoleProtectedRoute allowedRoles={['Wali Kelas', 'Ketua Kelas', 'Sekretaris']}>
+            <RoleProtectedRoute allowedRoles={['Wali Kelas', 'Ketua Kelas', 'Wakil Ketua Kelas', 'Sekretaris', 'Wakil Sekretaris']}>
               <PresensiPagi key={location.key} />
             </RoleProtectedRoute>
           }
@@ -94,7 +94,7 @@ function AppRoutes() {
         <Route
           path="presensi-siang"
           element={
-            <RoleProtectedRoute allowedRoles={['Wali Kelas', 'Ketua Kelas', 'Sekretaris']}>
+            <RoleProtectedRoute allowedRoles={['Wali Kelas', 'Ketua Kelas', 'Wakil Ketua Kelas', 'Sekretaris', 'Wakil Sekretaris']}>
               <PresensiSiang key={location.key} />
             </RoleProtectedRoute>
           }
@@ -142,7 +142,7 @@ function AppRoutes() {
         <Route
           path="keuangan"
           element={
-            <RoleProtectedRoute allowedRoles={['Wali Kelas', 'Ketua Kelas', 'Bendahara']}>
+            <RoleProtectedRoute allowedRoles={['Wali Kelas', 'Ketua Kelas', 'Wakil Ketua Kelas', 'Bendahara', 'Wakil Bendahara']}>
               <Keuangan key={location.key} />
             </RoleProtectedRoute>
           }

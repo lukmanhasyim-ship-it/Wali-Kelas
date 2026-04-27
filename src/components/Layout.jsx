@@ -165,17 +165,17 @@ export default function Layout() {
   };
 
   const access = {
-    dashboard: ['Wali Kelas', 'Ketua Kelas', 'Bendahara', 'Sekretaris', 'Siswa'].includes(role),
+    dashboard: ['Wali Kelas', 'Ketua Kelas', 'Wakil Ketua Kelas', 'Bendahara', 'Wakil Bendahara', 'Sekretaris', 'Wakil Sekretaris', 'Siswa'].includes(role),
     siswa: ['Wali Kelas'].includes(role),
     laporan: ['Wali Kelas'].includes(role),
     bukuKlaper: ['Wali Kelas'].includes(role),
     dkn: ['Wali Kelas'].includes(role),
-    presensiPagi: ['Wali Kelas', 'Ketua Kelas', 'Sekretaris'].includes(role),
-    presensiSiang: ['Wali Kelas', 'Ketua Kelas', 'Sekretaris'].includes(role),
-    keuangan: ['Wali Kelas', 'Ketua Kelas', 'Bendahara'].includes(role),
+    presensiPagi: ['Wali Kelas', 'Ketua Kelas', 'Wakil Ketua Kelas', 'Sekretaris', 'Wakil Sekretaris'].includes(role),
+    presensiSiang: ['Wali Kelas', 'Ketua Kelas', 'Wakil Ketua Kelas', 'Sekretaris', 'Wakil Sekretaris'].includes(role),
+    keuangan: ['Wali Kelas', 'Ketua Kelas', 'Wakil Ketua Kelas', 'Bendahara', 'Wakil Bendahara'].includes(role),
     panggilan: ['Wali Kelas'].includes(role),
     laporanHarian: ['Wali Kelas'].includes(role),
-    feedback: ['Wali Kelas', 'Ketua Kelas', 'Bendahara', 'Sekretaris', 'Siswa'].includes(role),
+    feedback: ['Wali Kelas', 'Ketua Kelas', 'Wakil Ketua Kelas', 'Bendahara', 'Wakil Bendahara', 'Sekretaris', 'Wakil Sekretaris', 'Siswa'].includes(role),
   };
 
   return (

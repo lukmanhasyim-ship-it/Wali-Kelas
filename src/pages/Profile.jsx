@@ -39,7 +39,7 @@ export default function Profile() {
 
   const role = user?.role || 'Siswa';
   const isWaliKelas = role === 'Wali Kelas';
-  const isSiswaRole = ['Siswa', 'Ketua Kelas', 'Sekretaris', 'Bendahara'].includes(role);
+  const isSiswaRole = ['Siswa', 'Ketua Kelas', 'Wakil Ketua Kelas', 'Sekretaris', 'Wakil Sekretaris', 'Bendahara', 'Wakil Bendahara'].includes(role);
   const sheetName = isSiswaRole ? 'Master_Siswa' : 'Profil_Wali_Kelas';
   const idField = isSiswaRole ? 'ID_Siswa' : 'Id_Wali';
 

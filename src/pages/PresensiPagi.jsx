@@ -23,7 +23,7 @@ export default function PresensiPagi() {
   const [saveMessage, setSaveMessage] = useState('');
 
   const role = user?.role || 'Siswa';
-  const canEdit = ['Wali Kelas', 'Ketua Kelas', 'Sekretaris'].includes(role);
+  const canEdit = ['Wali Kelas', 'Ketua Kelas', 'Wakil Ketua Kelas', 'Sekretaris', 'Wakil Sekretaris'].includes(role);
 
   const normalizeDateString = (value) => {
     const parsed = new Date(value);

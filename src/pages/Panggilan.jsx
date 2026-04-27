@@ -111,7 +111,7 @@ export default function Panggilan() {
 
       await sendNotification(siswa, {
         subjectId: nisn,
-        targetRoles: ['Ketua Kelas', 'Sekretaris', 'Bendahara', 'Wali Kelas'],
+        targetRoles: ['Ketua Kelas', 'Wakil Ketua Kelas', 'Sekretaris', 'Wakil Sekretaris', 'Bendahara', 'Wakil Bendahara', 'Wali Kelas'],
         message: `Halo Pengurus Kelas! Sekadar info, Wali Kelas sedang mendampingi ${calledStudentName} terkait ${kategori}. Tetap semangat ya menjadi teladan di kelas!`,
         selfMessage: `Halo! Wali Kelas ingin mengobrol sebentar terkait ${kategori} (${finalAlasan}). Yuk, sempatkan waktu untuk diskusi santai bersama, kami peduli dengan prosesmu!`,
         includeSelf: true,

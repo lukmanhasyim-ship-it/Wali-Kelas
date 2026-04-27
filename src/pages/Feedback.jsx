@@ -16,7 +16,7 @@ export default function Feedback() {
   const [sending, setSending] = useState(false);
 
   const role = user?.role || 'Siswa';
-  const isSiswaRole = ['Siswa', 'Ketua Kelas', 'Sekretaris', 'Bendahara'].includes(role);
+  const isSiswaRole = ['Siswa', 'Ketua Kelas', 'Wakil Ketua Kelas', 'Sekretaris', 'Wakil Sekretaris', 'Bendahara', 'Wakil Bendahara'].includes(role);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

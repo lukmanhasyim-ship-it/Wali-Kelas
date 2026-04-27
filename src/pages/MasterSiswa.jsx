@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -77,7 +77,7 @@ export default function MasterSiswa() {
       const wb = XLSX.utils.book_new();
       const headers = [
         ['ID_Siswa', 'NIS', 'NISN', 'Nama_Siswa', 'L/P', 'Email', 'No_WA_Siswa', 'Nama_Wali', 'No_WA_Wali', 'Alamat', 'Jabatan', 'Status_Aktif'],
-        ['SISWA001', '12345', '0012345678', 'Nama Lengkap', 'L', 'siswa@email.com', '6281234567890', 'Nama Orang Tua', '6281234567890', 'Alamat Lengkap', 'Siswa/Ketua Kelas/Sekretaris/Bendahara', 'Aktif']
+        ['SISWA001', '12345', '0012345678', 'Nama Lengkap', 'L', 'siswa@email.com', '6281234567890', 'Nama Orang Tua', '6281234567890', 'Alamat Lengkap', 'Siswa/Ketua Kelas/Wakil Ketua Kelas/Sekretaris/Wakil Sekretaris/Bendahara/Wakil Bendahara', 'Aktif']
       ];
       const ws = XLSX.utils.aoa_to_sheet(headers);
       XLSX.utils.book_append_sheet(wb, ws, 'Template Siswa');
@@ -431,6 +431,12 @@ export default function MasterSiswa() {
     }
   };
 
+  const takenRoles = useMemo(() => {
+    return siswa
+      .filter(s => s.ID_Siswa !== editingStudent?.ID_Siswa && s.Jabatan !== 'Siswa')
+      .map(s => s.Jabatan);
+  }, [siswa, editingStudent]);
+
   if (loading) return <Loading message="Menyiapkan data induk siswa..." />;
 
 
@@ -699,9 +705,12 @@ export default function MasterSiswa() {
                         <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Struktur Organisasi</label>
                         <select className="input-field" value={jabatan} onChange={(e) => setJabatan(e.target.value)}>
                           <option value="Siswa">Siswa</option>
-                          <option value="Ketua Kelas">Ketua Kelas</option>
-                          <option value="Sekretaris">Sekretaris</option>
-                          <option value="Bendahara">Bendahara</option>
+                          <option value="Ketua Kelas" disabled={takenRoles.includes('Ketua Kelas')}>Ketua Kelas {takenRoles.includes('Ketua Kelas') ? '(Terisi)' : ''}</option>
+                          <option value="Wakil Ketua Kelas" disabled={takenRoles.includes('Wakil Ketua Kelas')}>Wakil Ketua Kelas {takenRoles.includes('Wakil Ketua Kelas') ? '(Terisi)' : ''}</option>
+                          <option value="Sekretaris" disabled={takenRoles.includes('Sekretaris')}>Sekretaris {takenRoles.includes('Sekretaris') ? '(Terisi)' : ''}</option>
+                          <option value="Wakil Sekretaris" disabled={takenRoles.includes('Wakil Sekretaris')}>Wakil Sekretaris {takenRoles.includes('Wakil Sekretaris') ? '(Terisi)' : ''}</option>
+                          <option value="Bendahara" disabled={takenRoles.includes('Bendahara')}>Bendahara {takenRoles.includes('Bendahara') ? '(Terisi)' : ''}</option>
+                          <option value="Wakil Bendahara" disabled={takenRoles.includes('Wakil Bendahara')}>Wakil Bendahara {takenRoles.includes('Wakil Bendahara') ? '(Terisi)' : ''}</option>
                         </select>
                       </div>
                       <div>

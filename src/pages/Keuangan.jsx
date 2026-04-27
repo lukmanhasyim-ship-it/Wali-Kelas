@@ -23,7 +23,7 @@ export default function Keuangan() {
   const [nominalIuran, setNominalIuran] = useState(0);
 
   const role = user?.role || 'Siswa';
-  const canEdit = role === 'Bendahara';
+  const canEdit = ['Bendahara', 'Wakil Bendahara'].includes(role);
 
   // Form State
   const [idSiswa, setIdSiswa] = useState('');
@@ -185,7 +185,7 @@ export default function Keuangan() {
         const payerName = selectedStudent?.Nama_Siswa || idSiswa;
         await sendNotification(activeStudents, {
           subjectId: idSiswa,
-          targetRoles: ['Bendahara', 'Wali Kelas'],
+          targetRoles: ['Bendahara', 'Wakil Bendahara', 'Wali Kelas'],
           message: `Update Keuangan: Transaksi ${payerName} sebesar ${formatIDR(amountValue)} telah diperbarui.`,
           selfMessage: `Info Keuangan: Transaksi pembayaran Anda sebesar ${formatIDR(amountValue)} telah diperbarui oleh Bendahara.`,
           includeSelf: true,
@@ -213,7 +213,7 @@ export default function Keuangan() {
 
         await sendNotification(activeStudents, {
           subjectId: idSiswa,
-          targetRoles: ['Bendahara', 'Ketua Kelas', 'Wali Kelas'],
+          targetRoles: ['Bendahara', 'Wakil Bendahara', 'Ketua Kelas', 'Wakil Ketua Kelas', 'Wali Kelas'],
           message: tipe === 'Masuk'
             ? `Halo! Ada kontribusi KAS baru nih dari ${payerName} sebesar ${formatIDR(amountValue)}${isUnderpaid ? ' (Belum Lunas)' : ''}. Dompet kelas makin sehat!`
             : `Info Pengeluaran: Ada dana kelas yang digunakan sebesar ${formatIDR(amountValue)} untuk ${keterangan || 'kebutuhan kelas'}.`,
@@ -259,7 +259,7 @@ export default function Keuangan() {
         
         await sendNotification(activeStudents, {
           subjectId: trx.ID_Siswa,
-          targetRoles: ['Bendahara', 'Wali Kelas'],
+          targetRoles: ['Bendahara', 'Wakil Bendahara', 'Wali Kelas'],
           message: `Otoritas Keuangan: Transaksi KAS dari ${studentName} sebesar ${formatIDR(trx.Jumlah)} telah dibatalkan/dihapus oleh pengelola.`,
           selfMessage: `Info Pembatalan: Transaksi pembayaran KAS Anda sebesar ${formatIDR(trx.Jumlah)} telah dibatalkan oleh pengelola kelas. Silakan hubungi Bendahara jika ini adalah kekeliruan.`,
           includeSelf: true,
@@ -435,7 +435,7 @@ export default function Keuangan() {
           </div>
           {!canEdit ? (
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
-              Hanya Bendahara yang dapat menambah atau mengubah transaksi kas. Wali Kelas dan Ketua Kelas dapat melihat riwayat tanpa mengubah data.
+              Hanya Bendahara dan Wakil Bendahara yang dapat menambah atau mengubah transaksi kas. Wali Kelas, Ketua Kelas, dan Wakil Ketua Kelas dapat melihat riwayat tanpa mengubah data.
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">

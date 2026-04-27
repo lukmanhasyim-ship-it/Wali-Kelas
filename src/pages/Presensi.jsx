@@ -19,7 +19,7 @@ export default function Presensi() {
   const [saveMessage, setSaveMessage] = useState('');
 
   const role = user?.role || 'Siswa';
-  const canEdit = ['Wali Kelas', 'Sekretaris'].includes(role);
+  const canEdit = ['Wali Kelas', 'Sekretaris', 'Wakil Sekretaris'].includes(role);
 
   useEffect(() => {
     async function load() {
@@ -259,9 +259,9 @@ export default function Presensi() {
         </div>
       )}
 
-      {!canEdit && role === 'Ketua Kelas' && (
+      {!canEdit && ['Ketua Kelas', 'Wakil Ketua Kelas'].includes(role) && (
         <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
-          Ketua Kelas hanya dapat melihat data presensi. Untuk mengubah presensi, silakan masuk sebagai Wali Kelas atau Sekretaris.
+          Ketua Kelas dan Wakil Ketua Kelas hanya dapat melihat data presensi. Untuk mengubah presensi, silakan masuk sebagai Wali Kelas, Sekretaris, atau Wakil Sekretaris.
         </div>
       )}
 
