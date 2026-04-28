@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { fetchGAS } from '../utils/gasClient';
@@ -32,6 +32,7 @@ export default function Keuangan() {
   const [keterangan, setKeterangan] = useState('');
   const [tanggal, setTanggal] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [editingTrx, setEditingTrx] = useState(null);
+  const formRef = useRef(null);
 
   const loadKeuangan = useCallback(async () => {
     setLoading(true);
@@ -153,8 +154,10 @@ export default function Keuangan() {
     setKeterangan(trx.Keterangan || '');
     setTanggal(typeof trx.Tanggal === 'string' ? trx.Tanggal : new Date(trx.Tanggal).toISOString().split('T')[0]);
     
-    // Scroll to form
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Scroll ke form dengan ref
+    setTimeout(() => {
+      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
   }, []);
 
   const handleSubmit = useCallback(async (e) => {
@@ -420,7 +423,7 @@ export default function Keuangan() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Form Input */}
-        <div className="card lg:col-span-1 h-fit relative">
+        <div className="card lg:col-span-1 h-fit relative" ref={formRef}>
           <div className="flex items-center justify-between mb-4 border-b pb-2">
             <h3 className="font-semibold text-slate-800">{editingTrx ? 'Edit Transaksi' : 'Input Transaksi'}</h3>
             {editingTrx && (
