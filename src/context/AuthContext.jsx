@@ -21,7 +21,8 @@ export function AuthProvider({ children }) {
       email: payload.email || '',
       picture: payload.picture || '',
       managedClass: payload.managedClass || '', // The class this user belongs to or manages
-      role // 'Wali Kelas', 'Ketua Kelas', 'Sekretaris', 'Bendahara'
+      role, // 'Wali Kelas', 'Ketua Kelas', 'Sekretaris', 'Bendahara', 'Siswa'
+      idSiswa: payload.idSiswa || '' // ID Siswa jika role adalah Siswa
     };
 
     setUser(userData);

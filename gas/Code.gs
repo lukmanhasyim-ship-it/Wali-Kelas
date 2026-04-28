@@ -11,7 +11,7 @@ function pancingIzin() {
 
 function formatDateValue(value, header) {
   if (value instanceof Date) {
-    if (header === 'Timestamp_Pagi' || header === 'Timestamp_Siang' || header === 'Created_At' || header === 'Processed_At' || header === 'Timestamp') {
+    if (header === 'Timestamp_Pagi' || header === 'Timestamp_Siang' || header === 'Created_At' || header === 'Processed_At' || header === 'Timestamp' || header === 'Last_Active') {
       return Utilities.formatDate(value, Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss');
     }
     var month = '' + (value.getMonth() + 1);

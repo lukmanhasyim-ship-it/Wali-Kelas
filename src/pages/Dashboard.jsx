@@ -9,7 +9,7 @@ import { Users, Wallet, AlertTriangle, CheckCircle2, Bell, ChevronRight, Calenda
 import Loading from '../components/Loading';
 import Skeleton, { SkeletonStats, SkeletonDashboard } from '../components/Skeleton';
 import EmptyState from '../components/EmptyState';
-import { 
+import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, AreaChart, Area
 } from 'recharts';
@@ -49,7 +49,7 @@ export default function Dashboard() {
           fetchGAS('SEND_PIKET_NOTIFICATIONS');
           localStorage.setItem('last_piket_notif', today);
         }
-  
+
         setData({
           siswa: (s.data || []).filter(st => st.Status_Aktif === 'Aktif'),
           presensi: p.data || [],
@@ -69,6 +69,29 @@ export default function Dashboard() {
     load();
   }, []);
 
+  // Update Last_Active ketika siswa membuka dashboard
+  useEffect(() => {
+    if (user?.role === 'Siswa' && user?.idSiswa) {
+      const updateLastActive = async () => {
+        try {
+          await fetchGAS('UPDATE', {
+            sheet: 'Master_Siswa',
+            id: user.idSiswa,
+            data: {
+              Last_Active: new Date().toISOString()
+            }
+          });
+        } catch (err) {
+          console.error('Failed to update Last_Active:', err);
+        }
+      };
+
+      // Update saat component mount dengan debounce
+      const timer = setTimeout(updateLastActive, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [user]);
+
   const getEffectiveStatus = useCallback((p) => {
     if (p.Status_Siang && p.Status_Siang !== '') return p.Status_Siang;
     return p.Status_Pagi || p.Status || '';
@@ -82,6 +105,19 @@ export default function Dashboard() {
 
     const hadirHariIni = todayPresensi.filter(p => getEffectiveStatus(p) === 'H').length;
     const percentageHadir = totalSiswa ? Math.round((hadirHariIni / totalSiswa) * 100) : 0;
+
+    // Count students monitored today (Last_Active is today)
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const terpantauHariIni = data.siswa.filter(s => {
+      if (!s.Last_Active) return false;
+      try {
+        const lastActive = new Date(s.Last_Active);
+        return lastActive >= todayStart;
+      } catch {
+        return false;
+      }
+    }).length;
 
     const activeKas = data.keuangan.reduce((acc, curr) => {
       return curr.Tipe === 'Masuk' ? acc + Number(curr.Jumlah) : acc - Number(curr.Jumlah);
@@ -126,7 +162,7 @@ export default function Dashboard() {
 
     // If no presence today, show "No Data" or empty
     if (pieData.length === 0 && totalSiswa > 0) {
-       pieData.push({ name: 'Belum Absen', value: totalSiswa, color: '#e2e8f0' });
+      pieData.push({ name: 'Belum Absen', value: totalSiswa, color: '#e2e8f0' });
     }
 
     // Data for Financial Trend (Last 7 days)
@@ -147,13 +183,14 @@ export default function Dashboard() {
       };
     });
 
-    return { 
-      hadirHariIni, 
-      totalSiswa, 
-      percentageHadir, 
-      totalKas: archivedBalance + activeKas, 
-      saldoMingguIni: kasWeekNet, 
-      kasWeekMasuk, 
+    return {
+      hadirHariIni,
+      totalSiswa,
+      percentageHadir,
+      terpantauHariIni,
+      totalKas: archivedBalance + activeKas,
+      saldoMingguIni: kasWeekNet,
+      kasWeekMasuk,
       kasWeekKeluar,
       pieData,
       financialTrendData,
@@ -169,7 +206,7 @@ export default function Dashboard() {
       const studentPanggilan = (data.panggilan || [])
         .filter(pg => String(pg.NISN) === String(student.NISN) || String(pg.NISN) === String(student.ID_Siswa))
         .sort((a, b) => new Date(b.Tanggal) - new Date(a.Tanggal));
-      
+
       const latestPg = studentPanggilan[0];
       const cutOffDate = (latestPg && latestPg.Status_Selesai === 'Selesai') ? new Date(latestPg.Tanggal) : null;
 
@@ -202,11 +239,11 @@ export default function Dashboard() {
 
         // Filter personal: Jika role bukan Wali Kelas, hanya tampilkan alert MILIK SENDIRI
         const isSelf = String(student.Email).toLowerCase() === String(user.email).toLowerCase();
-        
+
         if (user.role === 'Wali Kelas' || isSelf) {
-          result.push({ 
-            student, 
-            discipline: isProcessed ? 'Sudah Dipanggil' : disciplineStatus, 
+          result.push({
+            student,
+            discipline: isProcessed ? 'Sudah Dipanggil' : disciplineStatus,
             detailReason: reason,
             isProcessed
           });
@@ -217,11 +254,11 @@ export default function Dashboard() {
   }, [data.siswa, data.presensi, data.archiveDetail, data.panggilan, getEffectiveStatus, user.email, user.role]);
 
   const handleDirectCall = useCallback((student, discipline, detailReason) => {
-    navigate('/panggilan', { 
-      state: { 
+    navigate('/panggilan', {
+      state: {
         nisn: student.NISN || student.ID_Siswa,
         alasan: detailReason
-      } 
+      }
     });
   }, [navigate]);
 
@@ -249,20 +286,20 @@ export default function Dashboard() {
         <div>
           <h2 className="text-2xl font-black text-slate-800 tracking-tight">Halo, {firstName}! 👋</h2>
           <p className="text-sm text-slate-500 font-medium">
-            {isTeacher 
-              ? `Berikut ringkasan perkembangan Kelas ${user.managedClass} hari ini.` 
+            {isTeacher
+              ? `Berikut ringkasan perkembangan Kelas ${user.managedClass} hari ini.`
               : `Tetap semangat belajar dan jaga kesehatan ya! Berikut statusmu hari ini.`
             }
           </p>
         </div>
         {user.role === 'Wali Kelas' && (
-           <div className="px-4 py-2 bg-emerald-50 text-emerald-700 rounded-2xl text-xs font-black uppercase tracking-widest border border-emerald-100">
-             Wali Kelas {user.managedClass}
-           </div>
+          <div className="px-4 py-2 bg-emerald-50 text-emerald-700 rounded-2xl text-xs font-black uppercase tracking-widest border border-emerald-100">
+            Wali Kelas {user.managedClass}
+          </div>
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {/* Card Kehadiran */}
         <div className="card bg-gradient-to-br from-emerald-600 to-emerald-800 text-white border-none">
           <div className="flex items-start justify-between">
@@ -277,7 +314,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Card Saldo Minggu Ini */}
+        {/* Card Saldo Kas */}
         <div className="card bg-gradient-to-br from-emerald-800 to-emerald-950 text-white border-none shadow-lg shadow-emerald-900/20">
           <div className="flex items-start justify-between">
             <div>
@@ -293,63 +330,84 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Card Piket Hari Ini */}
-        <div className="md:col-span-2 card border-l-4 border-l-emerald-500 overflow-hidden relative group hover:shadow-lg transition-all duration-500">
-           <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-110 transition-transform">
-             <Calendar className="w-24 h-24" />
-           </div>
-           <div className="flex items-center gap-3 mb-4">
+        {/* Card Terpantau Hari Ini - Only for Wali Kelas */}
+        {isTeacher && (
+          <div className="card border-l-4 border-l-emerald-500 hover:shadow-lg transition-all duration-500">
+            <div className="flex items-center gap-3 mb-3">
               <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl">
-                 <Calendar className="w-5 h-5" />
+                <Bell className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-lg font-black text-slate-800 tracking-tight">Piket Hari Ini</h3>
-                <p className="text-xs text-slate-500 font-medium">{format(new Date(), 'EEEE, dd MMMM yyyy', { locale: id })}</p>
+                <h3 className="text-base font-black text-slate-800 tracking-tight">Terpantau Hari Ini</h3>
+                <p className="text-[10px] text-slate-500 font-medium">Siswa cek data</p>
               </div>
+            </div>
+            <div className="flex items-end gap-2">
+              <div className="text-3xl font-bold text-emerald-600 leading-none">{stats.terpantauHariIni}</div>
+              <div>
+                <p className="text-[10px] text-slate-600 font-medium">dari {stats.totalSiswa} Siswa</p>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Piket Hari Ini - Full Width Below Stats */}
+      {isTeacher && (
+        <div className="card border-l-4 border-l-emerald-500 mt-4">
+           <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl">
+                   <Calendar className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-800 tracking-tight">Piket Hari Ini</h3>
+                  <p className="text-[10px] text-slate-500 font-medium">{format(new Date(), 'EEEE, dd MMMM yyyy', { locale: id })}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => navigate('/piket')}
+                className="flex items-center gap-1 text-[9px] font-black text-emerald-800 uppercase tracking-widest hover:gap-2 transition-all"
+              >
+                Kelola <ChevronRight className="w-2.5 h-2.5" />
+              </button>
            </div>
 
            <div className="flex flex-wrap gap-2">
               {stats.piketHariIni.length === 0 ? (
-                <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-2xl border border-dashed border-slate-200 w-full animate-pulse">
-                   <Info className="w-4 h-4 text-slate-400" />
-                   <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Belum ada jadwal piket hari ini</p>
+                <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 rounded-xl border border-slate-200">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Belum ada jadwal piket hari ini</p>
                 </div>
               ) : (
                 stats.piketHariIni.map((m, idx) => (
-                  <div key={idx} className="flex items-center gap-2 px-3 py-2 bg-emerald-50 border border-emerald-100 rounded-xl">
-                    <div className="w-6 h-6 bg-emerald-600 text-white rounded-lg flex items-center justify-center text-[10px] font-black uppercase">
+                  <div key={idx} className="flex items-center gap-2 px-3 py-2 bg-emerald-50 border border-emerald-100 rounded-xl hover:shadow-md transition-all">
+                    <div className="w-6 h-6 bg-emerald-600 text-white rounded-lg flex items-center justify-center text-[10px] font-black">
                        {m.Nama_Siswa.charAt(0)}
                     </div>
-                    <span className="text-xs font-bold text-emerald-700 tracking-tight">{m.Nama_Siswa}</span>
+                    <span className="text-xs font-bold text-emerald-700">{m.Nama_Siswa}</span>
                   </div>
                 ))
               )}
            </div>
-           
-           {isTeacher && (
-             <button 
-               onClick={() => navigate('/piket')}
-               className="mt-6 flex items-center gap-2 text-[10px] font-black text-emerald-800 uppercase tracking-widest hover:gap-3 transition-all"
-             >
-               Kelola Jadwal Piket <ChevronRight className="w-3 h-3" />
-             </button>
-           )}
         </div>
-      </div>
+      )}
 
       {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-1 card">
-          <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest mb-4">Komposisi Presensi</h3>
-          <div className="h-64">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="card">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-1 h-4 bg-emerald-500 rounded-full" />
+            <h3 className="text-xs font-black text-slate-500 uppercase tracking-[0.2em]">Komposisi Presensi</h3>
+          </div>
+          <div className="h-56">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={stats.pieData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={60}
-                  outerRadius={80}
+                  innerRadius={50}
+                  outerRadius={70}
                   paddingAngle={5}
                   dataKey="value"
                 >
@@ -357,7 +415,7 @@ export default function Dashboard() {
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip 
+                <Tooltip
                   contentStyle={{ borderRadius: '1rem', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
                 />
                 <Legend iconType="circle" wrapperStyle={{ fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase' }} />
@@ -366,40 +424,43 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="lg:col-span-2 card">
-          <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest mb-4">Tren Transaksi Kas (7 Hari)</h3>
-          <div className="h-64">
+        <div className="card">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-1 h-4 bg-blue-500 rounded-full" />
+            <h3 className="text-xs font-black text-slate-500 uppercase tracking-[0.2em]">Tren Kas (7 Hari)</h3>
+          </div>
+          <div className="h-56">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={stats.financialTrendData}>
                 <defs>
                   <linearGradient id="colorMasuk" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.1}/>
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.1} />
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="colorKeluar" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#ef4444" stopOpacity={0.1}/>
-                    <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#ef4444" stopOpacity={0.1} />
+                    <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis 
-                  dataKey="date" 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }} 
-                />
-                <YAxis 
-                  axisLine={false} 
-                  tickLine={false} 
+                <XAxis
+                  dataKey="date"
+                  axisLine={false}
+                  tickLine={false}
                   tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }}
-                  tickFormatter={(value) => `Rp${value/1000}k`}
                 />
-                <Tooltip 
+                <YAxis
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }}
+                  tickFormatter={(value) => `Rp${value / 1000}k`}
+                />
+                <Tooltip
                   contentStyle={{ borderRadius: '1rem', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
                   formatter={(value) => formatIDR(value)}
                 />
-                <Area type="monotone" dataKey="Masuk" stroke="#10b981" fillOpacity={1} fill="url(#colorMasuk)" strokeWidth={3} />
-                <Area type="monotone" dataKey="Keluar" stroke="#ef4444" fillOpacity={1} fill="url(#colorKeluar)" strokeWidth={3} />
+                <Area type="monotone" dataKey="Masuk" stroke="#10b981" fillOpacity={1} fill="url(#colorMasuk)" strokeWidth={2} />
+                <Area type="monotone" dataKey="Keluar" stroke="#ef4444" fillOpacity={1} fill="url(#colorKeluar)" strokeWidth={2} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -407,24 +468,24 @@ export default function Dashboard() {
       </div>
 
       {/* Alert Section */}
-      <div>
-        <div className="flex items-center gap-2 mb-4">
-          <div className="p-2 bg-red-100 text-red-600 rounded-xl">
+      <div className="pt-2">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="p-2 bg-red-50 text-red-600 rounded-xl">
             <AlertTriangle className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-lg font-black text-slate-800 tracking-tight">
+            <h3 className="text-base font-black text-slate-800 tracking-tight">
               {isTeacher ? 'Alert Kedisiplinan Siswa' : 'Status Kedisiplinanmu'}
             </h3>
-            <p className="text-xs text-slate-500 font-medium">{isTeacher ? 'Pantau siswa yang membutuhkan perhatian khusus' : 'Pastikan kehadiranmu tetap terjaga dengan baik'}</p>
+            <p className="text-[10px] text-slate-500 font-medium">{isTeacher ? 'Pantau siswa yang membutuhkan perhatian khusus' : 'Pastikan kehadiranmu tetap terjaga dengan baik'}</p>
           </div>
         </div>
         {alerts.length === 0 ? (
-          <EmptyState
-            title="Semua Aman!"
-            description="Tidak ada siswa yang berada dalam zona merah kedisiplinan hari ini."
-            icon={CheckCircle2}
-          />
+          <div className="card p-6 text-center border-emerald-100 bg-emerald-50/50">
+            <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
+            <h4 className="text-sm font-black text-emerald-700">Semua Aman!</h4>
+            <p className="text-[10px] text-emerald-600 mt-1">Tidak ada siswa dalam zona merah hari ini</p>
+          </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {alerts.map((alert, idx) => (

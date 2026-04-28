@@ -67,12 +67,26 @@ export default function Login() {
             console.error('Failed to fetch class for student:', e);
           }
 
+          // Update Last_Active di Master_Siswa
+          try {
+            await fetchGAS('UPDATE', {
+              sheet: 'Master_Siswa',
+              id: matchingUser.ID_Siswa,
+              data: {
+                Last_Active: new Date().toISOString()
+              }
+            });
+          } catch (err) {
+            console.error('Failed to update Last_Active:', err);
+          }
+
           login({
             token: tokenResponse.access_token,
             name: matchingUser.Nama_Siswa || userInfo.name,
             email: userInfo.email,
             picture: userInfo.picture,
-            managedClass: studentClass
+            managedClass: studentClass,
+            idSiswa: matchingUser.ID_Siswa
           }, matchingUser.Jabatan || 'Siswa');
           return;
         }
