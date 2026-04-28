@@ -231,32 +231,53 @@ export default function Layout() {
         <nav className={`flex-1 ${isSidebarCollapsed ? 'px-2' : 'px-4'} space-y-1 overflow-y-auto custom-scrollbar`}>
           {access.dashboard && <NavItem to="dashboard" icon={LayoutDashboard} label="Dashboard" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
           
-          <div className={`${isSidebarCollapsed ? 'my-2 mx-auto w-8' : 'my-4 px-4'} h-px bg-slate-200`} />
-          <span className={`${isSidebarCollapsed ? 'hidden' : 'block'} text-[9px] font-black text-slate-300 uppercase tracking-widest px-4`}>Manajemen Data</span>
-          {access.siswa && <NavItem to="master-siswa" icon={Users} label="Data Siswa" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
-          {access.bukuKlaper && <NavItem to="buku-klaper" icon={BookOpen} label="Buku Klaper" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
-          {access.dkn && <NavItem to="dkn" icon={LibraryBig} label="Leger" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
+          {/* Manajemen Data Section */}
+          {(access.siswa || access.bukuKlaper || access.dkn) && (
+            <>
+              <div className={`${isSidebarCollapsed ? 'my-2 mx-auto w-8' : 'my-4 px-4'} h-px bg-slate-200`} />
+              <span className={`${isSidebarCollapsed ? 'hidden' : 'block'} text-[9px] font-black text-slate-300 uppercase tracking-widest px-4`}>Manajemen Data</span>
+              {access.siswa && <NavItem to="master-siswa" icon={Users} label="Data Siswa" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
+              {access.bukuKlaper && <NavItem to="buku-klaper" icon={BookOpen} label="Buku Klaper" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
+              {access.dkn && <NavItem to="dkn" icon={LibraryBig} label="Leger" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
+            </>
+          )}
 
-          <div className={`${isSidebarCollapsed ? 'my-2 mx-auto w-8' : 'my-4 px-4'} h-px bg-slate-200`} />
-          <span className={`${isSidebarCollapsed ? 'hidden' : 'block'} text-[9px] font-black text-slate-300 uppercase tracking-widest px-4`}>Keuangan</span>
-          {access.keuangan && <NavItem to="tanggungan" icon={ClipboardList} label="Tanggungan KAS" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
-          {access.keuangan && <NavItem to="keuangan" icon={Wallet} label="KAS Kelas" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
+          {/* Keuangan Section */}
+          {access.keuangan && (
+            <>
+              <div className={`${isSidebarCollapsed ? 'my-2 mx-auto w-8' : 'my-4 px-4'} h-px bg-slate-200`} />
+              <span className={`${isSidebarCollapsed ? 'hidden' : 'block'} text-[9px] font-black text-slate-300 uppercase tracking-widest px-4`}>Keuangan</span>
+              {access.keuangan && <NavItem to="tanggungan" icon={ClipboardList} label="Tanggungan KAS" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
+              {access.keuangan && <NavItem to="keuangan" icon={Wallet} label="KAS Kelas" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
+            </>
+          )}
 
+          {/* Presensi Section */}
           <div className={`${isSidebarCollapsed ? 'my-2 mx-auto w-8' : 'my-4 px-4'} h-px bg-slate-200`} />
           <span className={`${isSidebarCollapsed ? 'hidden' : 'block'} text-[9px] font-black text-slate-300 uppercase tracking-widest px-4`}>Presensi</span>
           {access.presensiPagi && <NavItem to="presensi-pagi" icon={Sun} label="Presensi Pagi" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
           {access.presensiSiang && <NavItem to="presensi-siang" icon={Moon} label="Presensi Siang" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
           <NavItem to="piket" icon={Calendar} label="Jadwal Piket" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />
 
-          <div className={`${isSidebarCollapsed ? 'my-2 mx-auto w-8' : 'my-4 px-4'} h-px bg-slate-200`} />
-          <span className={`${isSidebarCollapsed ? 'hidden' : 'block'} text-[9px] font-black text-slate-300 uppercase tracking-widest px-4`}>Pelaporan</span>
-          {access.laporan && <NavItem to="laporan" icon={FileText} label="Laporan Akhir" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
-          {access.laporanHarian && <NavItem to="laporan-harian" icon={CalendarCheck} label="Laporan Harian" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
+          {/* Pelaporan Section */}
+          {(access.laporan || access.laporanHarian) && (
+            <>
+              <div className={`${isSidebarCollapsed ? 'my-2 mx-auto w-8' : 'my-4 px-4'} h-px bg-slate-200`} />
+              <span className={`${isSidebarCollapsed ? 'hidden' : 'block'} text-[9px] font-black text-slate-300 uppercase tracking-widest px-4`}>Pelaporan</span>
+              {access.laporan && <NavItem to="laporan" icon={FileText} label="Laporan Akhir" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
+              {access.laporanHarian && <NavItem to="laporan-harian" icon={CalendarCheck} label="Laporan Harian" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
+            </>
+          )}
 
-          <div className={`${isSidebarCollapsed ? 'my-2 mx-auto w-8' : 'my-4 px-4'} h-px bg-slate-200`} />
-          <span className={`${isSidebarCollapsed ? 'hidden' : 'block'} text-[9px] font-black text-slate-300 uppercase tracking-widest px-4`}>Komunikasi</span>
-          {access.panggilan && <NavItem to="panggilan" icon={PhoneCall} label="Log Panggilan" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
-          <NavItem to="feedback" icon={MessageCircle} label="Feedback" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />
+          {/* Komunikasi Section */}
+          {(access.panggilan || access.feedback) && (
+            <>
+              <div className={`${isSidebarCollapsed ? 'my-2 mx-auto w-8' : 'my-4 px-4'} h-px bg-slate-200`} />
+              <span className={`${isSidebarCollapsed ? 'hidden' : 'block'} text-[9px] font-black text-slate-300 uppercase tracking-widest px-4`}>Komunikasi</span>
+              {access.panggilan && <NavItem to="panggilan" icon={PhoneCall} label="Log Panggilan" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
+              {access.feedback && <NavItem to="feedback" icon={MessageCircle} label="Feedback" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
+            </>
+          )}
         </nav>
 
         <div className={`${isSidebarCollapsed ? 'p-2' : 'p-6'} mt-auto`}>
