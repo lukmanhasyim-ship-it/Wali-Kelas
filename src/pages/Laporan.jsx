@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
+import logo from '../assets/logo.png';
 import {
   format,
   startOfMonth,
@@ -46,6 +47,7 @@ import Skeleton, { SkeletonStats, SkeletonTable } from '../components/Skeleton';
 import EmptyState from '../components/EmptyState';
 import PageGuide from '../components/PageGuide';
 import { formatDateIndo } from '../utils/logic';
+import { getCurrentVersion } from '../utils/version';
 
 const COLORS = ['#10b981', '#f59e0b', '#3b82f6', '#ef4444', '#8b5cf6', '#64748b'];
 
@@ -451,111 +453,167 @@ export default function Laporan() {
       <style>{`
         @media print {
           @page {
-            size: A4 portrait;
-            margin: 5mm 5mm 5mm 10mm;
+            margin: 0;
+            size: auto;
           }
-          @page :nth(2) {
-            margin-top: 15mm;
-          }
-          .no-print, aside, header, nav, footer, button, .sidebar-class, .navbar-class {
+          .no-print, aside, header, nav, footer, button, .sidebar-class, .navbar-class, .page-guide {
             display: none !important;
           }
           
-          html, body, #root, main, .max-w-6xl, .space-y-8 {
-            height: auto !important;
-            overflow: visible !important;
-            display: block !important;
-            position: static !important;
-            width: 100% !important;
-            max-width: none !important;
+          html, body {
+            background: white !important;
             margin: 0 !important;
             padding: 0 !important;
+            width: 100% !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
           }
 
           #printable-report {
             display: block !important;
-            position: static !important;
             width: 100% !important;
-            height: auto !important;
             margin: 0 !important;
             padding: 0 !important;
             box-shadow: none !important;
             border: none !important;
             background: white !important;
+            box-sizing: border-box !important;
+            overflow: visible !important;
+          }
+
+          /* Force Grid to work in Print */
+          .grid {
+            display: grid !important;
+          }
+
+          .table-responsive {
+             overflow: visible !important;
           }
 
           table {
             width: 100% !important;
             border-collapse: collapse !important;
+            table-layout: fixed !important;
             page-break-inside: auto !important;
+            word-wrap: break-word !important;
+            font-size: 9px !important; /* Smaller font to fit width */
           }
+
+          th, td {
+            word-wrap: break-word !important;
+            word-break: break-all !important;
+            overflow-wrap: break-word !important;
+          }
+          
+          th {
+            background-color: #f8fafc !important;
+            color: #0f172a !important;
+            border: 1px solid #e2e8f0 !important;
+          }
+
+          td {
+            border: 1px solid #f1f5f9 !important;
+          }
+
           tr {
             page-break-inside: avoid !important;
             page-break-after: auto !important;
           }
-          thead {
-            display: table-header-group !important;
-          }
-          .bg-slate-900 { 
-            background-color: #0f172a !important; 
-            color: white !important; 
-            print-color-adjust: exact !important; 
-            -webkit-print-color-adjust: exact !important;
-          }
-          
-          .bg-slate-50, .bg-slate-100, .bg-slate-200, [style*="background-color: #f8fafc"] {
-            background-color: white !important;
-          }
-          
-          .modern-table tbody tr:nth-child(even) {
-            background-color: white !important;
-          }
-          
-          .grid.grid-cols-2, section, .space-y-12 > div {
-            page-break-inside: avoid !important;
-            margin-bottom: 15px !important;
-          }
 
-          .print-page-2 {
-            margin-top: 15mm !important;
+          .section-break {
+            page-break-before: always !important;
             padding-top: 10mm !important;
           }
 
-          .print-chart-container {
-            height: 150px !important;
-            min-height: 150px !important;
+          .print-card {
+            border: 1px solid #e2e8f0 !important;
+            border-radius: 12px !important;
+            padding: 15px !important;
+            background: #fff !important;
+            break-inside: avoid !important;
           }
 
-          .print-grid-cols-2 {
+          .signature-box {
             display: grid !important;
             grid-template-columns: 1fr 1fr !important;
-            gap: 8px !important;
-            min-height: 120px !important;
+            margin-top: 50px !important;
+            text-align: center !important;
+            break-inside: avoid !important;
           }
 
-          .print-grid-cols-2 > div {
-            min-height: 120px !important;
-            height: 120px !important;
+          .badge-print {
+            border: 1px solid #e2e8f0 !important;
+            background: #f8fafc !important;
+            color: #475569 !important;
+          }
+           
+          /* Ensure charts are visible and sized correctly */
+          .recharts-responsive-container {
+            width: 100% !important;
+            height: 250px !important;
+            min-height: 250px !important;
+            max-width: 100% !important;
           }
 
-          .recharts-wrapper,
-          .recharts-responsive-container,
-          .recharts-responsive-container > div {
+          .recharts-wrapper {
             width: 100% !important;
             height: 100% !important;
+            display: flex !important;
+            justify-content: center !important;
+            align-items: center !important;
           }
 
-          .recharts-responsive-container svg {
+          .recharts-surface {
             width: 100% !important;
             height: 100% !important;
             max-width: 100% !important;
-            max-height: 100% !important;
+            margin: 0 auto !important;
+            overflow: visible !important;
           }
+
+          .recharts-legend-wrapper {
+            width: 100% !important;
+            position: relative !important;
+            left: 0 !important;
+            bottom: 0 !important;
+            text-align: center !important;
+          }
+
+          .print-footer {
+            position: fixed;
+            bottom: 0px;
+            left: 0;
+            right: 0;
+            display: block !important;
+            text-align: center;
+            font-size: 8px;
+            color: #94a3b8;
+            border-top: 1px solid #f1f5f9;
+            padding-top: 5px;
+            background: white;
+            font-family: 'Inter', sans-serif;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+          }
+        }
+
+        #printable-report {
+          max-width: 210mm;
+          margin-left: auto;
+          margin-right: auto;
+          padding: 10mm;
+          background: white;
+          min-height: 297mm;
+          box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.1);
+          border: 1px solid #f1f5f9;
         }
 
         .report-section-title {
           position: relative;
           padding-left: 1rem;
+          margin-bottom: 1.5rem;
+          font-family: 'Outfit', sans-serif;
         }
         .report-section-title::before {
           content: '';
@@ -567,12 +625,46 @@ export default function Laporan() {
           border-radius: 4px;
         }
 
-        .modern-table thead th {
-          border-bottom: 2px solid #e2e8f0;
-          padding: 0.75rem 1rem;
+        .kop-surat {
+          display: flex;
+          align-items: center;
+          gap: 20px;
+          border-bottom: 3px double #1e293b;
+          padding-bottom: 15px;
+          margin-bottom: 25px;
         }
-        .modern-table tbody tr:nth-child(even) {
-          background-color: #f8fafc;
+
+        .kop-surat img {
+          width: 80px;
+          height: auto;
+        }
+
+        .kop-surat .edu-info {
+          flex: 1;
+          text-align: center;
+        }
+
+        .kop-surat h2 {
+          font-size: 18px;
+          font-weight: 900;
+          margin: 15;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+        }
+
+        .kop-surat h1 {
+          font-size: 24px;
+          font-weight: 950;
+          margin: 2px 0;
+          color: #064e3b;
+          text-transform: uppercase;
+        }
+
+        .kop-surat p {
+          font-size: 10px;
+          margin: 15;
+          color: #64748b;
+          font-weight: 600;
         }
       `}</style>
 
@@ -632,16 +724,17 @@ export default function Laporan() {
 
             <button
               onClick={handleDownload}
-              className="p-2.5 bg-emerald-900 text-white rounded-xl shadow-lg shadow-emerald-900/20 hover:bg-emerald-950 transition-all group"
-              title="Cetak Laporan"
+              className="flex items-center gap-2 px-4 py-2.5 bg-emerald-900 text-white rounded-xl shadow-lg shadow-emerald-900/20 hover:bg-emerald-950 transition-all group"
             >
               <Download className="w-5 h-5 group-hover:scale-110 transition-transform" />
+              <span className="text-sm font-bold">Ekspor Laporan</span>
             </button>
           </div>
         </div>
       </div>
 
       <PageGuide
+        className="page-guide"
         title="Panduan Laporan:"
         steps={[
           'Pilih periode laporan menggunakan fitur filter tanggal atau bulan.',
@@ -651,109 +744,126 @@ export default function Laporan() {
         ]}
       />
 
-      <div ref={reportRef} id="printable-report" className="bg-white p-8 md:p-12 rounded-2xl border border-slate-100 shadow-xl space-y-12">
-        {/* Simplified Header for Report */}
-        <div className="border-b-2 border-slate-900 pb-4 flex justify-between items-end">
-          <div>
-            <h1 className="text-2xl font-black text-slate-900 uppercase tracking-tight leading-tight">Laporan Siswa.Hub</h1>
-            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">SMKS AL AZHAR SEMPU</p>
-          </div>
-          <div className="text-right">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Kelas:</p>
-            <p className="text-xl font-black text-slate-900 leading-none mt-1">{user?.managedClass || '-'}</p>
+      <div ref={reportRef} id="printable-report" className="space-y-12 relative">
+        {/* Automatic Print Footer */}
+        <div className="hidden print:block print-footer no-print-screen">
+          Siswa.Hub Digital Report — Kelas {user?.managedClass} — Dicetak pada {format(new Date(), 'dd MMMM yyyy HH:mm', { locale: id })}
+        </div>
+
+        <div className="flex flex-col gap-6">
+          <div className="flex justify-between items-start border-b border-slate-100 pb-6">
+            <div className="space-y-1">
+              <h2 className="text-xl font-black text-emerald-900 uppercase">Laporan Perkembangan Siswa</h2>
+              <div className="flex items-center gap-3">
+                <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[9px] font-black rounded uppercase border border-emerald-100">
+                  {filterType === 'month' ? 'Periode Bulanan' : 'Periode Mingguan'}
+                </span>
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                  {filterType === 'month'
+                    ? academicMonths.find(m => m.value === selectedMonth)?.label
+                    : `${formatDateIndo(dateRange.start)} - ${formatDateIndo(dateRange.end)}`}
+                </span>
+              </div>
+            </div>
+
+            <div className="text-right grid grid-cols-2 gap-x-6 gap-y-1 text-[10px] font-bold tracking-tight">
+              <span className="text-slate-400 text-right uppercase">Wali Kelas:</span>
+              <span className="text-slate-900 text-left">{user?.name || '-'}</span>
+              <span className="text-slate-400 text-right uppercase">Kelas:</span>
+              <span className="text-slate-900 text-left font-black uppercase">{user?.managedClass || '-'}</span>
+              <span className="text-slate-400 text-right uppercase">Tgl Cetak:</span>
+              <span className="text-slate-900 text-left uppercase">{formatDateIndo(new Date())}</span>
+            </div>
           </div>
         </div>
 
-        <div className="flex justify-between items-center bg-slate-50/50 px-4 py-2 rounded-lg border border-slate-100 text-[10px]">
-          <div>
-            <span className="font-bold text-slate-400 uppercase ml-1">Periode: </span>
-            <span className="font-black text-slate-700">
-              {filterType === 'month'
-                ? academicMonths.find(m => m.value === selectedMonth)?.label
-                : `${formatDateIndo(dateRange.start)} - ${formatDateIndo(dateRange.end)}`}
-            </span>
-          </div>
-          <div className="text-slate-400 font-bold uppercase tracking-widest">
-            Unduh: {formatDateIndo(new Date())}
-          </div>
-        </div>
-
-        {/* SECTION 0: KOMPOSISI SISWA */}
         <div className="space-y-6">
           <h3 className="text-sm font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2 report-section-title before:bg-blue-600">
             I. Komposisi Kelas
           </h3>
-          <div className="grid grid-cols-3 gap-4">
-            <div className="bg-blue-50 p-4 rounded-2xl border border-white shadow-sm flex flex-col items-center justify-center text-center">
-              <span className="text-2xl font-black text-blue-600">{komposisiSiswa.total}</span>
-              <span className="text-[8px] font-black uppercase tracking-widest text-slate-400 mt-1">Total Siswa Aktif</span>
+          <div className="grid grid-cols-3 gap-4 print:grid-cols-3">
+            <div className="bg-blue-50 p-5 rounded-2xl border border-white shadow-sm flex flex-col items-center justify-center text-center print-card">
+              <span className="text-3xl font-black text-blue-600 tracking-tighter">{komposisiSiswa.total}</span>
+              <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 mt-2">Total Siswa Aktif</span>
             </div>
-            <div className="bg-slate-50 p-4 rounded-2xl border border-white shadow-sm flex flex-col items-center justify-center text-center">
-              <span className="text-2xl font-black text-slate-700">{komposisiSiswa.LK}</span>
-              <span className="text-[8px] font-black uppercase tracking-widest text-slate-400 mt-1">Laki-Laki (L)</span>
+            <div className="bg-slate-50 p-5 rounded-2xl border border-white shadow-sm flex flex-col items-center justify-center text-center print-card">
+              <span className="text-3xl font-black text-slate-700 tracking-tighter">{komposisiSiswa.LK}</span>
+              <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 mt-2">Laki-Laki (L)</span>
             </div>
-            <div className="bg-rose-50 p-4 rounded-2xl border border-white shadow-sm flex flex-col items-center justify-center text-center">
-              <span className="text-2xl font-black text-rose-600">{komposisiSiswa.PR}</span>
-              <span className="text-[8px] font-black uppercase tracking-widest text-slate-400 mt-1">Perempuan (P)</span>
+            <div className="bg-rose-50 p-5 rounded-2xl border border-white shadow-sm flex flex-col items-center justify-center text-center print-card">
+              <span className="text-3xl font-black text-rose-600 tracking-tighter">{komposisiSiswa.PR}</span>
+              <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 mt-2">Perempuan (P)</span>
             </div>
           </div>
         </div>
 
-        {/* SECTION 1: REKAP ABSENSI UMUM */}
-        <div className="space-y-6">
-          <h3 className="text-sm font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2 report-section-title before:bg-emerald-600">
+        <div className="space-y-10">
+          <h3 className="text-xs font-black text-slate-900 uppercase tracking-[0.3em] flex items-center gap-3 report-section-title before:bg-emerald-600">
             II. Ringkasan Kehadiran
           </h3>
-          <div className="grid grid-cols-5 gap-2 px-1">
+          <div className="grid grid-cols-5 gap-4 print:grid-cols-5">
             {[
-              { label: 'Hadir', val: generalStats.H, color: 'emerald' },
-              { label: 'Sakit', val: generalStats.S, color: 'blue' },
-              { label: 'Izin', val: generalStats.I, color: 'amber' },
-              { label: 'Alfa', val: generalStats.A, color: 'rose' },
-              { label: 'Bolos', val: generalStats.B, color: 'slate' }
+              { label: 'Hadir', val: generalStats.H, color: 'emerald', bg: 'bg-emerald-50' },
+              { label: 'Sakit', val: generalStats.S, color: 'blue', bg: 'bg-blue-50' },
+              { label: 'Izin', val: generalStats.I, color: 'amber', bg: 'bg-amber-50' },
+              { label: 'Alfa', val: generalStats.A, color: 'rose', bg: 'bg-rose-50' },
+              { label: 'Bolos', val: generalStats.B, color: 'purple', bg: 'bg-purple-50' }
             ].map((s, i) => (
-              <div key={i} className="bg-white p-2 rounded-lg border border-slate-100 shadow-sm flex flex-col items-center justify-center">
-                <p className="text-[14px] font-black text-slate-900 leading-none">{s.val}</p>
-                <p className={`text-[7px] font-black uppercase tracking-widest mt-1 text-${s.color}-600`}>{s.label}</p>
+              <div key={i} className={`${s.bg} p-4 rounded-2xl border border-white shadow-sm flex flex-col items-center justify-center text-center print-card`}>
+                <p className="text-lg font-black text-slate-900 leading-none">{s.val}</p>
+                <p className="text-[7px] font-black uppercase tracking-[0.2em] mt-2 text-slate-400">{s.label}</p>
               </div>
             ))}
           </div>
 
-          <div className="grid grid-cols-2 gap-3 h-[200px] print-grid-cols-2">
-            <div className="bg-slate-50/50 rounded-2xl border border-slate-100 p-3 flex flex-col">
-              <h4 className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Persentase Kehadiran</h4>
+          <div className="grid grid-cols-2 gap-3 h-[250px] print:grid-cols-2">
+            <div className="bg-slate-50/50 rounded-2xl border border-slate-100 p-4 flex flex-col min-h-[220px]">
+              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Persentase Kehadiran</h4>
               <div className="flex-1">
-                <PieChart width="100%" height="100%">
-                  <Pie
-                    data={chartDataGeneral}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={25}
-                    outerRadius={45}
-                    paddingAngle={3}
-                    dataKey="value"
-                    stroke="none"
-                  >
-                    {chartDataGeneral.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
-                  </Pie>
-                  <Tooltip />
-                  <Legend iconType="circle" wrapperStyle={{ fontSize: '7px', paddingTop: '2px' }} />
-                </PieChart>
+                <div className="flex justify-center items-center">
+                  <PieChart width={300} height={210} margin={{ bottom: 5 }}>
+                    <Pie
+                      data={chartDataGeneral}
+                      cx="50%"
+                      cy="45%"
+                      innerRadius={45}
+                      outerRadius={75}
+                      paddingAngle={5}
+                      dataKey="value"
+                      stroke="none"
+                      isAnimationActive={false}
+                    >
+                      {chartDataGeneral.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
+                    </Pie>
+                    <Tooltip />
+                    <Legend
+                      iconType="circle"
+                      iconSize={8}
+                      verticalAlign="bottom"
+                      align="center"
+                      wrapperStyle={{
+                        fontSize: '9px',
+                        fontWeight: 'bold',
+                        paddingTop: '2px'
+                      }}
+                    />
+                  </PieChart>
+                </div>
               </div>
             </div>
-            <div className="bg-slate-50/50 rounded-2xl border border-slate-100 p-3 flex flex-col">
-              <h4 className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-2">Perbandingan Status</h4>
-              <div className="flex-1 flex flex-col justify-center space-y-2">
+            <div className="bg-slate-50/50 rounded-2xl border border-slate-100 p-4 flex flex-col min-h-[220px]">
+              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Perbandingan Status</h4>
+              <div className="flex-1 flex flex-col justify-center space-y-3">
                 {chartDataGeneral.map((entry, idx) => {
                   const maxVal = Math.max(...chartDataGeneral.map(d => d.value), 1);
                   const percentage = (entry.value / maxVal) * 100;
                   return (
-                    <div key={idx} className="space-y-1">
-                      <div className="flex justify-between items-center text-[7px] font-black uppercase tracking-widest px-0.5">
+                    <div key={idx} className="space-y-1.5">
+                      <div className="flex justify-between items-center text-[8px] font-black uppercase tracking-widest px-0.5">
                         <span className="text-slate-500">{entry.name}</span>
                         <span className="text-slate-900">{entry.value}</span>
                       </div>
-                      <div className="h-2 w-full bg-slate-200/50 rounded-full overflow-hidden border border-slate-100">
+                      <div className="h-2.5 w-full bg-slate-200/50 rounded-full overflow-hidden border border-slate-100">
                         <div
                           className="h-full rounded-full transition-all duration-1000 ease-out shadow-sm"
                           style={{
@@ -770,46 +880,68 @@ export default function Laporan() {
             </div>
           </div>
 
-          {/* New Trend Chart */}
-          <div className="bg-slate-50/50 rounded-2xl border border-slate-100 p-4 h-[220px] print-chart-container">
-            <div className="flex items-center justify-between mb-2">
-              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Trend Kehadiran Periodik</h4>
-            </div>
-            <ResponsiveContainer width="100%" height="85%">
-              <LineChart data={trendData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 8, fontWeight: 800, fill: '#94a3b8' }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 8, fontWeight: 800, fill: '#94a3b8' }} />
-                <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontSize: '10px' }} />
-                <Legend iconType="circle" wrapperStyle={{ fontSize: '8px', fontWeight: 'bold' }} />
-                <Line type="monotone" dataKey="H" stroke="#10b981" strokeWidth={3} dot={{ r: 2 }} activeDot={{ r: 4 }} name="Hadir" />
-                <Line type="monotone" dataKey="S" stroke="#f59e0b" strokeWidth={2} dot={{ r: 2 }} name="Sakit" />
-                <Line type="monotone" dataKey="I" stroke="#3b82f6" strokeWidth={2} dot={{ r: 2 }} name="Izin" />
-                <Line type="monotone" dataKey="A" stroke="#ef4444" strokeWidth={2} dot={{ r: 2 }} name="Alfa" />
-                <Line type="monotone" dataKey="B" stroke="#8b5cf6" strokeWidth={2} dot={{ r: 2 }} name="Bolos" />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
         </div>
 
         {/* SECTION 2: REKAP SISWA TIDAK MASUK */}
-        <div className="space-y-6" style={{ pageBreakBefore: 'always' }}>
-          <h3 className="text-sm font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2 report-section-title before:bg-rose-600">
-            III. Detail Ketidakhadiran
+        <div className="section-break">
+          <h3 className="text-sm font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2 report-section-title before:bg-indigo-600">
+            III. Trend Kehadiran Periodik
           </h3>
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden overflow-x-auto">
-              <table className="modern-table w-full">
-                <thead>
-                  <tr className="bg-slate-50/50">
-                    <th className="text-left w-10 px-4">No.</th>
-                    <th className="text-left min-w-[150px]">Nama Siswa</th>
-                    <th className="text-center w-16">Sakit</th>
-                    <th className="text-center w-16">Izin</th>
-                    <th className="text-center w-16">Alfa</th>
-                    <th className="text-center w-16">Bolos</th>
-                    <th className="text-center w-20">Total</th>
-                  </tr>
-                </thead>
+          <div className="bg-slate-50/50 rounded-2xl border border-slate-100 p-6 h-[320px] print-chart-container">
+            <div className="flex justify-center items-center">
+              <LineChart width={700} height={260} data={trendData} margin={{ bottom: 20 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                <XAxis
+                  dataKey="name"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 9, fontWeight: 800, fill: '#64748b' }}
+                  dy={10}
+                />
+                <YAxis
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 9, fontWeight: 800, fill: '#64748b' }}
+                />
+                <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontSize: '10px' }} />
+                <Legend
+                  iconType="circle"
+                  iconSize={8}
+                  verticalAlign="bottom"
+                  align="center"
+                  wrapperStyle={{
+                    fontSize: '9px',
+                    fontWeight: 'bold',
+                    paddingTop: '15px'
+                  }}
+                />
+                <Line type="monotone" dataKey="H" stroke="#10b981" strokeWidth={4} dot={{ r: 3 }} activeDot={{ r: 5 }} name="Hadir" isAnimationActive={false} />
+                <Line type="monotone" dataKey="S" stroke="#f59e0b" strokeWidth={3} dot={{ r: 3 }} name="Sakit" isAnimationActive={false} />
+                <Line type="monotone" dataKey="I" stroke="#3b82f6" strokeWidth={3} dot={{ r: 3 }} name="Izin" isAnimationActive={false} />
+                <Line type="monotone" dataKey="A" stroke="#ef4444" strokeWidth={3} dot={{ r: 3 }} name="Alfa" isAnimationActive={false} />
+                <Line type="monotone" dataKey="B" stroke="#8b5cf6" strokeWidth={3} dot={{ r: 3 }} name="Bolos" isAnimationActive={false} />
+              </LineChart>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          <h3 className="text-sm font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2 report-section-title before:bg-rose-600">
+            IV. Detail Ketidakhadiran
+          </h3>
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden table-responsive">
+            <table className="modern-table w-full">
+              <thead>
+                <tr className="bg-slate-50/50">
+                  <th className="text-left w-10 px-4">No.</th>
+                  <th className="text-left min-w-[150px]">Nama Siswa</th>
+                  <th className="text-center w-16">Sakit</th>
+                  <th className="text-center w-16">Izin</th>
+                  <th className="text-center w-16">Alfa</th>
+                  <th className="text-center w-16">Bolos</th>
+                  <th className="text-center w-20">Total</th>
+                </tr>
+              </thead>
               <tbody className="divide-y divide-slate-100">
                 {(() => {
                   const filtered = siswa
@@ -858,27 +990,60 @@ export default function Laporan() {
           </div>
         </div>
 
-        {/* SECTION 3: KEUANGAN */}
-        <div className="space-y-6 print-page-2">
-          <h3 className="text-sm font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2 report-section-title before:bg-indigo-600">
-            IV. Rekapitulasi Keuangan
+        <div className="space-y-8 section-break">
+          <h3 className="text-xs font-black text-slate-900 uppercase tracking-[0.3em] flex items-center gap-3 report-section-title before:bg-indigo-600">
+            V. Rekapitulasi Keuangan
           </h3>
-          <div className="grid grid-cols-4 gap-4">
-            <div className="bg-slate-50 p-4 rounded-2xl border border-white shadow-sm">
-              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Saldo Awal</p>
-              <p className="text-lg font-black text-slate-600">Rp {financialStats.saldoAwal.toLocaleString('id-ID')}</p>
+          <div className="grid grid-cols-4 gap-6 print:grid-cols-4">
+            <div className="bg-slate-50 p-5 rounded-2xl border border-white shadow-sm print-card">
+              <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest">Saldo Awal</p>
+              <p className="text-base font-black text-slate-600 mt-1">Rp {financialStats.saldoAwal.toLocaleString('id-ID')}</p>
             </div>
-            <div className="bg-emerald-50 p-4 rounded-2xl border border-white shadow-sm">
-              <p className="text-[9px] font-black text-emerald-400 uppercase tracking-widest">Masuk (+)</p>
-              <p className="text-lg font-black text-emerald-600">Rp {financialStats.masuk.toLocaleString('id-ID')}</p>
+            <div className="bg-emerald-50 p-5 rounded-2xl border border-white shadow-sm print-card">
+              <p className="text-[7px] font-black text-emerald-400 uppercase tracking-widest">Masuk (+)</p>
+              <p className="text-base font-black text-emerald-600 mt-1">Rp {financialStats.masuk.toLocaleString('id-ID')}</p>
             </div>
-            <div className="bg-rose-50 p-4 rounded-2xl border border-white shadow-sm">
-              <p className="text-[9px] font-black text-rose-400 uppercase tracking-widest">Keluar (-)</p>
-              <p className="text-lg font-black text-rose-600">Rp {financialStats.keluar.toLocaleString('id-ID')}</p>
+            <div className="bg-rose-50 p-5 rounded-2xl border border-white shadow-sm print-card">
+              <p className="text-[7px] font-black text-rose-400 uppercase tracking-widest">Keluar (-)</p>
+              <p className="text-base font-black text-rose-600 mt-1">Rp {financialStats.keluar.toLocaleString('id-ID')}</p>
             </div>
-            <div className="bg-slate-900 p-4 rounded-2xl text-white shadow-md">
-              <p className="text-[9px] font-black opacity-60 uppercase tracking-widest">Saldo Akhir</p>
-              <p className="text-lg font-black">Rp {financialStats.saldo.toLocaleString('id-ID')}</p>
+            <div className="bg-slate-900 p-5 rounded-2xl text-white shadow-md print:bg-slate-100 print:text-slate-900 print:border-slate-900 print-card" style={{ backgroundColor: '#0f172a' }}>
+              <p className="text-[7px] font-black opacity-60 uppercase tracking-widest print:opacity-100 print:text-slate-500">Saldo Akhir</p>
+              <p className="text-base font-black print:text-slate-900 mt-1">Rp {financialStats.saldo.toLocaleString('id-ID')}</p>
+            </div>
+          </div>
+
+          <div className="bg-slate-50/50 rounded-2xl border border-slate-100 p-6">
+            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Visualisasi Arus Kas (Periode Ini)</h4>
+            <div className="flex justify-center items-center">
+              <BarChart
+                width={700}
+                height={200}
+                data={[
+                  { name: 'Pemasukan', amount: financialStats.masuk, fill: '#10b981' },
+                  { name: 'Pengeluaran', amount: financialStats.keluar, fill: '#ef4444' }
+                ]}
+                margin={{ top: 20, right: 30, left: 40, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                <XAxis
+                  dataKey="name"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 10, fontWeight: 900, fill: '#64748b' }}
+                />
+                <YAxis
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 9, fontWeight: 800, fill: '#94a3b8' }}
+                  tickFormatter={(val) => `Rp ${val / 1000}k`}
+                />
+                <Tooltip
+                  formatter={(val) => `Rp ${val.toLocaleString('id-ID')}`}
+                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                />
+                <Bar dataKey="amount" radius={[6, 6, 0, 0]} barSize={60} isAnimationActive={false} />
+              </BarChart>
             </div>
           </div>
 
@@ -931,9 +1096,9 @@ export default function Laporan() {
         {/* SECTION 4: PANGGILAN & HOME VISIT */}
         <div className="space-y-6 print-page-2">
           <h3 className="text-sm font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2 report-section-title before:bg-amber-600">
-            V. Rekapitulasi Panggilan & Home Visit
+            VI. Rekapitulasi Panggilan & Home Visit
           </h3>
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-4 gap-4 print:grid-cols-4">
             {[
               { label: 'Total Record', val: panggilanStats.total, color: 'text-slate-600', bg: 'bg-slate-50' },
               { label: 'Home Visit', val: panggilanStats.homeVisit, color: 'text-amber-600', bg: 'bg-amber-50' },
@@ -950,7 +1115,7 @@ export default function Laporan() {
           {/* VERSI 1: REKAP RINGKAS */}
           <div className="mt-8">
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">A. Versi Rekapitulasi Ringkas (Berdasarkan Siswa)</p>
-            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden overflow-x-auto">
+            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden table-responsive">
               <table className="modern-table w-full">
                 <thead>
                   <tr className="bg-slate-50/50">
@@ -1022,7 +1187,7 @@ export default function Laporan() {
           {/* VERSI 2: DETAIL */}
           <div className="mt-8">
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">B. Versi Detail Panggilan & Home Visit</p>
-            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden overflow-x-auto">
+            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden table-responsive">
               <table className="modern-table w-full">
                 <thead>
                   <tr className="bg-slate-50/50">
@@ -1125,17 +1290,17 @@ export default function Laporan() {
           </div>
         </div>
         {/* SECTION 5: SISWA KELUAR */}
-        <div className="space-y-6 print-page-2">
+        <div className="space-y-6 section-break">
           <h3 className="text-sm font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2 report-section-title before:bg-slate-400">
-            VI. Rekapitulasi Siswa Keluar
+            VII. Rekapitulasi Siswa Keluar
           </h3>
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
             <table className="modern-table">
               <thead>
                 <tr>
                   <th className="text-left w-12">No.</th>
-                  <th className="text-left">Nama Siswa</th>
-                  <th className="text-left">Keterangan (Alasan Keluar)</th>
+                  <th className="text-left font-black">Nama Siswa</th>
+                  <th className="text-left font-black">Keterangan (Alasan Keluar)</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -1164,6 +1329,11 @@ export default function Laporan() {
           </div>
         </div>
 
+
+        {/* Footer for PDF */}
+        <div className="pt-12 text-center border-t border-slate-50 text-[8px] font-black text-slate-300 uppercase tracking-[0.3em]">
+          Siswa.Hub : Wali Kelas Digital Project © 2026 (v{getCurrentVersion()})
+        </div>
       </div>
     </div>
   );
