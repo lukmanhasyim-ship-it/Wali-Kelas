@@ -135,6 +135,9 @@ function handleResponse(e) {
       },
       SYNC_PIKET: function() {
         return { status: 'success', data: syncPiket(payload && payload.data) };
+      },
+      RESET_ALL_NOTIFICATIONS: function() {
+        return { status: 'success', data: resetAllNotifications(payload && payload.email) };
       }
     };
 
@@ -734,6 +737,22 @@ function deleteNotification(id) {
   return false;
 }
 
+function resetAllNotifications(waliEmail) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('Notifikasi');
+  if (!sheet) return { success: false, message: 'Sheet not found' };
+
+  // Clear all data except header
+  var lastRow = sheet.getLastRow();
+  if (lastRow > 1) {
+    sheet.deleteRows(2, lastRow - 1);
+  }
+
+  // Create a new welcome notification
+  createNotification('Selamat datang di SISWA.HUB! Sistem manajemen kelas digital Anda sudah siap digunakan.', 'success', 'ALL');
+
+  return { success: true, message: 'Semua notifikasi berhasil direset' };
+}
 
 
 function setupSpreadsheet() {

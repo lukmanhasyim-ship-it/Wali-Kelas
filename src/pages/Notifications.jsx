@@ -89,6 +89,27 @@ export default function Notifications() {
     }
   };
 
+  const handleResetAll = async () => {
+    if (!window.confirm('PERHATIAN: Ini akan menghapus SEMUA notifikasi untuk semua pengguna. Lanjutkan?')) return;
+    
+    try {
+      setLoading(true);
+      showToast('Mereset semua notifikasi...', 'info');
+      const res = await fetchGAS('RESET_ALL_NOTIFICATIONS', { email: user?.email });
+      if (res.status === 'success') {
+        setNotifications([]);
+        showToast('Semua notifikasi berhasil direset.', 'success');
+      } else {
+        throw new Error('Gagal reset notifikasi');
+      }
+    } catch (err) {
+      console.error('Reset all failed:', err);
+      showToast('Gagal mereset notifikasi.', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   if (loading) return <Loading message="Memuat notifikasi..." />;
 
@@ -126,6 +147,16 @@ export default function Notifications() {
             <Trash2 className="w-4 h-4 text-rose-500" />
             <span className="text-[10px] font-black uppercase tracking-widest">Hapus Semua</span>
           </button>
+
+          {role === 'Wali Kelas' && (
+            <button
+              onClick={handleResetAll}
+              className="btn-secondary flex items-center gap-2 group hover:!bg-red-50 hover:!text-red-600 hover:!border-red-100 !py-2.5"
+            >
+              <Trash2 className="w-4 h-4 text-red-500" />
+              <span className="text-[10px] font-black uppercase tracking-widest">Reset Semua</span>
+            </button>
+          )}
         </div>
       </div>
 
