@@ -299,7 +299,7 @@ export default function Dashboard() {
         )}
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Card Kehadiran */}
         <div className="card bg-gradient-to-br from-emerald-600 to-emerald-800 text-white border-none">
           <div className="flex items-start justify-between">
@@ -343,18 +343,16 @@ export default function Dashboard() {
               </div>
             </div>
             <div className="flex items-end gap-2">
-              <div className="text-3xl font-bold text-emerald-600 leading-none">{stats.terpantauHariIni}</div>
+              <div className="text-2xl font-bold text-emerald-600 leading-none">{stats.terpantauHariIni}</div>
               <div>
                 <p className="text-[10px] text-slate-600 font-medium">dari {stats.totalSiswa} Siswa</p>
               </div>
             </div>
           </div>
         )}
-      </div>
 
-      {/* Piket Hari Ini - Full Width Below Stats */}
-      {isTeacher && (
-        <div className="card border-l-4 border-l-emerald-500 mt-4">
+        {/* Piket Hari Ini - Shown for all users */}
+        <div className="card border-l-4 border-l-emerald-500 hover:shadow-lg transition-all duration-500">
            <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl">
@@ -369,7 +367,7 @@ export default function Dashboard() {
                 onClick={() => navigate('/piket')}
                 className="flex items-center gap-1 text-[9px] font-black text-emerald-800 uppercase tracking-widest hover:gap-2 transition-all"
               >
-                Kelola <ChevronRight className="w-2.5 h-2.5" />
+                Lihat <ChevronRight className="w-2.5 h-2.5" />
               </button>
            </div>
 
@@ -390,7 +388,7 @@ export default function Dashboard() {
               )}
            </div>
         </div>
-      )}
+      </div>
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

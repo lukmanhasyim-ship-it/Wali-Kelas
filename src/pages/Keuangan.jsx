@@ -537,7 +537,7 @@ export default function Keuangan() {
           )}
         </div>
         {/* History Table */}
-        <div className="card lg:col-span-2 overflow-hidden p-0">
+        <div className="card lg:col-span-2 p-0">
           {keuangan.length === 0 ? (
             <EmptyState
               title="Belum Ada Transaksi"
@@ -545,8 +545,8 @@ export default function Keuangan() {
               icon={History}
             />
           ) : (
-          <div className="table-container">
-              <table className="modern-table min-w-[800px] md:min-w-full">
+          <div className="overflow-x-auto">
+              <table className="modern-table w-full">
                 <thead>
                   <tr>
                     <th>Tanggal</th>

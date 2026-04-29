@@ -44,23 +44,7 @@ export default function Register() {
       setError('Nama Siswa dan Email Aktif harus diisi.');
       return;
     }
-    const message = `Assalamu'alaikum Warahmatullahi Wabarakatuh,
-
-Bismillah, mohon maaf mengganggu waktunya sebentar, Bapak/Ibu.
-
-Saya berniat untuk melakukan registrasi di platform Siswa.Hub agar data kehadiran dan administrasi saya dapat terdata secara amanah dalam sistem kelas. Sehubungan dengan syarat pendaftaran yang diperlukan, berikut adalah data diri saya:
-
-Nama Lengkap: ${namaSiswa.trim()}
-
-Email Aktif: ${emailSiswa.trim()}
-
-Kelas : ${waliKelas}
-
-Mohon kesediaan Bapak/Ibu untuk memproses pendaftaran saya ke dalam sistem. Semoga langkah ini menjadi awal yang baik untuk kedisiplinan saya dan membawa keberkahan bagi kelas kita.
-
-Jazakumullah Khairan katsiran atas bimbingan Bapak/Ibu selama ini.
-
-Wassalamu'alaikum Warahmatullahi Wabarakatuh.`;
+    const message = `Assalamualaikum, Wr.Wb. perkenalkan saya ${namaSiswa.trim()} ingin mendaftarkan diri ke aplikasi Siswa.Hub. Berikut Email saya ${emailSiswa.trim()}. terimakasih atas perhariannya. Wassalamualaikum, Wr.Wb`;
     const encodedMessage = encodeURIComponent(message);
     const formattedPhone = formatPhoneNumber(waliContact);
     const waUrl = `https://wa.me/${formattedPhone}?text=${encodedMessage}`;
