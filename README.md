@@ -33,28 +33,6 @@
 
 ---
 
-## 📦 Riwayat Pembaruan (Changelog)
-
-### v4.9.4 (Pembaruan Versi Minor & Stabilitas)
-*   **Upgrade versi aplikasi ke 4.9.4** untuk menyelaraskan rilis dokumentasi dan integrasi update internal.
-*   **Perbaikan kompatibilitas fitur `last seen`** untuk akun lama dengan dukungan format tanggal historis.
-*   **Penyempurnaan dokumentasi instalasi** dan penegasan alur setup Google Apps Script untuk implementasi yang lebih cepat.
-
-### v4.9.3 (Update Identitas & Optimalisasi Laporan)
-*   **Transformasi Brand Identity**: Pembaruan total skema warna aplikasi menjadi **Dark Green (Emerald 900)** yang selaras dengan logo institusi untuk tampilan yang lebih premium.
-*   **Fitur Ekspor MS Excel**: Menambahkan tombol "Export to Excel" pada menu Buku Klaper untuk mempermudah pengelolaan data master siswa secara offline.
-*   **Penyempurnaan Print Layout (A4 Landscape)**: 
-    *   Implementasi sistem *Fixed Table Layout* & *Colgroup* pada Buku Klaper untuk memastikan seluruh 14 kolom tampil sempurna dalam satu halaman tanpa terpotong.
-    *   Optimalisasi *line-height* dan *padding* pada PDF report untuk mencegah teks saling menindih.
-*   **Modernisasi Visual Laporan**:
-    *   Konversi bagan perbandingan status dari Column Bar menjadi **Dynamic Progress Bars** dengan efek glow.
-    *   Penambahan judul deskriptif pada setiap Chart untuk mempermudah stakeholders dalam membaca data.
-
-### v4.9.2
-*   **Pencegahan Duplikasi Jabatan**: Sistem eliminasi pilihan jabatan secara real-time di halaman Master Siswa.
-*   **Optimalisasi Mobile Table**: Implementasi *Scroll Horizontal* presisi pada seluruh tabel administrasi.
-*   **Database Access Fix**: Penyempurnaan rute endpoint konfigurasi untuk kestabilan pengambilan data dari Google Sheets.
-
 ---
 
 ## 🛠️ Panduan Instalasi (Langkah demi Langkah)
