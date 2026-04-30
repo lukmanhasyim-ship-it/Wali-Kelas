@@ -1,7 +1,7 @@
-# Siswa.Hub v4.9.3 - Ekosistem Manajemen Kelas Digital Premium
+# Siswa.Hub v4.9.4 - Ekosistem Manajemen Kelas Digital Premium
 
 ![License](https://img.shields.io/badge/License-Private-red.svg)
-![Version](https://img.shields.io/badge/Version-4.9.2-emerald.svg)
+![Version](https://img.shields.io/badge/Version-4.9.4-emerald.svg)
 ![React](https://img.shields.io/badge/Frontend-React%2019-blue.svg)
 ![Backend](https://img.shields.io/badge/Backend-Google%20Apps%20Script-orange.svg)
 
@@ -19,28 +19,19 @@
 ### 📝 Administrasi Akademik & Presensi
 *   **Presensi Dual-Session**: Pencatatan kehadiran pagi dan siang dengan *timestamp* otomatis untuk akurasi maksimal.
 *   **Daftar Nilai (DKN) Dinamis**: Sistem pengelolaan nilai yang fleksibel dengan fitur "Terapkan Susunan Mapel" otomatis dan editor kategori yang mudah.
-*   **Buku Klaper Digital**: Arsip data mutasi dan riwayat siswa yang siap cetak kapan saja.
+*   **Buku Klaper Digital**: Arsip data mutasi dan riwayat siswa yang siap cetak kapan saja dengan fitur **Ekspor ke Excel**.
 
 ### 💰 Manajemen Keuangan (Kas Kelas)
 *   **Laporan Kas 4 Kolom**: Transparansi penuh dengan pencatatan masuk, keluar, dan saldo akhir secara otomatis.
 *   **Smart Debtor Tracking**: Sistem otomatis mendeteksi siswa yang memiliki tanggungan iuran berdasarkan nominal yang ditetapkan Wali Kelas.
 *   **Otoritas Bendahara**: Fitur input keuangan yang diamankan secara khusus hanya untuk akun Google Bendahara dan Wakil Bendahara yang terdaftar.
 
-### 🏠 Layanan Konseling & Home Visit (NEW v4.9)
+### 🏠 Layanan Konseling & Home Visit (v4.9)
 *   **Digital Call Log**: Pendataan panggilan siswa secara sistematis mulai dari kategori hingga alasan detail.
 *   **Home Visit Evidence**: Fitur unggahan foto bukti kunjungan rumah langsung ke Google Drive melalui aplikasi, terintegrasi dengan laporan perkembangan siswa.
 *   **Automated Notifications**: Kirim pesan motivasi dan pengingat resmi secara otomatis kepada siswa dan pengurus kelas.
 
 ---
-
-## 📦 Riwayat Pembaruan (Changelog)
-
-### v4.9.2 (Update Utama)
-*   **Perbaikan Koneksi Database**: Mengatasi peringatan kegagalan akses data ("Gagal memuat data siswa") dengan menyempurnakan rute endpoint konfigurasi *environment*.
-*   **Pencegahan Duplikasi Jabatan**: Menambahkan sistem "Eliminasi Pilihan" secara *real-time* di halaman Master Siswa. Siswa baru tidak dapat memilih jabatan khusus (Ketua Kelas, Bendahara, dll) yang sudah berstatus terisi (*disabled*) atau diklaim oleh siswa lain.
-*   **Optimalisasi Tampilan Mobile (UI/UX)**: 
-    *   Seluruh tabel kini memiliki *Scroll Horizontal* presisi yang mencegah tampilan hancur/terhimpit (*squishing*) di layar sempit.
-    *   Kolom "Keterangan" pada proses Absensi (Pagi & Siang) kini *terbuka* penuh secara bawaan di layar HP model *portrait*.
 
 ---
 
@@ -51,15 +42,14 @@ Buat sebuah Google Spreadsheet baru. Tambahkan sheet-sheet berikut dengan nama d
 
 | Nama Sheet | Struktur Kolom (Header Baris 1) |
 | :--- | :--- |
-| **Master_Siswa** | ID_Siswa, NIS, NISN, Nama_Siswa, L/P, Email, Jabatan, Tempat_Lahir, Tanggal_Lahir, Tanggal_Masuk_X, Tanggal_Naik_XI, Tanggal_Naik_XII, Tanggal_Tamat_Sekolah, No_WA_Siswa, Nama_Wali, No_WA_Wali, Alamat, Latitude, Longitude, Lokasi, Status_Aktif, Keterangan |
-| **Presensi** | ID_Presensi, Tanggal, ID_Siswa, NISN, Status_Pagi, Timestamp_Pagi, Status_Siang, Timestamp_Siang, Keterangan |
+| **Master_Siswa** | ID_Siswa, NIS, NISN, Nama_Siswa, L/P, Email, Jabatan, Tempat_Lahir, Tanggal_Lahir, Tanggal_Masuk_X, Tanggal_Naik_XI, Tanggal_Naik_XII, Tanggal_Tamat_Sekolah, No_WA_Siswa, Nama_Wali, No_WA_Wali, Alamat, Latitude, Longitude, Lokasi, Status_Aktif, Last_Active, Keterangan, Created_At |
+| **Presensi** | ID_Presensi, Tanggal, ID_Siswa, Status_Pagi, Status_Siang, Keterangan, Timestamp_Pagi, Timestamp_Siang |
 | **Keuangan** | ID_Transaksi, Tanggal, ID_Siswa, NISN, Tipe, Jumlah, Keterangan |
 | **Daftar_Nilai** | ID_Nilai, ID_Siswa, NISN, Jenjang, Semester, Kategori_Mapel, Nama_Mapel, Topik, Nilai, Timestamp |
-| **Log_Panggilan** | ID_Panggilan, Tanggal, ID_Siswa, NISN, Kategori, Alasan, Tanggal_Pemanggilan, Waktu_Diskusi, Hasil_Pertemuan, Status_Selesai, Bukti_File_URL |
-| **Profil_Wali_Kelas** | Id_Wali, Nama, Email, Bio, Gaya_Ajar, Kontak, Created_At, Nominal_Iuran, Kelas |
+| **Log_Panggilan** | ID_Panggilan, Tanggal, NISN, Kategori, Alasan, Tanggal_Pemanggilan, Hasil_Pertemuan, Status_Selesai, Bukti_File_URL |
+| **Profil_Wali_Kelas** | Id_Wali, Nama, Email, Bio, Gaya_Ajar, Kontak, Alamat, Latitude, Longitude, Lokasi, Nominal_Iuran, Kelas, Created_At |
 | **Piket** | ID_Piket, Hari, ID_Siswa, Nama_Siswa, Email |
 | **Notifikasi** | ID, Message, Type, Target_Email, Is_Read, Timestamp, Target_Role, Role, Email |
-| **Lokasi** | ID_Lokasi, Nama_Lokasi, Deskripsi, Alamat, Latitude, Longitude, Lokasi, Created_By, Created_By_Email, Created_At |
 
 > [!IMPORTANT]
 > Pastikan kolom `Bukti_File_URL` di sheet `Log_Panggilan` tersedia untuk menyimpan link foto dokumentasi dari Google Drive.
@@ -150,4 +140,4 @@ Siswa.Hub menggunakan autentikasi resmi Google. Data Anda tersimpan sepenuhnya d
 > **Didesain dengan ❤️ oleh Mohamad Lukman Nurhasyim, S.Kom, Gr.**  
 > *Membangun ekosistem pendidikan yang lebih baik, satu baris kode dalam satu waktu.*
 
-© 2026 Siswa.Hub. All rights reserved.man Nurhasyim, S.Kom, Gr.*
+© 2026 Siswa.Hub. All rights reserved.
