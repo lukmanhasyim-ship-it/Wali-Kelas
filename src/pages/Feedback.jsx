@@ -32,12 +32,16 @@ export default function Feedback() {
       const emailSubject = encodeURIComponent(`[Feedback ${type.toUpperCase()}] ${subject}`);
       
       const emailBody = encodeURIComponent(
+        `=== INFORMASI PENGIRIM ===\n` +
         `Nama: ${user?.name || 'Tidak diketahui'}\n` +
         `Email: ${user?.email || 'Tidak diketahui'}\n` +
         `Role: ${role}\n` +
-        `Jenis Feedback: ${type === 'saran' ? 'Saran' : 'Keluhan'}\n` +
+        `Kelas: ${user?.managedClass || '-'}\n\n` +
+        `=== DETAIL FEEDBACK ===\n` +
+        `Jenis: ${type === 'saran' ? 'Saran' : 'Keluhan'}\n` +
         `Subjek: ${subject}\n\n` +
-        `Pesan:\n${message}`
+        `Pesan:\n${message}\n\n` +
+        `========================`
       );
 
       window.location.href = `mailto:${FEEDBACK_EMAIL}?subject=${emailSubject}&body=${emailBody}`;

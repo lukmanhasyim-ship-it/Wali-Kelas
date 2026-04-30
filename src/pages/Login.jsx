@@ -67,12 +67,26 @@ export default function Login() {
             console.error('Failed to fetch class for student:', e);
           }
 
+          // Update Last_Active di Master_Siswa
+          try {
+            await fetchGAS('UPDATE', {
+              sheet: 'Master_Siswa',
+              id: matchingUser.ID_Siswa,
+              data: {
+                Last_Active: new Date().toISOString()
+              }
+            });
+          } catch (err) {
+            console.error('Failed to update Last_Active:', err);
+          }
+
           login({
             token: tokenResponse.access_token,
             name: matchingUser.Nama_Siswa || userInfo.name,
             email: userInfo.email,
             picture: userInfo.picture,
-            managedClass: studentClass
+            managedClass: studentClass,
+            idSiswa: matchingUser.ID_Siswa
           }, matchingUser.Jabatan || 'Siswa');
           return;
         }
@@ -115,23 +129,23 @@ export default function Login() {
     <div className="min-h-screen bg-[#F0F2F5] flex items-center justify-center p-4 relative overflow-hidden font-sans">
       {/* Decorative lines matching reference */}
       <div className="absolute top-0 right-0 w-64 h-64 opacity-20 pointer-events-none">
-        <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" className="w-full h-full text-indigo-400">
+        <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" className="w-full h-full text-emerald-400">
           <path fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="10 5" d="M10,0 L10,200 M30,0 L30,200 M50,0 L50,200 M70,0 L70,200 M90,0 L90,200" transform="rotate(45 100 100)" />
         </svg>
       </div>
 
-      <div className="absolute bottom-[-100px] right-[10%] w-[300px] h-[300px] border-[1px] border-orange-400 rounded-full opacity-30 pointer-events-none"></div>
-      <div className="absolute bottom-[50px] right-[15%] w-6 h-6 bg-blue-600 rounded-full opacity-90 pointer-events-none"></div>
+      <div className="absolute bottom-[-100px] right-[10%] w-[300px] h-[300px] border-[1px] border-emerald-400 rounded-full opacity-30 pointer-events-none"></div>
+      <div className="absolute bottom-[50px] right-[15%] w-6 h-6 bg-emerald-600 rounded-full opacity-90 pointer-events-none"></div>
 
       <div className="w-full max-w-5xl bg-white rounded-2xl shadow-2xl flex flex-col md:flex-row overflow-hidden relative z-10 md:min-h-[600px] animate-fade-in">
 
         {/* Left Section - Illustration */}
-        <div className="hidden md:flex md:w-[45%] bg-[#E8F2FB] flex-col items-center justify-center p-6 relative overflow-hidden">
-          <div className="absolute bottom-[-50px] left-[-50px] w-64 h-64 bg-blue-100 rounded-full mix-blend-multiply opacity-50 blur-xl"></div>
+        <div className="hidden md:flex md:w-[45%] bg-emerald-50/50 flex-col items-center justify-center p-6 relative overflow-hidden">
+          <div className="absolute bottom-[-50px] left-[-50px] w-64 h-64 bg-emerald-100 rounded-full mix-blend-multiply opacity-50 blur-xl"></div>
 
           <div className="text-center z-10 w-full mb-4 px-4">
             <h2 className="text-[1.5rem] lg:text-[1.8rem] font-bold text-slate-800 leading-tight">
-              Sistem<span className="text-[#fdb813]"> Cerdas</span> dan <span className="text-[#008647]">Canggih</span> Untuk Monitoring Siswa yang Lebih Presisi.
+              Sistem<span className="text-amber-500"> Cerdas</span> dan <span className="text-emerald-700">Canggih</span> Untuk Monitoring Siswa yang Lebih Presisi.
             </h2>
           </div>
 
@@ -155,7 +169,7 @@ export default function Login() {
             <div className="text-center mb-8 md:mb-10">
               <h1 className="text-[1.3rem] md:text-[1.5rem] font-bold text-slate-800 mb-2">Hai, selamat datang kembali</h1>
               <p className="text-[11px] md:text-[12px] text-slate-500">
-                Belum terdaftar di Siswa.Hub? <button onClick={() => navigate('/register')} className="text-blue-500 hover:underline font-bold">Daftar Sekarang</button>
+                Belum terdaftar di Siswa.Hub? <button onClick={() => navigate('/register')} className="text-emerald-700 hover:underline font-bold">Daftar Sekarang</button>
               </p>
             </div>
 
@@ -182,13 +196,13 @@ export default function Login() {
                 )}
               </button>
 
-<div className="flex items-center mt-6">
-                <input type="checkbox" id="remember" className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 mr-2" defaultChecked />
+              <div className="flex items-center mt-6">
+                <input type="checkbox" id="remember" className="w-4 h-4 rounded text-emerald-800 focus:ring-emerald-800 border-slate-300 mr-2" defaultChecked />
                 <label htmlFor="remember" className="text-xs text-slate-600">Ingat perangkat ini</label>
               </div>
 
               <p className="text-left text-[11px] text-slate-400 mt-6 pt-4 border-t border-slate-100 leading-relaxed">
-                Dengan melanjutkan, kamu menerima <button onClick={() => navigate('/terms')} className="text-blue-500 hover:underline">Syarat Penggunaan</button> dan <button onClick={() => navigate('/privacy')} className="text-blue-500 hover:underline">Kebijakan Privasi</button> kami.
+                Dengan melanjutkan, kamu menerima <button onClick={() => navigate('/terms')} className="text-emerald-800 hover:underline">Syarat Penggunaan</button> dan <button onClick={() => navigate('/privacy')} className="text-emerald-800 hover:underline">Kebijakan Privasi</button> kami.
               </p>
 
               <div className="mt-8 pt-6 border-t border-slate-100 flex flex-col md:flex-row items-center justify-between gap-3 text-[10px]">
@@ -202,4 +216,3 @@ export default function Login() {
     </div>
   );
 }
-

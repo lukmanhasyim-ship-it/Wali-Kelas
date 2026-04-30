@@ -60,6 +60,43 @@ export function formatPhoneNumber(phone) {
 }
 
 // Format Date to DD/MMMM/YYYY (Indonesian)
+export function parseDateValue(value) {
+  if (value instanceof Date) {
+    return isNaN(value.getTime()) ? null : value;
+  }
+
+  if (typeof value === 'number') {
+    const date = new Date(value);
+    return isNaN(date.getTime()) ? null : date;
+  }
+
+  if (typeof value === 'string') {
+    const raw = value.trim();
+    if (!raw) return null;
+
+    let timestamp = Date.parse(raw);
+    if (!Number.isNaN(timestamp)) {
+      return new Date(timestamp);
+    }
+
+    // Try ISO-like conversion for older string formats
+    const normalized = raw.replace(' ', 'T');
+    timestamp = Date.parse(normalized);
+    if (!Number.isNaN(timestamp)) {
+      return new Date(timestamp);
+    }
+
+    // Convert common dd/mm/yyyy or dd-mm-yyyy formats to ISO
+    const ddmmyyyy = raw.replace(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/, '$3-$2-$1T$4:$5:$6');
+    timestamp = Date.parse(ddmmyyyy);
+    if (!Number.isNaN(timestamp)) {
+      return new Date(timestamp);
+    }
+  }
+
+  return null;
+}
+
 export function formatDateIndo(dateStr) {
   if (!dateStr) return '-';
   try {

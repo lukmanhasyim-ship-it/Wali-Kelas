@@ -1,80 +1,38 @@
-import packageJson from '../../package.json?raw'
+export const getCurrentVersion = () => "4.9.4";
 
-const GITHUB_OWNER = 'lukmanhasyim-ship-it'
-const GITHUB_REPO = 'Siswa.Hub'
-const GITHUB_API_URL = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}`
+export const checkForUpdate = async () => {
+  const current = getCurrentVersion();
+  const repoUrl = "https://raw.githubusercontent.com/lukmanhasyim-ship-it/Wali-Kelas/main/src/utils/version.js";
 
-let cachedVersion = null
-
-export function getCurrentVersion() {
-  if (cachedVersion) return cachedVersion
   try {
-    const pkg = JSON.parse(packageJson)
-    cachedVersion = pkg.version || '0.0.0'
-  } catch {
-    cachedVersion = '0.0.0'
-  }
-  return cachedVersion
-}
+    const response = await fetch(repoUrl);
+    if (!response.ok) throw new Error("Gagal terhubung ke server update.");
+    
+    const text = await response.text();
+    // Simple regex to extract version from the file content
+    const match = text.match(/getCurrentVersion = \(\) => "(.*?)"/);
+    const latestVersion = match ? match[1] : current;
 
-function compareVersions(current, latest) {
-  const curParts = current.split('.').map(Number)
-  const latParts = latest.split('.').map(Number)
-
-  for (let i = 0; i < Math.max(curParts.length, latParts.length); i++) {
-    const cur = curParts[i] || 0
-    const lat = latParts[i] || 0
-    if (cur < lat) return -1
-    if (cur > lat) return 1
-  }
-  return 0
-}
-
-export async function checkForUpdate() {
-  try {
-    const response = await fetch(`${GITHUB_API_URL}/releases/latest`, {
-      headers: {
-        Accept: 'application/vnd.github+json',
-      },
-    })
-
-    if (!response.ok) {
-      if (response.status === 404) {
-        return {
-          hasUpdate: false,
-          currentVersion: getCurrentVersion(),
-          latestVersion: null,
-          releaseNotes: null,
-          releaseUrl: null,
-          error: 'Belum ada release',
-        }
-      }
-      throw new Error(`HTTP ${response.status}`)
-    }
-
-    const release = await response.json()
-    const latestVersion = release.tag_name?.replace(/^v/, '') || release.name || '0.0.0'
-    const currentVersion = getCurrentVersion()
-
-    const hasUpdate = compareVersions(currentVersion, latestVersion) < 0
+    const hasUpdate = latestVersion !== current;
 
     return {
       hasUpdate,
-      currentVersion,
+      currentVersion: current,
       latestVersion,
-      releaseNotes: release.body || null,
-      releaseUrl: release.html_url,
-      publishedAt: release.published_at,
-      error: null,
-    }
-  } catch (err) {
-    return {
-      hasUpdate: false,
-      currentVersion: getCurrentVersion(),
-      latestVersion: null,
-      releaseNotes: null,
-      releaseUrl: null,
-      error: err.message,
-    }
+      releaseUrl: "https://github.com/lukmanhasyim-ship-it/Wali-Kelas/releases",
+      releaseNotes: hasUpdate 
+        ? `Tersedia pembaruan versi ${latestVersion}. Silakan hubungi pengelola atau lakukan git pull untuk memperbarui.`
+        : "Sistem sudah dalam versi terbaru.",
+      description: hasUpdate 
+        ? "Versi baru tersedia di repository." 
+        : "Sistem sudah dalam versi terbaru."
+    };
+  } catch (error) {
+    console.error("Check for update failed:", error);
+    return { 
+      hasUpdate: false, 
+      currentVersion: current,
+      error: "Gagal mengecek pembaruan. Pastikan Anda terhubung ke internet." 
+    };
   }
-}
+};

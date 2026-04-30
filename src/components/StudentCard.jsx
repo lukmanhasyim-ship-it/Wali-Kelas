@@ -1,9 +1,27 @@
 import React, { memo } from 'react';
-import { Phone, FileText, AlertTriangle, Edit3, MapPin, Trash2, MessageCircle, Crown } from 'lucide-react';
+import { Phone, FileText, AlertTriangle, Edit3, MapPin, Trash2, MessageCircle, Crown, Clock } from 'lucide-react';
+import { parseDateValue } from '../utils/logic';
 
 function StudentCard({ student, disciplineStatus, onWaClick, onWaStudentClick, onContactClick, onEdit, onDelete, canSeeLocation }) {
   const getAvatarColor = (gender) => {
     return gender === 'P' ? 'bg-rose-100 text-rose-700' : 'bg-sky-100 text-sky-700';
+  };
+
+  const formatLastSeen = (lastActive) => {
+    const last = parseDateValue(lastActive);
+    if (!last) return 'Belum pernah';
+    const now = new Date();
+    const diffMs = now - last;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'Baru saja';
+    if (diffMins < 60) return `${diffMins} menit lalu`;
+    if (diffHours < 24) return `${diffHours} jam lalu`;
+    if (diffDays < 7) return `${diffDays} hari lalu`;
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)} minggu lalu`;
+    return last.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
   };
 
   return (
@@ -50,6 +68,14 @@ function StudentCard({ student, disciplineStatus, onWaClick, onWaStudentClick, o
                 <span className="text-slate-400 font-medium tracking-tight">Wali:</span> {student.Nama_Wali}
               </p>
             </div>
+            {student.Last_Active && (
+              <div className="mt-0.5 flex items-center gap-1">
+                <Clock className="w-2.5 h-2.5 text-slate-400" />
+                <p className="text-[9px] text-slate-400 font-medium">
+                  Cek terakhir: {formatLastSeen(student.Last_Active)}
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>

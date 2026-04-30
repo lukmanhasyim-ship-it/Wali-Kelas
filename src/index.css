@@ -4,18 +4,18 @@
 
 @layer base {
   :root {
-    --brand-hue: 156;
+    --brand-hue: 160;
     --brand-saturation: 84%;
-    --brand-lightness: 24%;
+    --brand-lightness: 15%;
 
     --brand: hsl(var(--brand-hue), var(--brand-saturation), var(--brand-lightness));
-    --brand-hover: hsl(var(--brand-hue), var(--brand-saturation), 18%);
-    --brand-soft: hsl(var(--brand-hue), var(--brand-saturation), 97%);
+    --brand-hover: hsl(var(--brand-hue), var(--brand-saturation), 10%);
+    --brand-soft: hsl(var(--brand-hue), 60%, 97%);
 
     --accent: 43 96% 56%;
     --accent-gold: hsl(var(--accent));
 
-    --success: 142 71% 45%;
+    --success: 158 94% 30%;
     --warning: 45 100% 50%;
     --error: 0 84% 60%;
 
@@ -25,7 +25,7 @@
   }
 
   body {
-    @apply bg-slate-50 text-slate-900 selection:bg-emerald-100 selection:text-emerald-900;
+    @apply bg-slate-50 text-slate-900 selection:bg-blue-100 selection:text-blue-900;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
   }
 
@@ -49,11 +49,11 @@
   }
 
   .btn-primary {
-    @apply bg-emerald-800 text-white px-6 py-2.5 rounded-2xl font-bold shadow-lg shadow-emerald-200/50 hover:bg-emerald-900 hover:shadow-emerald-300/50 hover:-translate-y-0.5 transition-all duration-300 active:scale-95 disabled:opacity-50 disabled:pointer-events-none uppercase text-[11px] tracking-widest;
+    @apply bg-emerald-900 text-white px-6 py-2.5 rounded-2xl font-bold shadow-lg shadow-emerald-200/50 hover:bg-emerald-950 hover:shadow-emerald-300/50 hover:-translate-y-0.5 transition-all duration-300 active:scale-95 disabled:opacity-50 disabled:pointer-events-none uppercase text-[11px] tracking-widest;
   }
 
   .btn-secondary {
-    @apply bg-white text-slate-700 px-6 py-2.5 rounded-2xl font-bold border border-slate-200 shadow-sm hover:bg-slate-50 hover:border-emerald-600 hover:text-emerald-700 transition-all active:scale-95 uppercase text-[11px] tracking-widest;
+    @apply bg-white text-slate-700 px-6 py-2.5 rounded-2xl font-bold border border-slate-200 shadow-sm hover:bg-emerald-50 hover:border-emerald-800 hover:text-emerald-900 transition-all active:scale-95 uppercase text-[11px] tracking-widest;
   }
 
   .btn-ghost {
@@ -61,7 +61,7 @@
   }
 
   .input-field {
-    @apply w-full px-5 py-3 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-600 outline-none transition-all duration-300 shadow-sm;
+    @apply w-full px-5 py-3 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-800 outline-none transition-all duration-300 shadow-sm;
   }
 
   .status-badge {
@@ -77,12 +77,16 @@
     @apply w-full text-left border-collapse;
   }
 
-  .modern-table th {
-    @apply px-6 py-2.5 bg-emerald-50 text-emerald-900 font-bold text-[11px] uppercase tracking-widest border border-emerald-200/50 whitespace-nowrap;
+.modern-table th {
+    @apply px-6 py-2.5 bg-blue-50 text-blue-900 font-bold text-[11px] uppercase tracking-widest border border-blue-200/50 whitespace-nowrap;
+  }
+
+  .modern-table tr:hover td {
+    @apply bg-blue-50/50;
   }
 
   .modern-table td {
-    @apply px-6 py-2.5 border border-slate-100 text-sm align-middle bg-white transition-colors duration-200 whitespace-nowrap md:whitespace-normal;
+    @apply px-6 py-2.5 border border-slate-100 text-sm align-middle bg-white transition-colors duration-200 break-words;
   }
 
   .modern-table tr:hover td {
@@ -126,8 +130,8 @@
 }
 
 .gradient-text {
-  @apply bg-clip-text text-transparent bg-gradient-to-r from-emerald-600 to-amber-500 font-black;
-}
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-900 to-amber-500 font-black;
+  }
 
 
 

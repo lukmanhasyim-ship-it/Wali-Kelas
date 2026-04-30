@@ -42,6 +42,8 @@ export default function DKN() {
   const [newMapel, setNewMapel] = useState('');
   const [newTopik, setNewTopik] = useState('');
   const [addedColumns, setAddedColumns] = useState([]);
+  const [editingCol, setEditingCol] = useState(null);
+  const [editValues, setEditValues] = useState({ mapel: '', topik: '' });
 
   // Perubahan Nilai lokal sebelum disimpan
   // Format map: "ID_Siswa_Kategori_Mapel_Topik" -> value
@@ -184,20 +186,16 @@ export default function DKN() {
     showToast(`Kolom ${newMapel} ditambahkan dengan nilai default 0.`, 'info');
   };
 
-  const handleDeleteMapel = (col) => {
-    // Check if it's in addedColumns
+  const handleDeleteMapel = async (col) => {
     const isNew = addedColumns.some(c => c.kategori === col.kategori && c.mapel === col.mapel && c.topik === col.topik);
-    if (!isNew) {
-      showToast('Hanya kolom yang baru ditambah (draft) yang dapat dihapus.', 'warning');
-      return;
-    }
 
-    if (confirm(`Hapus kolom "${col.mapel}" dari draft?`)) {
+    if (isNew) {
+      if (!confirm(`Hapus kolom "${col.mapel}" dari draft?`)) return;
+
       setAddedColumns(prev => prev.filter(c =>
         !(c.kategori === col.kategori && c.mapel === col.mapel && c.topik === col.topik)
       ));
 
-      // Also cleanup draftNilai for this column
       setDraftNilai(prev => {
         const next = { ...prev };
         Object.keys(next).forEach(key => {
@@ -207,66 +205,50 @@ export default function DKN() {
         });
         return next;
       });
+
+      showToast(`Kolom "${col.mapel}" dihapus dari draft.`, 'success');
+      return;
     }
-  };
 
-  const [editingCol, setEditingCol] = useState(null); // {kategori, mapel, topik}
-  const [editValues, setEditValues] = useState({ mapel: '', topik: '' });
+    if (!confirm(`Hapus mapel "${col.mapel}" dari leger ${jenjang} ${semester}?`)) return;
 
-  const startEdit = (col) => {
-    setEditingCol(col);
-    setEditValues({ mapel: col.mapel, topik: col.topik });
-  };
-
-  const handleUpdateMapel = async () => {
-    if (!editValues.mapel) return;
-
-    const isNew = addedColumns.some(c => c.kategori === editingCol.kategori && c.mapel === editingCol.mapel && c.topik === editingCol.topik);
-
-    if (isNew) {
-      // Update draft columns
-      setAddedColumns(prev => prev.map(c => {
-        if (c.kategori === editingCol.kategori && c.mapel === editingCol.mapel && c.topik === editingCol.topik) {
-          return { ...c, mapel: editValues.mapel, topik: editValues.topik };
-        }
-        return c;
-      }));
-
-      // Migrate draftNilai keys
-      setDraftNilai(prev => {
-        const next = { ...prev };
-        Object.keys(next).forEach(key => {
-          const oldKeySuffix = `_${editingCol.kategori}_${editingCol.mapel}_${editingCol.topik}`;
-          if (key.endsWith(oldKeySuffix)) {
-            const newKey = key.replace(oldKeySuffix, `_${editingCol.kategori}_${editValues.mapel}_${editValues.topik}`);
-            next[newKey] = next[key];
-            delete next[key];
-          }
-        });
-        return next;
-      });
-      showToast('Kolom draft berhasil diperbarui.', 'success');
-    } else {
-      // Update existing subjects in database
+    try {
       setSaving(true);
-      try {
-        await fetchGAS('RENAME_MAPEL', {
-          oldMapel: editingCol.mapel,
-          oldTopik: editingCol.topik,
-          newName: editValues.mapel,
-          newTopik: editValues.topik,
-          kategori: editingCol.kategori
-        });
-        showToast('Nama Mapel di database berhasil diubah!', 'success');
-        await loadData();
-      } catch (err) {
-        showToast('Gagal mengubah nama mapel di database.', 'error');
-      } finally {
-        setSaving(false);
-      }
+      await fetchGAS('DELETE_MAPEL', {
+        kategori: col.kategori,
+        mapel: col.mapel,
+        topik: col.topik || '',
+        jenjang,
+        semester
+      });
+      setDraftNilai({});
+      setAddedColumns([]);
+      showToast(`Mapel "${col.mapel}" berhasil dihapus dari leger.`, 'success');
+      await loadData();
+    } catch (err) {
+      console.error('Hapus Mapel Gagal:', err);
+      showToast('Gagal menghapus mapel dari leger.', 'error');
+    } finally {
+      setSaving(false);
     }
+  };
 
-    setEditingCol(null);
+  const handleDeleteAllMapel = async () => {
+    if (!confirm(`Hapus semua mapel dari leger Jenjang ${jenjang} Semester ${semester}? Semua nilai mapel akan terhapus.`)) return;
+
+    try {
+      setSaving(true);
+      await fetchGAS('DELETE_ALL_MAPEL', { jenjang, semester });
+      setDraftNilai({});
+      setAddedColumns([]);
+      showToast('Semua mapel berhasil dihapus dari leger.', 'success');
+      await loadData();
+    } catch (err) {
+      console.error('Hapus Semua Mapel Gagal:', err);
+      showToast('Gagal menghapus semua mapel dari leger.', 'error');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleApplyTemplate = () => {
@@ -298,6 +280,83 @@ export default function DKN() {
       showToast(`Berhasil menambahkan ${addCount} mapel dari susunan kurikulum.`, 'success');
     } else {
       showToast('Semua mapel kurikulum sudah ada.', 'info');
+    }
+  };
+
+  const startEdit = (col) => {
+    setEditingCol(col);
+    setEditValues({
+      mapel: col.mapel || '',
+      topik: col.topik || ''
+    });
+  };
+
+  const handleUpdateMapel = async () => {
+    if (!editingCol) return;
+
+    const isNew = addedColumns.some(c =>
+      c.kategori === editingCol.kategori &&
+      c.mapel === editingCol.mapel &&
+      c.topik === editingCol.topik
+    );
+
+    if (!editValues.mapel) {
+      showToast('Nama Mapel tidak boleh kosong.', 'error');
+      return;
+    }
+
+    if (isNew) {
+      setAddedColumns(prev => prev.map(c => {
+        if (c.kategori === editingCol.kategori && c.mapel === editingCol.mapel && c.topik === editingCol.topik) {
+          return {
+            ...c,
+            mapel: editValues.mapel,
+            topik: editValues.topik || ''
+          };
+        }
+        return c;
+      }));
+
+      setDraftNilai(prev => {
+        const next = {};
+        Object.entries(prev).forEach(([key, value]) => {
+          if (key.includes(`_${editingCol.kategori}_${editingCol.mapel}_${editingCol.topik}`)) {
+            const updatedKey = key.replace(
+              `_${editingCol.kategori}_${editingCol.mapel}_${editingCol.topik}`,
+              `_${editingCol.kategori}_${editValues.mapel}_${editValues.topik || ''}`
+            );
+            next[updatedKey] = value;
+          } else {
+            next[key] = value;
+          }
+        });
+        return next;
+      });
+
+      showToast(`Kolom draft berhasil diperbarui.`, 'success');
+      setEditingCol(null);
+      return;
+    }
+
+    try {
+      setSaving(true);
+      await fetchGAS('RENAME_MAPEL', {
+        oldMapel: editingCol.mapel,
+        oldTopik: editingCol.topik || '',
+        newName: editValues.mapel,
+        newTopik: editValues.topik || '',
+        kategori: editingCol.kategori
+      });
+      showToast(`Nama mapel berhasil diperbarui.`, 'success');
+      setEditingCol(null);
+      setDraftNilai({});
+      setAddedColumns([]);
+      await loadData();
+    } catch (err) {
+      console.error('Update Mapel Gagal:', err);
+      showToast('Gagal memperbarui nama mapel.', 'error');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -626,6 +685,9 @@ export default function DKN() {
             <button onClick={handleApplyTemplate} className="btn-secondary flex items-center gap-2 border-dashed border-2 bg-white !text-blue-700 hover:bg-blue-50 border-blue-200 hover:border-blue-300 shadow-sm" title="Terapkan susunan mapel sesuai lampiran">
                <BookOpen className="w-4 h-4" /> Terapkan Susunan Mapel
             </button>
+            <button onClick={handleDeleteAllMapel} className="btn-secondary flex items-center gap-2 border-dashed border-2 bg-white !text-red-700 hover:bg-red-50 border-red-200 hover:border-red-300 shadow-sm" title="Hapus semua mapel di leger">
+              <Trash2 className="w-4 h-4" /> Hapus Semua Mapel
+            </button>
             <button onClick={() => setShowAddMapel(true)} className="btn-secondary flex items-center gap-2 border-dashed border-2 bg-white !text-emerald-700 hover:bg-emerald-50 border-emerald-200 hover:border-emerald-300 shadow-sm">
               <Plus className="w-4 h-4" /> Tambah Kolom Manual
             </button>
@@ -669,15 +731,13 @@ export default function DKN() {
                           <div className="text-[11px] text-slate-800 leading-tight pr-5">{c.mapel}</div>
                           {c.topik && <div className="text-[9px] text-slate-500 font-normal max-w-[80px] mx-auto truncate" title={c.topik}>{c.topik}</div>}
 
-                          <div className="flex items-center gap-1 mt-1 opacity-0 group-hover:opacity-100 transition-opacity print:hidden">
+                          <div className="flex items-center gap-1 mt-1 opacity-80 group-hover:opacity-100 transition-opacity print:hidden">
                             <button onClick={() => startEdit(c)} className="p-1 hover:bg-emerald-100 rounded text-emerald-600 transition-colors" title="Edit Nama/Topik">
                               <Edit2 className="w-3 h-3" />
                             </button>
-                            {isNew && (
-                              <button onClick={() => handleDeleteMapel(c)} className="p-1 hover:bg-red-100 rounded text-red-500 transition-colors" title="Hapus Draft">
-                                <Trash2 className="w-3 h-3" />
-                              </button>
-                            )}
+                            <button onClick={() => handleDeleteMapel(c)} className="p-1 hover:bg-red-100 rounded text-red-500 transition-colors" title={isNew ? 'Hapus Draft Mapel' : 'Hapus Mapel'}>
+                              <Trash2 className="w-3 h-3" />
+                            </button>
                           </div>
                         </div>
                         {isNew && <div className="absolute top-0 right-0 w-1.5 h-1.5 bg-emerald-400 rounded-full m-1" title="Kolom Baru (Belum Disimpan)" />}

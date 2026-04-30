@@ -1,137 +1,177 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, UserPlus, ShieldCheck, MessageSquare } from 'lucide-react';
 import { fetchGAS } from '../utils/gasClient';
-import { getCurrentVersion } from '../utils/version';
-import { UserPlus, ArrowLeft, Send, Mail, User } from 'lucide-react';
-import appLogo from '../assets/logo.png';
+import { formatPhoneNumber } from '../utils/logic';
 
 export default function Register() {
   const navigate = useNavigate();
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [waliContact, setWaliContact] = useState('6282330295812');
+  const [showForm, setShowForm] = useState(false);
+  const [namaSiswa, setNamaSiswa] = useState('');
+  const [emailSiswa, setEmailSiswa] = useState('');
+  const [waliContact, setWaliContact] = useState('');
+  const [waliKelas, setWaliKelas] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  useEffect(() => {
-    async function loadContact() {
-      try {
-        const res = await fetchGAS('GET_ALL', { sheet: 'Profil_Wali_Kelas' });
-        if (res.data && res.data.length > 0) {
-          const c = res.data[0].Kontak;
-          if (c) setWaliContact(c.replace(/[^0-9]/g, ''));
-        }
-      } catch (err) {
-        console.error('Register contact fetch error:', err);
-      }
-    }
-    loadContact();
-  }, []);
-
-  const handleRegister = (e) => {
-    e.preventDefault();
-    if (!name || !email) return;
-
+  const handleHubungiAdmin = async () => {
     setLoading(true);
-    const message = encodeURIComponent(`Halo Bapak/Ibu Wali Kelas. \n\nPerkenalkan nama saya *${name}*, dan akun Gmail saya adalah *${email}*.\n\nSaya ingin memohon izin untuk didaftarkan ke sistem *Siswa.Hub* agar bisa mengakses laporan dan fitur kelas digital. Terima kasih banyak.`);
-    const waUrl = `https://api.whatsapp.com/send?phone=${waliContact}&text=${message}`;
+    setError('');
+    try {
+      const res = await fetchGAS('GET_ALL', { sheet: 'Profil_Wali_Kelas' });
+      if (res.data && res.data.length > 0) {
+        const wali = res.data[0];
+        const kontak = wali.Kontak;
+        if (kontak) {
+          setWaliContact(kontak.replace(/[^0-9]/g, ''));
+          setWaliKelas(wali.Kelas || '-');
+          setShowForm(true);
+        } else {
+          setError('Kontak Wali Kelas tidak ditemukan.');
+        }
+      } else {
+        setError('Data Wali Kelas tidak ditemukan.');
+      }
+    } catch (err) {
+      setError('Gagal mengambil data Wali Kelas.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    // Buka WhatsApp di tab baru
+  const handleRegister = () => {
+    if (!namaSiswa.trim() || !emailSiswa.trim()) {
+      setError('Nama Siswa dan Email Aktif harus diisi.');
+      return;
+    }
+    const message = `Assalamualaikum, Wr.Wb. perkenalkan saya ${namaSiswa.trim()} ingin mendaftarkan diri ke aplikasi Siswa.Hub. Berikut Email saya ${emailSiswa.trim()}. terimakasih atas perhariannya. Wassalamualaikum, Wr.Wb`;
+    const encodedMessage = encodeURIComponent(message);
+    const formattedPhone = formatPhoneNumber(waliContact);
+    const waUrl = `https://wa.me/${formattedPhone}?text=${encodedMessage}`;
     window.open(waUrl, '_blank');
-    setLoading(false);
+    setNamaSiswa('');
+    setEmailSiswa('');
+    setShowForm(false);
+    setError('');
   };
 
   return (
-    <div className="min-h-screen bg-[#F0F2F5] flex items-center justify-center p-4 relative overflow-hidden font-sans">
-      {/* Decorative background elements */}
-      <div className="absolute top-0 right-0 w-64 h-64 opacity-10 pointer-events-none">
-        <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" className="w-full h-full text-indigo-400">
-          <path fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="10 5" d="M10,0 L10,200 M30,0 L30,200 M50,0 L50,200 M70,0 L70,200 M90,0 L90,200" transform="rotate(45 100 100)" />
-        </svg>
-      </div>
-      <div className="absolute bottom-[-100px] left-[10%] w-[300px] h-[300px] border-[1px] border-emerald-400 rounded-full opacity-20 pointer-events-none"></div>
+    <div className="min-h-screen bg-[#F0F2F5] py-12 px-4 sm:px-6 lg:px-8 font-sans flex items-center justify-center">
+      <div className="max-w-md w-full bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-100">
+        <div className="h-2 w-full bg-emerald-600" />
+        
+        <div className="p-8 sm:p-10">
+          <button 
+            onClick={() => navigate('/login')}
+            className="flex items-center gap-2 text-slate-400 hover:text-blue-600 font-bold text-xs uppercase tracking-widest transition-colors mb-8"
+          >
+            <ArrowLeft className="w-4 h-4" /> Kembali ke Login
+          </button>
 
-      <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden relative z-10 border border-slate-100 animate-fade-in">
-        {/* Top Accent */}
-        <div className="h-2 w-full bg-gradient-to-r from-emerald-500 to-blue-500" />
-
-        <div className="p-8 sm:p-10 flex flex-col items-center">
-          <div className="w-20 h-20 bg-emerald-50 rounded-2xl flex items-center justify-center mb-6 shadow-inner">
-            <img src={appLogo} alt="Logo" className="h-12 w-auto" />
+          <div className="flex flex-col items-center text-center mb-8">
+            <div className="p-4 bg-emerald-50 rounded-2xl mb-4">
+              <UserPlus className="w-10 h-10 text-emerald-600" />
+            </div>
+            <h1 className="text-2xl font-black text-slate-800 tracking-tight">Pendaftaran Akun</h1>
+            <p className="text-emerald-600/60 text-[10px] font-bold uppercase tracking-widest mt-1">Siswa.Hub Digital Ecosystem</p>
           </div>
 
-          <div className="text-center mb-8">
-            <h1 className="text-2xl font-black text-slate-800 tracking-tight leading-tight">Registrasi Siswa Baru</h1>
-            <p className="text-[12px] font-bold text-slate-400 uppercase tracking-widest mt-2">Bergabung dengan Ekosistem Siswa.Hub</p>
-          </div>
-
-          <form onSubmit={handleRegister} className="w-full space-y-6">
-            <div className="space-y-4">
-              <div>
-                <label className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">
-                  <User className="w-3 h-3" /> Nama Lengkap
-                </label>
-                <input
-                  type="text"
-                  className="input-field py-3.5"
-                  placeholder="Masukkan nama sesuai ijazah"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                />
-              </div>
-              <div>
-                <label className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">
-                  <Mail className="w-3 h-3" /> Akun Gmail Pribadi
-                </label>
-                <input
-                  type="email"
-                  className="input-field py-3.5"
-                  placeholder="contoh@gmail.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-                <div className="mt-3 bg-amber-50 border border-amber-100 p-3 rounded-xl">
-                  <p className="text-[10px] text-amber-700 leading-relaxed font-medium">
-                    <span className="font-bold underline">Penting:</span> Gunakan email Gmail yang aktif. Email ini akan digunakan untuk proses verifikasi masuk (Google Login) setelah didaftarkan oleh Wali Kelas.
+          <div className="space-y-6">
+            <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100">
+              <div className="flex items-start gap-4">
+                <div className="mt-1">
+                  <ShieldCheck className="w-5 h-5 text-emerald-600" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-800 mb-1">Sistem Keanggotaan Tertutup</h3>
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    Siswa.Hub menggunakan sistem manajemen tertutup untuk menjaga keamanan data siswa. Akun tidak dapat dibuat secara mandiri oleh pengguna.
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="pt-4 space-y-4">
-              <button
-                type="submit"
-                disabled={loading}
-                className="btn-primary w-full flex items-center justify-center gap-3 py-4 text-sm font-bold shadow-xl shadow-emerald-100 active:scale-95 transition-all"
-              >
-                {loading ? 'Memproses...' : (
-                  <>
-                    <Send className="w-4 h-4" /> Daftar Sekarang
-                  </>
-                )}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => navigate('/login')}
-                className="w-full flex items-center justify-center gap-2 text-slate-400 hover:text-slate-600 text-xs font-bold uppercase tracking-widest transition-colors py-2"
-              >
-                <ArrowLeft className="w-3 h-3" /> Kembali ke Login
-              </button>
+            <div className="space-y-4">
+              <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2 px-2">
+                <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
+                Cara Mendaftar:
+              </h3>
+              <ol className="space-y-3 px-2">
+                <li className="flex gap-3 items-start text-xs text-slate-600">
+                  <span className="flex-shrink-0 w-5 h-5 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center font-bold text-[10px]">1</span>
+                  <span>Siapkan alamat <span className="font-bold text-slate-800">Email Utama (Gmail)</span> Anda yang aktif.</span>
+                </li>
+                <li className="flex gap-3 items-start text-xs text-slate-600">
+                  <span className="flex-shrink-0 w-5 h-5 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center font-bold text-[10px]">2</span>
+                  <span>Hubungi <span className="font-bold text-slate-800">Wali Kelas</span> atau Admin Kelas Anda.</span>
+                </li>
+                <li className="flex gap-3 items-start text-xs text-slate-600">
+                  <span className="flex-shrink-0 w-5 h-5 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center font-bold text-[10px]">3</span>
+                  <span>Berikan data NIS dan Email Anda untuk diinput ke dalam sistem <span className="italic">Master Siswa</span>.</span>
+                </li>
+              </ol>
             </div>
-          </form>
-        </div>
 
-        <div className="bg-slate-50 p-6 text-center border-t border-slate-100">
-          <div className="flex justify-center gap-4 mb-2">
-            <button onClick={() => navigate('/terms')} className="text-[10px] text-blue-500 hover:underline font-bold">Syarat Penggunaan</button>
-            <button onClick={() => navigate('/privacy')} className="text-[10px] text-blue-500 hover:underline font-bold">Kebijakan Privasi</button>
+            {error && <p className="text-xs text-red-500 text-center">{error}</p>}
+
+            <div className="pt-6 border-t border-slate-100">
+              {!showForm ? (
+                <button
+                  onClick={handleHubungiAdmin}
+                  disabled={loading}
+                  className="w-full flex items-center justify-center gap-2 bg-emerald-600 text-white rounded-xl py-3 text-xs font-bold hover:bg-emerald-700 transition-all active:scale-95 disabled:bg-emerald-400"
+                >
+                  {loading ? 'Memuat...' : <><MessageSquare className="w-4 h-4" /> Hubungi Administrator</>}
+                </button>
+              ) : (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-800 block">Nama Siswa</label>
+                    <input
+                      type="text"
+                      value={namaSiswa}
+                      onChange={(e) => setNamaSiswa(e.target.value)}
+                      className="w-full px-4 py-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Masukkan Nama Siswa"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-800 block">Email Aktif</label>
+                    <input
+                      type="email"
+                      value={emailSiswa}
+                      onChange={(e) => setEmailSiswa(e.target.value)}
+                      className="w-full px-4 py-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Masukkan Email Aktif"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                      <button
+                        onClick={handleRegister}
+                        className="flex-1 flex items-center justify-center gap-2 bg-emerald-600 text-white rounded-xl py-3 text-xs font-bold hover:bg-emerald-700 transition-all active:scale-95"
+                      >
+                      <MessageSquare className="w-4 h-4" /> Register
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowForm(false);
+                        setNamaSiswa('');
+                        setEmailSiswa('');
+                        setError('');
+                      }}
+                      className="flex-1 flex items-center justify-center gap-2 bg-slate-100 text-slate-800 rounded-xl py-3 text-xs font-bold hover:bg-slate-200 transition-all active:scale-95"
+                    >
+                      Batal
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
-          <div className="flex flex-col md:flex-row items-center justify-center gap-3 text-[10px]">
-            <p className="font-bold uppercase tracking-widest text-slate-400">Wali Kelas Digital Project &copy; 2026 v<span className="font-mono">{getCurrentVersion()}</span></p>
-            <p className="text-slate-400 italic">Designed with precision by Mohamad Lukman Nurhasyim, S.Kom, Gr.</p>
-          </div>
+
+          <p className="mt-8 text-center text-[10px] text-slate-400 font-medium italic">
+            "Keamanan data Anda adalah prioritas utama kami."
+          </p>
         </div>
       </div>
     </div>
