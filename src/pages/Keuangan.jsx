@@ -33,6 +33,7 @@ export default function Keuangan() {
   const [tanggal, setTanggal] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [editingTrx, setEditingTrx] = useState(null);
   const formRef = useRef(null);
+  const [draftTransaksi, setDraftTransaksi] = useState([]);
 
   const loadKeuangan = useCallback(async () => {
     setLoading(true);
@@ -146,6 +147,62 @@ export default function Keuangan() {
     setStudentSearch('');
   }, []);
 
+const removeDraftTrx = useCallback((tempId) => {
+  if (!window.confirm('Hapus draf transaksi ini?')) return;
+  setDraftTransaksi(prev => prev.filter(trx => trx.tempId !== tempId));
+}, []);
+
+const saveAllDrafts = useCallback(async () => {
+  if (draftTransaksi.length === 0) return;
+
+  setSaving(true);
+  try {
+    const dataToSave = draftTransaksi.map(trx => ({
+      ID_Transaksi: 'K' + trx.tempId,
+      Tanggal: trx.Tanggal,
+      ID_Siswa: trx.ID_Siswa,
+      NISN: trx.NISN,
+      Tipe: trx.Tipe,
+      Jumlah: trx.Jumlah,
+      Keterangan: trx.Keterangan
+    }));
+
+    await fetchGAS('BULK_CREATE', { sheet: 'Keuangan', data: dataToSave });
+
+    // Send notifications for each transaction
+    for (const trx of draftTransaksi) {
+      const selectedStudent = activeStudents.find(s => String(s.ID_Siswa) === String(trx.ID_Siswa));
+      const payerName = selectedStudent?.Nama_Siswa || trx.ID_Siswa;
+      const isUnderpaid = trx.Tipe === 'Masuk' && trx.Jumlah < nominalIuran;
+
+      await sendNotification(activeStudents, {
+        subjectId: trx.ID_Siswa,
+        targetRoles: ['Bendahara', 'Wakil Bendahara', 'Ketua Kelas', 'Wakil Ketua Kelas', 'Wali Kelas'],
+        message: trx.Tipe === 'Masuk'
+          ? `Halo! Ada kontribusi KAS baru nih dari ${payerName} sebesar ${formatIDR(trx.Jumlah)}${isUnderpaid ? ' (Belum Lunas)' : ''}. Dompet kelas makin sehat!`
+          : `Info Pengeluaran: Ada dana kelas yang digunakan sebesar ${formatIDR(trx.Jumlah)} untuk ${trx.Keterangan || 'kebutuhan kelas'}.`,
+        selfMessage: trx.Tipe === 'Masuk'
+          ? (isUnderpaid
+              ? `Terima kasih ya, ${payerName}! Kamu sudah mencicil KAS sebesar ${formatIDR(trx.Jumlah)}. Yuk semangat melunasi sisanya pelan-pelan!`
+              : `Terima kasih ya, ${payerName}! Partisipasi KAS sebesar ${formatIDR(trx.Jumlah)} sudah kami terima. Kontribusimu sangat berarti untuk kegiatan kelas kita!`)
+          : `Info Pengeluaran: Dana kelas digunakan sebesar ${formatIDR(trx.Jumlah)}.`,
+        includeSelf: trx.Tipe === 'Masuk',
+        type: isUnderpaid ? 'info' : 'success',
+        waliEmail: user?.email
+      });
+    }
+
+    showToast(`${draftTransaksi.length} transaksi berhasil disimpan.`, 'success');
+    setDraftTransaksi([]);
+    await loadKeuangan();
+  } catch (error) {
+    console.error('Simpan draft gagal:', error);
+    showToast('Gagal menyimpan draf transaksi.', 'error');
+  } finally {
+    setSaving(false);
+  }
+}, [draftTransaksi, activeStudents, nominalIuran, loadKeuangan, showToast, user?.email]);
+
   const handleEdit = useCallback((trx) => {
     setEditingTrx(trx);
     setIdSiswa(trx.ID_Siswa);
@@ -165,10 +222,11 @@ export default function Keuangan() {
     if (!idSiswa || amountValue <= 0 || isAmountWarning) return;
 
     const selectedStudent = activeStudents.find(s => String(s.ID_Siswa) === String(idSiswa));
-    
-    setSaving(true);
-    try {
-      if (editingTrx) {
+
+    if (editingTrx) {
+      // Edit mode still saves directly
+      setSaving(true);
+      try {
         const updatedData = {
           ID_Siswa: idSiswa,
           NISN: selectedStudent?.NISN || '',
@@ -178,13 +236,12 @@ export default function Keuangan() {
           Tanggal: tanggal
         };
 
-        await fetchGAS('UPDATE', { 
-          sheet: 'Keuangan', 
-          id: editingTrx.ID_Transaksi, 
-          data: updatedData 
+        await fetchGAS('UPDATE', {
+          sheet: 'Keuangan',
+          id: editingTrx.ID_Transaksi,
+          data: updatedData
         });
 
-        // Notify relevant parties about the update
         const payerName = selectedStudent?.Nama_Siswa || idSiswa;
         await sendNotification(activeStudents, {
           subjectId: idSiswa,
@@ -197,49 +254,30 @@ export default function Keuangan() {
         });
 
         showToast('Transaksi berhasil diperbarui.', 'success');
-      } else {
-        const newTrx = {
-          ID_Transaksi: 'K' + Date.now(),
-          Tanggal: tanggal,
-          ID_Siswa: idSiswa,
-          NISN: selectedStudent?.NISN || '', 
-          Tipe: tipe,
-          Jumlah: amountValue,
-          Keterangan: keterangan
-        };
-
-        await fetchGAS('CREATE', { sheet: 'Keuangan', data: newTrx });
-
-        // Notify relevant parties via utility
-        const payerName = selectedStudent?.Nama_Siswa || idSiswa;
-        const isUnderpaid = tipe === 'Masuk' && amountValue < nominalIuran;
-
-        await sendNotification(activeStudents, {
-          subjectId: idSiswa,
-          targetRoles: ['Bendahara', 'Wakil Bendahara', 'Ketua Kelas', 'Wakil Ketua Kelas', 'Wali Kelas'],
-          message: tipe === 'Masuk'
-            ? `Halo! Ada kontribusi KAS baru nih dari ${payerName} sebesar ${formatIDR(amountValue)}${isUnderpaid ? ' (Belum Lunas)' : ''}. Dompet kelas makin sehat!`
-            : `Info Pengeluaran: Ada dana kelas yang digunakan sebesar ${formatIDR(amountValue)} untuk ${keterangan || 'kebutuhan kelas'}.`,
-          selfMessage: tipe === 'Masuk'
-            ? (isUnderpaid 
-                ? `Terima kasih ya, ${payerName}! Kamu sudah mencicil KAS sebesar ${formatIDR(amountValue)}. Yuk semangat melunasi sisanya pelan-pelan!`
-                : `Terima kasih ya, ${payerName}! Partisipasi KAS sebesar ${formatIDR(amountValue)} sudah kami terima. Kontribusimu sangat berarti untuk kegiatan kelas kita!`)
-            : `Info Pengeluaran: Dana kelas digunakan sebesar ${formatIDR(amountValue)}.`,
-          includeSelf: tipe === 'Masuk',
-          type: isUnderpaid ? 'info' : 'success',
-          waliEmail: user?.email
-        });
-
-        showToast('Transaksi berhasil disimpan.', 'success');
+        cancelEdit();
+        await loadKeuangan();
+      } catch (error) {
+        console.error('Update transaksi gagal:', error);
+        showToast('Gagal memperbarui transaksi.', 'error');
+      } finally {
+        setSaving(false);
       }
+    } else {
+      // Add to draft instead of saving directly
+      const newDraft = {
+        tempId: Date.now(),
+        ID_Siswa: idSiswa,
+        NISN: selectedStudent?.NISN || '',
+        Tipe: tipe,
+        Jumlah: amountValue,
+        Keterangan: keterangan,
+        Tanggal: tanggal,
+        Nama_Siswa: selectedStudent?.Nama_Siswa || ''
+      };
 
+      setDraftTransaksi(prev => [...prev, newDraft]);
+      showToast('Transaksi ditambahkan ke draf.', 'success');
       cancelEdit();
-      await loadKeuangan();
-    } catch (error) {
-      console.error('Simpan transaksi gagal:', error);
-      showToast('Gagal menyimpan transaksi.', 'error');
-    } finally {
-      setSaving(false);
     }
   }, [idSiswa, amountValue, tipe, keterangan, tanggal, editingTrx, activeStudents, user?.email, nominalIuran, loadKeuangan, showToast, cancelEdit]);
 
@@ -524,16 +562,16 @@ export default function Keuangan() {
               </div>
 
                <div className="flex gap-2">
-                <button type="submit" className="btn-primary flex-1" disabled={saving || isAmountWarning}>
-                  {saving ? 'Menyimpan...' : (editingTrx ? 'Update Transaksi' : 'Simpan Transaksi')}
-                </button>
-                {editingTrx && (
-                  <button type="button" onClick={cancelEdit} className="px-4 py-2 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition-colors">
-                    Batal
-                  </button>
-                )}
-              </div>
-            </form>
+                 <button type="submit" className="btn-primary flex-1" disabled={saving || isAmountWarning}>
+                   {saving ? 'Menyimpan...' : (editingTrx ? 'Update Transaksi' : 'Tambah ke Draf')}
+                 </button>
+                 {editingTrx && (
+                   <button type="button" onClick={cancelEdit} className="px-4 py-2 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition-colors">
+                     Batal
+                   </button>
+                 )}
+               </div>
+             </form>
           )}
         </div>
         {/* History Table */}
@@ -605,10 +643,82 @@ export default function Keuangan() {
                   </p>
                 </div>
               )}
-            </div>
-          )}
+             </div>
+           )}
         </div>
       </div>
+
+      {/* Draft Transactions Table - Full Width */}
+      {draftTransaksi.length > 0 && (
+        <div className="mt-6">
+          <div className="card p-0">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-amber-200 bg-amber-50">
+              <h3 className="font-semibold text-amber-800">
+                Draf Transaksi ({draftTransaksi.length})
+              </h3>
+              <div className="flex gap-2">
+                <button
+                  onClick={saveAllDrafts}
+                  disabled={saving}
+                  className="px-4 py-2 bg-emerald-600 text-white text-sm rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50"
+                >
+                  {saving ? 'Menyimpan...' : `Simpan Semua (${draftTransaksi.length})`}
+                </button>
+                <button
+                  onClick={() => {
+                    if (window.confirm('Hapus semua draf transaksi?')) {
+                      setDraftTransaksi([]);
+                    }
+                  }}
+                  className="px-4 py-2 bg-slate-100 text-slate-600 text-sm rounded-lg hover:bg-slate-200 transition-colors"
+                >
+                  Batal Semua Draf
+                </button>
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="modern-table w-full">
+                <thead>
+                  <tr>
+                    <th className="whitespace-nowrap">Tanggal</th>
+                    <th className="whitespace-nowrap">ID Siswa</th>
+                    <th className="whitespace-nowrap">Siswa</th>
+                    <th className="whitespace-nowrap">Tipe</th>
+                    <th className="whitespace-nowrap">Jumlah</th>
+                    <th className="whitespace-nowrap">Keterangan</th>
+                    <th className="text-center whitespace-nowrap">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {draftTransaksi.map(draft => (
+                    <tr key={draft.tempId} className="border-b last:border-0 bg-amber-50 hover:bg-amber-100">
+                      <td className="px-4 py-3 whitespace-nowrap">{draft.Tanggal}</td>
+                      <td className="px-4 py-3 font-medium text-slate-800 whitespace-nowrap">{draft.ID_Siswa}</td>
+                      <td className="px-4 py-3 whitespace-nowrap">{draft.Nama_Siswa || '-'}</td>
+                      <td className="px-4 py-3">
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${draft.Tipe === 'Masuk' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                          {draft.Tipe}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 font-medium whitespace-nowrap">{formatIDR(draft.Jumlah)}</td>
+                      <td className="px-4 py-3 text-xs">{draft.Keterangan || '-'}</td>
+                      <td className="px-4 py-3 text-center whitespace-nowrap">
+                        <button
+                          onClick={() => removeDraftTrx(draft.tempId)}
+                          className="p-2 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"
+                          title="Hapus Draf"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
