@@ -55,6 +55,7 @@ export default function Layout() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
     return localStorage.getItem('sidebarCollapsed') === 'true';
   });
+  const sidebarCollapsed = isMobileOpen ? false : isSidebarCollapsed;
   const [notifications, setNotifications] = React.useState([]);
   const [students, setStudents] = React.useState([]);
   const prevNotifIds = React.useRef(new Set());
@@ -192,14 +193,14 @@ export default function Layout() {
       <aside 
         className={`fixed inset-y-0 left-0 z-[100] h-screen bg-white border-r border-slate-100/50 transition-all duration-300 ease-in-out print:hidden flex flex-col ${
           isMobileOpen ? 'translate-x-0 w-72 shadow-2xl' : '-translate-x-full md:translate-x-0'
-        } ${isSidebarCollapsed ? 'md:w-20 md:shadow-sm' : 'md:w-72 md:shadow-xl'}`}
+        } ${sidebarCollapsed ? 'md:w-20 md:shadow-sm' : 'md:w-72 md:shadow-xl'}`}
       >
-        <div className={`p-4 ${isSidebarCollapsed ? 'md:p-4' : 'md:p-6'} mb-2 relative flex items-center justify-between`}>
-          <div className={`flex items-center ${isSidebarCollapsed ? 'justify-center w-full' : 'gap-4'} transition-all duration-300`}>
-            <div className={`bg-white p-2 rounded-2xl border border-slate-50 transition-all duration-300 ${isSidebarCollapsed ? 'shadow-sm' : ''}`}>
+        <div className={`p-4 ${sidebarCollapsed ? 'md:p-4' : 'md:p-6'} mb-2 relative flex items-center justify-between`}>
+          <div className={`flex items-center ${sidebarCollapsed ? 'justify-center w-full' : 'gap-4'} transition-all duration-300`}>
+            <div className={`bg-white p-2 rounded-2xl border border-slate-50 transition-all duration-300 ${sidebarCollapsed ? 'shadow-sm' : ''}`}>
               <img src={appLogo} alt="Logo SMK" className="h-10 w-auto object-contain" />
             </div>
-            {!isSidebarCollapsed && (
+            {!sidebarCollapsed && (
               <div className="flex flex-col animate-in fade-in slide-in-from-left-2 duration-300 whitespace-nowrap overflow-hidden">
                 <h1 className="text-xl font-black text-slate-900 tracking-tighter leading-none">
                   SISWA<span className="text-emerald-800">.HUB</span>
@@ -224,70 +225,70 @@ export default function Layout() {
             className="hidden md:flex absolute -right-3 top-8 bg-white border border-slate-200 text-slate-400 hover:text-emerald-800 hover:border-emerald-800 rounded-full p-1 shadow-sm transition-all z-10"
             onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
           >
-            {isSidebarCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+            {sidebarCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
           </button>
         </div>
 
-        <nav className={`flex-1 ${isSidebarCollapsed ? 'px-2' : 'px-4'} space-y-1 overflow-y-auto custom-scrollbar`}>
-          {access.dashboard && <NavItem to="dashboard" icon={LayoutDashboard} label="Dashboard" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
+        <nav className={`flex-1 ${sidebarCollapsed ? 'px-2' : 'px-4'} space-y-1 overflow-y-auto custom-scrollbar`}>
+          {access.dashboard && <NavItem to="dashboard" icon={LayoutDashboard} label="Dashboard" collapsed={sidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
           
           {/* Manajemen Data Section */}
           {(access.siswa || access.bukuKlaper || access.dkn) && (
             <>
-              <div className={`${isSidebarCollapsed ? 'my-2 mx-auto w-8' : 'my-4 px-4'} h-px bg-slate-200`} />
-              <span className={`${isSidebarCollapsed ? 'hidden' : 'block'} text-[9px] font-black text-slate-300 uppercase tracking-widest px-4`}>Manajemen Data</span>
-              {access.siswa && <NavItem to="master-siswa" icon={Users} label="Data Siswa" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
-              {access.bukuKlaper && <NavItem to="buku-klaper" icon={BookOpen} label="Buku Klaper" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
-              {access.dkn && <NavItem to="dkn" icon={LibraryBig} label="Leger" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
+              <div className={`${sidebarCollapsed ? 'my-2 mx-auto w-8' : 'my-4 px-4'} h-px bg-slate-200`} />
+              <span className={`${sidebarCollapsed ? 'hidden' : 'block'} text-[9px] font-black text-slate-300 uppercase tracking-widest px-4`}>Manajemen Data</span>
+              {access.siswa && <NavItem to="master-siswa" icon={Users} label="Data Siswa" collapsed={sidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
+              {access.bukuKlaper && <NavItem to="buku-klaper" icon={BookOpen} label="Buku Klaper" collapsed={sidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
+              {access.dkn && <NavItem to="dkn" icon={LibraryBig} label="Leger" collapsed={sidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
             </>
           )}
 
           {/* Keuangan Section */}
           {access.keuangan && (
             <>
-              <div className={`${isSidebarCollapsed ? 'my-2 mx-auto w-8' : 'my-4 px-4'} h-px bg-slate-200`} />
-              <span className={`${isSidebarCollapsed ? 'hidden' : 'block'} text-[9px] font-black text-slate-300 uppercase tracking-widest px-4`}>Keuangan</span>
-              {access.keuangan && <NavItem to="tanggungan" icon={ClipboardList} label="Tanggungan KAS" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
-              {access.keuangan && <NavItem to="keuangan" icon={Wallet} label="KAS Kelas" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
+              <div className={`${sidebarCollapsed ? 'my-2 mx-auto w-8' : 'my-4 px-4'} h-px bg-slate-200`} />
+              <span className={`${sidebarCollapsed ? 'hidden' : 'block'} text-[9px] font-black text-slate-300 uppercase tracking-widest px-4`}>Keuangan</span>
+              {access.keuangan && <NavItem to="tanggungan" icon={ClipboardList} label="Tanggungan KAS" collapsed={sidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
+              {access.keuangan && <NavItem to="keuangan" icon={Wallet} label="KAS Kelas" collapsed={sidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
             </>
           )}
 
           {/* Presensi Section */}
-          <div className={`${isSidebarCollapsed ? 'my-2 mx-auto w-8' : 'my-4 px-4'} h-px bg-slate-200`} />
-          <span className={`${isSidebarCollapsed ? 'hidden' : 'block'} text-[9px] font-black text-slate-300 uppercase tracking-widest px-4`}>Presensi</span>
-          {access.presensiPagi && <NavItem to="presensi-pagi" icon={Sun} label="Presensi Pagi" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
-          {access.presensiSiang && <NavItem to="presensi-siang" icon={Moon} label="Presensi Siang" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
-          <NavItem to="piket" icon={Calendar} label="Jadwal Piket" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />
+          <div className={`${sidebarCollapsed ? 'my-2 mx-auto w-8' : 'my-4 px-4'} h-px bg-slate-200`} />
+          <span className={`${sidebarCollapsed ? 'hidden' : 'block'} text-[9px] font-black text-slate-300 uppercase tracking-widest px-4`}>Presensi</span>
+          {access.presensiPagi && <NavItem to="presensi-pagi" icon={Sun} label="Presensi Pagi" collapsed={sidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
+          {access.presensiSiang && <NavItem to="presensi-siang" icon={Moon} label="Presensi Siang" collapsed={sidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
+          <NavItem to="piket" icon={Calendar} label="Jadwal Piket" collapsed={sidebarCollapsed} onClick={() => setIsMobileOpen(false)} />
 
           {/* Pelaporan Section */}
           {(access.laporan || access.laporanHarian) && (
             <>
-              <div className={`${isSidebarCollapsed ? 'my-2 mx-auto w-8' : 'my-4 px-4'} h-px bg-slate-200`} />
-              <span className={`${isSidebarCollapsed ? 'hidden' : 'block'} text-[9px] font-black text-slate-300 uppercase tracking-widest px-4`}>Pelaporan</span>
-              {access.laporan && <NavItem to="laporan" icon={FileText} label="Laporan Akhir" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
-              {access.laporanHarian && <NavItem to="laporan-harian" icon={CalendarCheck} label="Laporan Harian" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
+              <div className={`${sidebarCollapsed ? 'my-2 mx-auto w-8' : 'my-4 px-4'} h-px bg-slate-200`} />
+              <span className={`${sidebarCollapsed ? 'hidden' : 'block'} text-[9px] font-black text-slate-300 uppercase tracking-widest px-4`}>Pelaporan</span>
+              {access.laporan && <NavItem to="laporan" icon={FileText} label="Laporan Akhir" collapsed={sidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
+              {access.laporanHarian && <NavItem to="laporan-harian" icon={CalendarCheck} label="Laporan Harian" collapsed={sidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
             </>
           )}
 
           {/* Komunikasi Section */}
           {(access.panggilan || access.feedback) && (
             <>
-              <div className={`${isSidebarCollapsed ? 'my-2 mx-auto w-8' : 'my-4 px-4'} h-px bg-slate-200`} />
-              <span className={`${isSidebarCollapsed ? 'hidden' : 'block'} text-[9px] font-black text-slate-300 uppercase tracking-widest px-4`}>Komunikasi</span>
-              {access.panggilan && <NavItem to="panggilan" icon={PhoneCall} label="Log Panggilan" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
-              {access.feedback && <NavItem to="feedback" icon={MessageCircle} label="Feedback" collapsed={isSidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
+              <div className={`${sidebarCollapsed ? 'my-2 mx-auto w-8' : 'my-4 px-4'} h-px bg-slate-200`} />
+              <span className={`${sidebarCollapsed ? 'hidden' : 'block'} text-[9px] font-black text-slate-300 uppercase tracking-widest px-4`}>Komunikasi</span>
+              {access.panggilan && <NavItem to="panggilan" icon={PhoneCall} label="Log Panggilan" collapsed={sidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
+              {access.feedback && <NavItem to="feedback" icon={MessageCircle} label="Feedback" collapsed={sidebarCollapsed} onClick={() => setIsMobileOpen(false)} />}
             </>
           )}
         </nav>
 
-        <div className={`${isSidebarCollapsed ? 'p-2' : 'p-6'} mt-auto`}>
-          <div className={`${isSidebarCollapsed ? 'p-2' : 'p-4'} bg-slate-50 rounded-2xl border border-slate-100 relative overflow-hidden group`}>
-            {!isSidebarCollapsed && (
+        <div className={`${sidebarCollapsed ? 'p-2' : 'p-6'} mt-auto`}>
+          <div className={`${sidebarCollapsed ? 'p-2' : 'p-4'} bg-slate-50 rounded-2xl border border-slate-100 relative overflow-hidden group`}>
+            {!sidebarCollapsed && (
               <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:rotate-12 transition-transform">
                 <Settings className="w-12 h-12" />
               </div>
             )}
-            <div className={`flex items-center ${isSidebarCollapsed ? 'justify-center' : 'gap-3'} relative z-10`}>
+            <div className={`flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3'} relative z-10`}>
               {user?.picture ? (
                 <img src={user.picture} alt="User" className="w-10 h-10 rounded-2xl shadow-sm border-2 border-white" />
               ) : (
@@ -295,7 +296,7 @@ export default function Layout() {
                   {user?.name?.charAt(0)}
                 </div>
               )}
-              {!isSidebarCollapsed && (
+              {!sidebarCollapsed && (
                 <div className="overflow-hidden animate-in fade-in slide-in-from-left-2 duration-300">
                   <p className="text-xs font-bold text-slate-900 truncate">{user?.name}</p>
                   <p className="text-[10px] text-slate-500 font-semibold">{role}</p>
@@ -304,18 +305,18 @@ export default function Layout() {
             </div>
             <button
               onClick={handleLogout}
-              className={`mt-4 flex w-full items-center justify-center gap-2 ${isSidebarCollapsed ? 'p-2' : 'p-2.5'} text-red-500 hover:bg-red-50 rounded-xl transition-all font-bold text-[11px] uppercase tracking-wider`}
-              title={isSidebarCollapsed ? 'Keluar' : ''}
+              className={`mt-4 flex w-full items-center justify-center gap-2 ${sidebarCollapsed ? 'p-2' : 'p-2.5'} text-red-500 hover:bg-red-50 rounded-xl transition-all font-bold text-[11px] uppercase tracking-wider`}
+              title={sidebarCollapsed ? 'Keluar' : ''}
             >
               <LogOut className="w-4 h-4" />
-              {!isSidebarCollapsed && <span>Keluar Sesi</span>}
+              {!sidebarCollapsed && <span>Keluar Sesi</span>}
             </button>
           </div>
         </div>
       </aside>
 
       {/* Main Content */}
-      <main className={`flex-1 transition-all duration-300 min-h-screen overflow-x-hidden ${isSidebarCollapsed ? 'md:ml-20' : 'md:ml-72'}`}>
+      <main className={`flex-1 transition-all duration-300 min-h-screen overflow-x-hidden ${sidebarCollapsed ? 'md:ml-20' : 'md:ml-72'}`}>
         {/* Header Bar */}
         <header className="bg-white sticky top-0 z-50 px-4 md:px-8 py-4 border-b border-slate-100 flex items-center justify-between print:hidden">
           <div className="flex items-center gap-3">
