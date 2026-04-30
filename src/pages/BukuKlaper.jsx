@@ -141,7 +141,7 @@ export default function BukuKlaper() {
         @media print {
           @page { 
             size: landscape; 
-            margin: 8mm 5mm 5mm 5mm; 
+            margin: 10mm; 
           }
           body { 
             -webkit-print-color-adjust: exact; 
@@ -231,8 +231,12 @@ export default function BukuKlaper() {
             icon={Users}
           />
         ) : (
-          <div className="table-container pt-8 shadow-xl print:pt-0">
-            <table className="modern-table min-w-full print:min-w-0 text-[10px]">
+          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+            <div className="px-5 md:px-6 py-4 border-b border-slate-100">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0">Daftar Induk Siswa</p>
+            </div>
+            <div className="table-container pt-0 shadow-xl print:pt-0">
+              <table className="modern-table min-w-full print:min-w-0 text-[10px]">
               <colgroup>
                 <col style={{ width: '3%' }} />
                 <col style={{ width: '5%' }} />
@@ -328,6 +332,7 @@ export default function BukuKlaper() {
               </tbody>
             </table>
           </div>
+        </div>
         )}
       </div>
     </div>

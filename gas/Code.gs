@@ -130,6 +130,12 @@ function handleResponse(e) {
       RENAME_MAPEL: function() {
         return { status: 'success', data: renameMapel(payload && payload.oldMapel, payload && payload.oldTopik, payload && payload.newName, payload && payload.newTopik, payload && payload.kategori) };
       },
+      DELETE_MAPEL: function() {
+        return { status: 'success', data: deleteMapel(payload && payload.kategori, payload && payload.mapel, payload && payload.topik, payload && payload.jenjang, payload && payload.semester) };
+      },
+      DELETE_ALL_MAPEL: function() {
+        return { status: 'success', data: deleteAllMapels(payload && payload.jenjang, payload && payload.semester) };
+      },
       SEND_PIKET_NOTIFICATIONS: function() {
         return { status: 'success', data: sendPiketNotifications() };
       },
@@ -1068,6 +1074,80 @@ function renameMapel(oldMapel, oldTopik, newName, newTopik, kategori) {
     range.setValues(data);
   }
   return updatedCount > 0;
+}
+
+function deleteMapel(kategori, mapel, topik, jenjang, semester) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('Daftar_Nilai');
+  if (!sheet) return false;
+
+  var range = sheet.getDataRange();
+  var data = range.getValues();
+  var headers = data[0];
+  var hMap = buildHeaderIndex(headers);
+  var katIdx = hMap['Kategori_Mapel'];
+  var mapelIdx = hMap['Nama_Mapel'];
+  var topikIdx = hMap['Topik'];
+  var jenjangIdx = hMap['Jenjang'];
+  var semesterIdx = hMap['Semester'];
+
+  if (katIdx === undefined || mapelIdx === undefined || topikIdx === undefined || jenjangIdx === undefined || semesterIdx === undefined) {
+    return false;
+  }
+
+  var deletedCount = 0;
+  for (var row = data.length - 1; row >= 1; row--) {
+    var rowKat = (data[row][katIdx] || '').toString();
+    var rowMapel = (data[row][mapelIdx] || '').toString();
+    var rowTopik = (data[row][topikIdx] || '').toString();
+    var rowJenjang = (data[row][jenjangIdx] || '').toString();
+    var rowSemester = (data[row][semesterIdx] || '').toString();
+
+    if (
+      rowKat === kategori &&
+      rowMapel === mapel &&
+      rowTopik === (topik || '') &&
+      rowJenjang === jenjang &&
+      rowSemester === semester
+    ) {
+      sheet.deleteRow(row + 1);
+      deletedCount++;
+    }
+  }
+
+  return deletedCount > 0;
+}
+
+function deleteAllMapels(jenjang, semester) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('Daftar_Nilai');
+  if (!sheet) return false;
+
+  var range = sheet.getDataRange();
+  var data = range.getValues();
+  if (data.length <= 1) return true;
+
+  var headers = data[0];
+  var hMap = buildHeaderIndex(headers);
+  var jenjangIdx = hMap['Jenjang'];
+  var semesterIdx = hMap['Semester'];
+
+  if (jenjangIdx === undefined || semesterIdx === undefined) {
+    return false;
+  }
+
+  var deletedCount = 0;
+  for (var row = data.length - 1; row >= 1; row--) {
+    var rowJenjang = (data[row][jenjangIdx] || '').toString();
+    var rowSemester = (data[row][semesterIdx] || '').toString();
+
+    if (rowJenjang === (jenjang || '') && rowSemester === (semester || '')) {
+      sheet.deleteRow(row + 1);
+      deletedCount++;
+    }
+  }
+
+  return deletedCount > 0;
 }
 
 function uploadFileToDrive(fileName, mimeType, base64Data, folderName) {

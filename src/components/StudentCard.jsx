@@ -1,5 +1,6 @@
 import React, { memo } from 'react';
 import { Phone, FileText, AlertTriangle, Edit3, MapPin, Trash2, MessageCircle, Crown, Clock } from 'lucide-react';
+import { parseDateValue } from '../utils/logic';
 
 function StudentCard({ student, disciplineStatus, onWaClick, onWaStudentClick, onContactClick, onEdit, onDelete, canSeeLocation }) {
   const getAvatarColor = (gender) => {
@@ -7,9 +8,9 @@ function StudentCard({ student, disciplineStatus, onWaClick, onWaStudentClick, o
   };
 
   const formatLastSeen = (lastActive) => {
-    if (!lastActive) return 'Belum pernah';
+    const last = parseDateValue(lastActive);
+    if (!last) return 'Belum pernah';
     const now = new Date();
-    const last = new Date(lastActive);
     const diffMs = now - last;
     const diffMins = Math.floor(diffMs / 60000);
     const diffHours = Math.floor(diffMs / 3600000);

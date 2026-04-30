@@ -146,7 +146,7 @@ export default function LaporanHarian() {
     <div className="space-y-8 pb-12 animate-fade-in">
       <style>{`
         @media print {
-          @page { size: A4; margin: 5mm 5mm 5mm 10mm; }
+          @page { size: A4; margin: 10mm; }
           .no-print, aside, header, nav, footer, button { display: none !important; }
           html, body, #root, main, .max-w-6xl {
             height: auto !important;
@@ -266,7 +266,10 @@ export default function LaporanHarian() {
         </div>
 
         {/* Table */}
-        <div className="table-container">
+        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden table-container">
+          <div className="px-5 md:px-6 py-4 border-b border-slate-100">
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0">Rekap Laporan Presensi Harian</p>
+          </div>
           <table className="modern-table">
             <thead>
               <tr>

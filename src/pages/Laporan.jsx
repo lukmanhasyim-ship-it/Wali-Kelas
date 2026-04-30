@@ -453,7 +453,7 @@ export default function Laporan() {
       <style>{`
         @media print {
           @page {
-            margin: 0;
+            margin: 10mm;
             size: auto;
           }
           .no-print, aside, header, nav, footer, button, .sidebar-class, .navbar-class, .page-guide {
@@ -474,6 +474,7 @@ export default function Laporan() {
             width: 100% !important;
             margin: 0 !important;
             padding: 0 !important;
+            padding-bottom: 10mm !important;
             box-shadow: none !important;
             border: none !important;
             background: white !important;
@@ -745,10 +746,7 @@ export default function Laporan() {
       />
 
       <div ref={reportRef} id="printable-report" className="space-y-12 relative">
-        {/* Automatic Print Footer */}
-        <div className="hidden print:block print-footer no-print-screen">
-          Siswa.Hub Digital Report — Kelas {user?.managedClass} — Dicetak pada {format(new Date(), 'dd MMMM yyyy HH:mm', { locale: id })}
-        </div>
+        <div className="hidden print:block print-footer no-print-screen" />
 
         <div className="flex flex-col gap-6">
           <div className="flex justify-between items-start border-b border-slate-100 pb-6">
@@ -1114,8 +1112,10 @@ export default function Laporan() {
 
           {/* VERSI 1: REKAP RINGKAS */}
           <div className="mt-8">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">A. Versi Rekapitulasi Ringkas (Berdasarkan Siswa)</p>
             <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden table-responsive">
+              <div className="px-5 md:px-6 py-4 border-b border-slate-100">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0">A. Versi Rekapitulasi Ringkas (Berdasarkan Siswa)</p>
+              </div>
               <table className="modern-table w-full">
                 <thead>
                   <tr className="bg-slate-50/50">
@@ -1186,8 +1186,10 @@ export default function Laporan() {
 
           {/* VERSI 2: DETAIL */}
           <div className="mt-8">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">B. Versi Detail Panggilan & Home Visit</p>
             <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden table-responsive">
+              <div className="px-5 md:px-6 py-4 border-b border-slate-100">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0">B. Versi Detail Panggilan & Home Visit</p>
+              </div>
               <table className="modern-table w-full">
                 <thead>
                   <tr className="bg-slate-50/50">

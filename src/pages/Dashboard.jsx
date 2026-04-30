@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { format, startOfWeek, endOfWeek, parseISO } from 'date-fns';
 import { fetchGAS } from '../utils/gasClient';
-import { calculateDisciplineStatus, formatIDR, formatDateIndo } from '../utils/logic';
+import { calculateDisciplineStatus, formatIDR, formatDateIndo, parseDateValue } from '../utils/logic';
 import StudentCard from '../components/StudentCard';
 import { Users, Wallet, AlertTriangle, CheckCircle2, Bell, ChevronRight, Calendar, Info } from 'lucide-react';
 import Loading from '../components/Loading';
@@ -110,13 +110,8 @@ export default function Dashboard() {
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
     const terpantauHariIni = data.siswa.filter(s => {
-      if (!s.Last_Active) return false;
-      try {
-        const lastActive = new Date(s.Last_Active);
-        return lastActive >= todayStart;
-      } catch {
-        return false;
-      }
+      const lastActive = parseDateValue(s.Last_Active);
+      return lastActive ? lastActive >= todayStart : false;
     }).length;
 
     const activeKas = data.keuangan.reduce((acc, curr) => {
