@@ -1,7 +1,7 @@
-# Siswa.Hub v4.9.3 - Ekosistem Manajemen Kelas Digital Premium
+# Siswa.Hub v4.9.4 - Ekosistem Manajemen Kelas Digital Premium
 
 ![License](https://img.shields.io/badge/License-Private-red.svg)
-![Version](https://img.shields.io/badge/Version-4.9.3-emerald.svg)
+![Version](https://img.shields.io/badge/Version-4.9.4-emerald.svg)
 ![React](https://img.shields.io/badge/Frontend-React%2019-blue.svg)
 ![Backend](https://img.shields.io/badge/Backend-Google%20Apps%20Script-orange.svg)
 
@@ -35,6 +35,11 @@
 
 ## 📦 Riwayat Pembaruan (Changelog)
 
+### v4.9.4 (Pembaruan Versi Minor & Stabilitas)
+*   **Upgrade versi aplikasi ke 4.9.4** untuk menyelaraskan rilis dokumentasi dan integrasi update internal.
+*   **Perbaikan kompatibilitas fitur `last seen`** untuk akun lama dengan dukungan format tanggal historis.
+*   **Penyempurnaan dokumentasi instalasi** dan penegasan alur setup Google Apps Script untuk implementasi yang lebih cepat.
+
 ### v4.9.3 (Update Identitas & Optimalisasi Laporan)
 *   **Transformasi Brand Identity**: Pembaruan total skema warna aplikasi menjadi **Dark Green (Emerald 900)** yang selaras dengan logo institusi untuk tampilan yang lebih premium.
 *   **Fitur Ekspor MS Excel**: Menambahkan tombol "Export to Excel" pada menu Buku Klaper untuk mempermudah pengelolaan data master siswa secara offline.
@@ -59,15 +64,14 @@ Buat sebuah Google Spreadsheet baru. Tambahkan sheet-sheet berikut dengan nama d
 
 | Nama Sheet | Struktur Kolom (Header Baris 1) |
 | :--- | :--- |
-| **Master_Siswa** | ID_Siswa, NIS, NISN, Nama_Siswa, L/P, Email, Jabatan, Tempat_Lahir, Tanggal_Lahir, Tanggal_Masuk_X, Tanggal_Naik_XI, Tanggal_Naik_XII, Tanggal_Tamat_Sekolah, No_WA_Siswa, Nama_Wali, No_WA_Wali, Alamat, Latitude, Longitude, Lokasi, Status_Aktif, Keterangan |
-| **Presensi** | ID_Presensi, Tanggal, ID_Siswa, NISN, Status_Pagi, Timestamp_Pagi, Status_Siang, Timestamp_Siang, Keterangan |
+| **Master_Siswa** | ID_Siswa, NIS, NISN, Nama_Siswa, L/P, Email, Jabatan, Tempat_Lahir, Tanggal_Lahir, Tanggal_Masuk_X, Tanggal_Naik_XI, Tanggal_Naik_XII, Tanggal_Tamat_Sekolah, No_WA_Siswa, Nama_Wali, No_WA_Wali, Alamat, Latitude, Longitude, Lokasi, Status_Aktif, Last_Active, Keterangan, Created_At |
+| **Presensi** | ID_Presensi, Tanggal, ID_Siswa, Status_Pagi, Status_Siang, Keterangan, Timestamp_Pagi, Timestamp_Siang |
 | **Keuangan** | ID_Transaksi, Tanggal, ID_Siswa, NISN, Tipe, Jumlah, Keterangan |
 | **Daftar_Nilai** | ID_Nilai, ID_Siswa, NISN, Jenjang, Semester, Kategori_Mapel, Nama_Mapel, Topik, Nilai, Timestamp |
-| **Log_Panggilan** | ID_Panggilan, Tanggal, ID_Siswa, NISN, Kategori, Alasan, Tanggal_Pemanggilan, Waktu_Diskusi, Hasil_Pertemuan, Status_Selesai, Bukti_File_URL |
-| **Profil_Wali_Kelas** | Id_Wali, Nama, Email, Bio, Gaya_Ajar, Kontak, Created_At, Nominal_Iuran, Kelas |
+| **Log_Panggilan** | ID_Panggilan, Tanggal, NISN, Kategori, Alasan, Tanggal_Pemanggilan, Hasil_Pertemuan, Status_Selesai, Bukti_File_URL |
+| **Profil_Wali_Kelas** | Id_Wali, Nama, Email, Bio, Gaya_Ajar, Kontak, Alamat, Latitude, Longitude, Lokasi, Nominal_Iuran, Kelas, Created_At |
 | **Piket** | ID_Piket, Hari, ID_Siswa, Nama_Siswa, Email |
 | **Notifikasi** | ID, Message, Type, Target_Email, Is_Read, Timestamp, Target_Role, Role, Email |
-| **Lokasi** | ID_Lokasi, Nama_Lokasi, Deskripsi, Alamat, Latitude, Longitude, Lokasi, Created_By, Created_By_Email, Created_At |
 
 > [!IMPORTANT]
 > Pastikan kolom `Bukti_File_URL` di sheet `Log_Panggilan` tersedia untuk menyimpan link foto dokumentasi dari Google Drive.
