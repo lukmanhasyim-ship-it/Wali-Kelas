@@ -15,6 +15,7 @@
 *   **Real-time Monitoring**: Visualisasi instan kehadiran harian, saldo kas, dan statistik kedisiplinan.
 *   **Role-Based Experience**: Antarmuka yang dipersonalisasi untuk Wali Kelas, Pengurus Kelas (Ketua Kelas & Wakil, Sekretaris & Wakil, Bendahara & Wakil), dan Siswa.
 *   **Privacy-First Design**: Siswa hanya dapat melihat data pribadi mereka (nilai dan presensi), sementara Wali Kelas memiliki kendali penuh atas seluruh data kelas.
+*   **Quick Actions**: Akses cepat ke fitur draf memungkinkan input transaksi tanpa hambatan reload halaman.
 
 ### 📝 Administrasi Akademik & Presensi
 *   **Presensi Dual-Session**: Pencatatan kehadiran pagi dan siang dengan *timestamp* otomatis untuk akurasi maksimal.
@@ -22,9 +23,11 @@
 *   **Buku Klaper Digital**: Arsip data mutasi dan riwayat siswa yang siap cetak kapan saja dengan fitur **Ekspor ke Excel**.
 
 ### 💰 Manajemen Keuangan (Kas Kelas)
+*   **Draf Transaksi Massal**: Input multiple transaksi tanpa reload! Transaksi ditampung dalam draf dan disimpan sekaligus (Bulk Save) untuk efisiensi maksimal.
 *   **Laporan Kas 4 Kolom**: Transparansi penuh dengan pencatatan masuk, keluar, dan saldo akhir secara otomatis.
 *   **Smart Debtor Tracking**: Sistem otomatis mendeteksi siswa yang memiliki tanggungan iuran berdasarkan nominal yang ditetapkan Wali Kelas.
 *   **Otoritas Bendahara**: Fitur input keuangan yang diamankan secara khusus hanya untuk akun Google Bendahara dan Wakil Bendahara yang terdaftar.
+*   **Hapus Transaksi**: Tombol hapus (Trash2) tersedia untuk membatalkan transaksi yang sudah tersimpan maupun yang masih dalam draf.
 
 ### 🏠 Layanan Konseling & Home Visit (v4.9)
 *   **Digital Call Log**: Pendataan panggilan siswa secara sistematis mulai dari kategori hingga alasan detail.
@@ -32,6 +35,17 @@
 *   **Automated Notifications**: Kirim pesan motivasi dan pengingat resmi secara otomatis kepada siswa dan pengurus kelas.
 
 ---
+
+---
+
+## 🆕 What's New in v4.9.4
+
+### Fitur Draf Transaksi (Bulk Save)
+*   **Input Tanpa Reload**: Transaksi keuangan tidak langsung disimpan ke backend. Data ditampung dalam draf terlebih dahulu.
+*   **Tabel Draf Dinamis**: Draf transaksi ditampilkan dalam tabel berwarna amber di bawah riwayat keuangan dengan lebar menyesuaikan aplikasi.
+*   **Bulk Save**: Simpan semua draf sekaligus dengan tombol "Simpan Semua (X)" menggunakan fitur `BULK_CREATE` di Google Apps Script.
+*   **Hapus Individual**: Setiap draf memiliki tombol hapus (Trash2) untuk membatalkan draf tertentu dengan konfirmasi.
+*   **Notifikasi Otomatis**: Notifikasi dikirim ke pengurus kelas dan siswa setelah draf disimpan (bulk save).
 
 ---
 
@@ -119,13 +133,15 @@ Aplikasi telah dikonfigurasi untuk mendukung rilis publik secara cepat (*Single-
 
 ## 💻 Tech Stack
 
-*   **Framework**: [React 19](https://react.dev/)
-*   **Build Tool**: [Vite 6](https://vitejs.dev/)
+*   **Framework**: [React 19.2](https://react.dev/)
+*   **Build Tool**: [Vite 7](https://vitejs.dev/)
 *   **Styling**: [Tailwind CSS 3.4](https://tailwindcss.com/)
-*   **Icons**: [Lucide React](https://lucide.dev/)
+*   **Icons**: [Lucide React 1.8](https://lucide.dev/)
 *   **Storage & Database**: Google Sheets via [Google Apps Script](https://developers.google.com/apps-script)
 *   **Auth**: Google OAuth 2.0
 *   **Export Engine**: jsPDF, xlsx (SheetJS), html2canvas
+*   **Notifications**: Automated email notifications via Google Apps Script
+*   **PWA**: Service Worker with Workbox (vite-plugin-pwa)
 
 ---
 
