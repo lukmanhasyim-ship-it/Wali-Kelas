@@ -8,6 +8,8 @@ import { formatPhoneNumber } from '../utils/logic';
 import Skeleton from '../components/Skeleton';
 import PageGuide from '../components/PageGuide';
 import UpdateCheck from '../components/UpdateCheck';
+import * as XLSX from 'xlsx';
+import { Download, Database, AlertTriangle, HardDrive } from 'lucide-react';
 
 export default function Profile() {
   const { user } = useAuth();
@@ -36,6 +38,7 @@ export default function Profile() {
   const [noWaSiswa, setNoWaSiswa] = useState('');
   const [showResetModal, setShowResetModal] = useState(false);
   const [confirmInput, setConfirmInput] = useState('');
+  const [exporting, setExporting] = useState(false);
 
   const role = user?.role || 'Siswa';
   const isWaliKelas = role === 'Wali Kelas';
@@ -169,6 +172,193 @@ export default function Profile() {
       showToast('Geolocation tidak didukung.', 'error');
     }
   }, [showToast]);
+
+  const expectedColumns = {
+    'Master_Siswa': ['ID_Siswa', 'NIS', 'NISN', 'Nama_Siswa', 'L/P', 'Email', 'Jabatan', 'Tempat_Lahir', 'Tanggal_Lahir', 'No_WA_Siswa', 'Nama_Wali', 'No_WA_Wali', 'Alamat'],
+    'Presensi': ['ID_Presensi', 'Tanggal', 'ID_Siswa', 'NISN', 'Status_Pagi', 'Timestamp_Pagi', 'Status_Siang', 'Timestamp_Siang', 'Keterangan'],
+    'Keuangan': ['ID_Transaksi', 'Tanggal', 'ID_Siswa', 'NISN', 'Tipe', 'Jumlah', 'Keterangan'],
+    'Daftar_Nilai': ['ID_Nilai', 'ID_Siswa', 'NISN', 'Jenjang', 'Semester', 'Kategori_Mapel', 'Nama_Mapel', 'Topik', 'Nilai', 'Timestamp'],
+    'Log_Panggilan': ['ID_Panggilan', 'Tanggal', 'ID_Siswa', 'NISN', 'Kategori', 'Alasan', 'Tanggal_Pemanggilan', 'Waktu_Diskusi', 'Hasil_Pertemuan', 'Status_Selesai', 'Bukti_File_URL'],
+    'Piket': ['ID_Piket', 'Hari', 'ID_Siswa', 'Nama_Siswa', 'Email'],
+    'Notifikasi': ['ID', 'Message', 'Type', 'Target_Email', 'Is_Read', 'Timestamp', 'Target_Role', 'Role', 'Email'],
+    'Archive_Rekap_Absensi': ['ID_Siswa', 'Bulan', 'H', 'I', 'S', 'A', 'B'],
+    'Archive_Rekap_Keuangan': ['Bulan', 'Saldo_Awal', 'Total_Masuk', 'Total_Keluar', 'Saldo_Akhir'],
+    'Archive_Detail_Absensi': ['ID_Presensi', 'Tanggal', 'ID_Siswa', 'NISN', 'Status_Pagi', 'Timestamp_Pagi', 'Status_Siang', 'Timestamp_Siang', 'Keterangan'],
+    'Profil_Wali_Kelas': ['Id_Wali', 'Nama', 'Email', 'Bio', 'Gaya_Ajar', 'Kontak', 'Created_At', 'Nominal_Iuran', 'Kelas']
+  };
+
+  const generateSQLDump = (data) => {
+    const tableMap = {
+      'Master_Siswa': 'master_siswa',
+      'Presensi': 'presensi',
+      'Keuangan': 'keuangan',
+      'Daftar_Nilai': 'daftar_nilai',
+      'Log_Panggilan': 'log_panggilan',
+      'Piket': 'piket',
+      'Notifikasi': 'notifikasi',
+      'Archive_Rekap_Absensi': 'archive_rekap_absensi',
+      'Archive_Rekap_Keuangan': 'archive_rekap_keuangan',
+      'Archive_Detail_Absensi': 'archive_detail_absensi',
+      'Profil_Wali_Kelas': 'profil_wali_kelas',
+      'Lokasi': 'lokasi'
+    };
+
+    let sql = '-- ============================================\n';
+    sql += '-- Backup Database Siswa.Hub\n';
+    sql += `-- Generated: ${new Date().toISOString()}\n`;
+    sql += `-- Wali Kelas: ${user?.name || 'Unknown'}\n`;
+    sql += `-- Email: ${user?.email || 'Unknown'}\n`;
+    sql += '-- Format: MySQL Compatible\n';
+    sql += '-- ============================================\n\n';
+
+    sql += 'SET NAMES utf8mb4;\n';
+    sql += 'SET FOREIGN_KEY_CHECKS = 0;\n\n';
+
+    for (const [sheet, rows] of Object.entries(data)) {
+      const tableName = tableMap[sheet] || sheet.toLowerCase().replace(/[^a-z0-9]/g, '_');
+      
+      sql += `-- ============================================\n`;
+      sql += `-- Tabel: ${tableName} (${rows.length} records)\n`;
+      sql += `-- ============================================\n\n`;
+
+      const columns = rows.length > 0 
+        ? Object.keys(rows[0]) 
+        : (expectedColumns[sheet] || []);
+      
+      if (columns.length === 0) {
+        sql += `-- Tabel ${tableName} tidak memiliki struktur kolom yang diketahui\n\n`;
+        continue;
+      }
+      
+      sql += `DROP TABLE IF EXISTS \`${tableName}\`;\n`;
+      sql += `CREATE TABLE \`${tableName}\` (\n`;
+      sql += `  \`id\` INT AUTO_INCREMENT PRIMARY KEY,\n`;
+      sql += columns.map(col => `  \`${col.replace(/[^a-zA-Z0-9_]/g, '_')}\` TEXT DEFAULT NULL`).join(',\n');
+      sql += '\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;\n\n';
+
+      if (rows.length === 0) {
+        sql += `-- Tabel ${tableName} kosong, tidak ada data untuk di-insert\n\n`;
+        continue;
+      }
+
+      sql += `LOCK TABLES \`${tableName}\` WRITE;\n`;
+      sql += `/*!40000 ALTER TABLE \`${tableName}\` DISABLE KEYS */;\n\n`;
+
+      rows.forEach((row, idx) => {
+        const values = columns.map(col => {
+          const val = row[col];
+          if (val === null || val === undefined) return 'NULL';
+          if (typeof val === 'number') return String(val);
+          return `'${String(val).replace(/'/g, "\\'").replace(/\\/g, '\\\\')}'`;
+        });
+        const prefix = idx === 0 ? `INSERT INTO \`${tableName}\` VALUES ` : ', ';
+        sql += `${prefix}(${values.join(', ')})`;
+        if (idx === rows.length - 1) sql += ';';
+        sql += '\n';
+      });
+
+      sql += `\n/*!40000 ALTER TABLE \`${tableName}\` ENABLE KEYS */;\n`;
+      sql += `UNLOCK TABLES;\n\n`;
+    }
+
+    sql += 'SET FOREIGN_KEY_CHECKS = 1;\n';
+    sql += `\n-- ============================================\n`;
+    sql += `-- Backup selesai: ${new Date().toISOString()}\n`;
+    sql += `-- Total tabel: ${Object.keys(data).length}\n`;
+    sql += `-- Total records: ${Object.values(data).reduce((sum, rows) => sum + rows.length, 0)}\n`;
+    sql += '-- ============================================\n';
+
+    return sql;
+  };
+
+  const handleExportDatabase = async () => {
+    if (!isWaliKelas) {
+      showToast('Hanya wali kelas yang dapat melakukan backup.', 'error');
+      return;
+    }
+
+    setExporting(true);
+    showToast('Memulai backup database...', 'info');
+
+    try {
+      const sheetsToExport = [
+        'Master_Siswa',
+        'Presensi',
+        'Keuangan',
+        'Daftar_Nilai',
+        'Log_Panggilan',
+        'Piket',
+        'Notifikasi',
+        'Archive_Rekap_Absensi',
+        'Archive_Rekap_Keuangan',
+        'Archive_Detail_Absensi',
+        'Profil_Wali_Kelas'
+      ];
+
+      const allData = {};
+      let totalRecords = 0;
+
+      for (const sheet of sheetsToExport) {
+        const res = await fetchGAS('GET_ALL', { sheet });
+        const data = res.data || [];
+        allData[sheet] = data;
+        totalRecords += data.length;
+      }
+
+      const dateStr = new Date().toISOString().slice(0, 10);
+      const timestamp = new Date().getTime();
+
+      // 1. Export sebagai XLSX (multi-sheet workbook)
+      const wb = XLSX.utils.book_new();
+      
+      sheetsToExport.forEach(sheet => {
+        const data = allData[sheet];
+        let ws;
+        
+        if (data.length > 0) {
+          ws = XLSX.utils.json_to_sheet(data);
+          
+          const colWidths = Object.keys(data[0]).map(key => {
+            const maxLen = Math.max(
+              key.length,
+              ...data.map(row => String(row[key] || '').length)
+            );
+            return { wch: Math.min(maxLen + 2, 50) };
+          });
+          ws['!cols'] = colWidths;
+        } else {
+          // Sheet kosong: buat dengan header row saja
+          const columns = expectedColumns[sheet] || [];
+          ws = XLSX.utils.aoa_to_sheet([columns]);
+          ws['!cols'] = columns.map(() => ({ wch: 15 }));
+        }
+        
+        XLSX.utils.book_append_sheet(wb, ws, sheet.substring(0, 31));
+      });
+
+      const xlsxFileName = `SiswaHub_Backup_${dateStr}_${timestamp}.xlsx`;
+      XLSX.writeFile(wb, xlsxFileName);
+
+      // 2. Export sebagai SQL (MySQL format)
+      const sqlContent = generateSQLDump(allData);
+      const sqlBlob = new Blob([sqlContent], { type: 'text/sql;charset=utf-8' });
+      const sqlUrl = URL.createObjectURL(sqlBlob);
+      const sqlLink = document.createElement('a');
+      sqlLink.href = sqlUrl;
+      sqlLink.download = `SiswaHub_Backup_${dateStr}_${timestamp}.sql`;
+      document.body.appendChild(sqlLink);
+      sqlLink.click();
+      document.body.removeChild(sqlLink);
+      URL.revokeObjectURL(sqlUrl);
+
+      showToast(`Backup berhasil! ${sheetsToExport.length} tabel, ${totalRecords} record. File XLSX dan SQL telah diunduh.`, 'success');
+    } catch (err) {
+      console.error('Export database error:', err);
+      showToast('Gagal melakukan backup database. Periksa koneksi internet Anda.', 'error');
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -497,28 +687,76 @@ export default function Profile() {
       </div>
 
       {isWaliKelas && (
-        <div className="card p-6 border-red-100 bg-red-50/30">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="space-y-1">
-              <h3 className="text-lg font-bold text-red-600">Zona Bahaya: Reset Database</h3>
-              <p className="text-sm text-slate-600">
-                Menghapus seluruh data siswa, transaksi, dan laporan. Gunakan hanya saat pergantian tahun ajaran atau ingin memulai dari awal.
-              </p>
+        <>
+          {/* Safe Zone: Backup Database */}
+          <div className="card p-6 border-emerald-200 bg-emerald-50/50">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="space-y-2">
+                <h3 className="text-lg font-bold text-emerald-800 flex items-center gap-2">
+                  <HardDrive className="w-5 h-5 text-emerald-600" />
+                  Safe Zone: Backup Database
+                </h3>
+                <p className="text-sm text-slate-600 leading-relaxed">
+                  Backup seluruh database sebelum melakukan reset atau perubahan besar. 
+                  File backup tersedia dalam dua format untuk keamanan maksimal.
+                </p>
+                <div className="mt-3 space-y-2">
+                  <div className="flex items-center gap-2 text-xs text-slate-600 bg-white/60 rounded-lg p-2">
+                    <Download className="w-3.5 h-3.5 text-emerald-600" />
+                    <span><strong>Format XLSX:</strong> Multi-sheet workbook, bisa dibuka di Excel/Google Sheets</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-slate-600 bg-white/60 rounded-lg p-2">
+                    <Database className="w-3.5 h-3.5 text-emerald-600" />
+                    <span><strong>Format SQL:</strong> Compatible dengan MySQL/MariaDB untuk restore</span>
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleExportDatabase}
+                disabled={exporting}
+                className={`px-6 py-3 rounded-xl font-bold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${
+                  exporting 
+                    ? 'bg-slate-200 text-slate-400 cursor-not-allowed' 
+                    : 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg shadow-emerald-200 active:scale-95'
+                }`}
+              >
+                <Download className="w-4 h-4" />
+                {exporting ? 'Membuat Backup...' : 'Backup Database'}
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={handleResetDatabase}
-              disabled={resetting}
-              className={`px-6 py-2.5 rounded-xl font-bold transition-all duration-200 ${
-                resetting 
-                  ? 'bg-slate-200 text-slate-400 cursor-not-allowed' 
-                  : 'bg-red-600 text-white hover:bg-red-700 shadow-lg shadow-red-200 active:scale-95'
-              }`}
-            >
-              {resetting ? 'Mereset...' : 'Reset Semua Data'}
-            </button>
           </div>
-        </div>
+
+          {/* Zona Bahaya: Reset Database */}
+          <div className="card p-6 border-red-100 bg-red-50/30">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="space-y-1">
+                <h3 className="text-lg font-bold text-red-600 flex items-center gap-2">
+                  <AlertTriangle className="w-5 h-5" />
+                  Zona Bahaya: Reset Database
+                </h3>
+                <p className="text-sm text-slate-600">
+                  Menghapus seluruh data siswa, transaksi, dan laporan. Gunakan hanya saat pergantian tahun ajaran atau ingin memulai dari awal.
+                </p>
+                <p className="text-xs text-red-500 font-medium italic">
+                  * Disarankan melakukan backup terlebih dahulu sebelum reset.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleResetDatabase}
+                disabled={resetting}
+                className={`px-6 py-2.5 rounded-xl font-bold transition-all duration-200 ${
+                  resetting 
+                    ? 'bg-slate-200 text-slate-400 cursor-not-allowed' 
+                    : 'bg-red-600 text-white hover:bg-red-700 shadow-lg shadow-red-200 active:scale-95'
+                }`}
+              >
+                {resetting ? 'Mereset...' : 'Reset Semua Data'}
+              </button>
+            </div>
+          </div>
+        </>
       )}
 
       {/* Modal Konfirmasi Reset */}
