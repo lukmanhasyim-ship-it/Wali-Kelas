@@ -422,83 +422,82 @@ export default function DKN() {
     try {
       const wb = XLSX.utils.book_new();
       const levels = ['X', 'XI', 'XII'];
+      const semesters = ['Ganjil', 'Genap'];
 
       levels.forEach(lvl => {
-        // 1. Get columns for this specific level
-        const lvlCols = [];
-        const colSet = new Set();
-        semuaNilai.forEach(n => {
-          if (n.Jenjang === lvl && n.Semester === semester && n.Nama_Mapel) {
-            const key = `${n.Kategori_Mapel}_${n.Nama_Mapel}_${n.Topik || ''}`;
-            if (!colSet.has(key)) {
-              colSet.add(key);
-              lvlCols.push({ kategori: n.Kategori_Mapel, mapel: n.Nama_Mapel, topik: n.Topik || '' });
-            }
-          }
-        });
-
-        // Add also currently added (unsaved) columns if they match level
-        if (lvl === jenjang) {
-          addedColumns.forEach(c => {
-            const key = `${c.kategori}_${c.mapel}_${c.topik || ''}`;
-            if (!colSet.has(key)) {
-              colSet.add(key);
-              lvlCols.push(c);
+        semesters.forEach(sem => {
+          // 1. Get columns for this specific level and semester
+          const lvlCols = [];
+          const colSet = new Set();
+          semuaNilai.forEach(n => {
+            if (n.Jenjang === lvl && n.Semester === sem && n.Nama_Mapel) {
+              const key = `${n.Kategori_Mapel}_${n.Nama_Mapel}_${n.Topik || ''}`;
+              if (!colSet.has(key)) {
+                colSet.add(key);
+                lvlCols.push({ kategori: n.Kategori_Mapel, mapel: n.Nama_Mapel, topik: n.Topik || '' });
+              }
             }
           });
-        }
 
-        // Sort columns
-        lvlCols.sort((a, b) => {
-          if (a.kategori !== b.kategori) return a.kategori === 'Umum' ? -1 : 1;
-          if (a.mapel !== b.mapel) return a.mapel.localeCompare(b.mapel);
-          return a.topik.localeCompare(b.topik);
-        });
-
-        // 2. Prepare headers
-        const headerRow1 = ['No', 'ID Siswa', 'NISN', 'NIS', 'Nama Siswa'];
-        lvlCols.forEach(c => headerRow1.push(c.kategori));
-
-        const headerRow2 = ['', '', '', '', ''];
-        lvlCols.forEach(c => headerRow2.push(c.kategori === 'Kejuruan' ? `${c.mapel} (${c.topik})` : c.mapel));
-
-        // 3. Prepare Data
-        const dataRows = siswa.map((item, index) => {
-          const row = [index + 1, item.ID_Siswa, item.NISN || '-', item.NIS || '-', item.Nama_Siswa];
-          lvlCols.forEach(c => {
-            const val = getDisplayedNilai(item.ID_Siswa, c.kategori, c.mapel, c.topik);
-            row.push(val || 0);
+          // Sort columns
+          lvlCols.sort((a, b) => {
+            if (a.kategori !== b.kategori) return a.kategori === 'Umum' ? -1 : 1;
+            if (a.mapel !== b.mapel) return a.mapel.localeCompare(b.mapel);
+            return a.topik.localeCompare(b.topik);
           });
-          return row;
+
+          // 2. Prepare headers
+          const headerRow1 = ['No', 'ID Siswa', 'NISN', 'NIS', 'Nama Siswa'];
+          lvlCols.forEach(c => headerRow1.push(c.kategori));
+
+          const headerRow2 = ['', '', '', '', ''];
+          lvlCols.forEach(c => headerRow2.push(c.kategori === 'Kejuruan' ? `${c.mapel} (${c.topik})` : c.mapel));
+
+          // 3. Prepare Data - all students shown in every sheet
+          const dataRows = siswa.map((item, index) => {
+            const row = [index + 1, item.ID_Siswa, item.NISN || '-', item.NIS || '-', item.Nama_Siswa];
+            lvlCols.forEach(c => {
+              const found = semuaNilai.find(n =>
+                n.ID_Siswa?.toString() === item.ID_Siswa?.toString() &&
+                n.Jenjang === lvl &&
+                n.Semester === sem &&
+                n.Kategori_Mapel === c.kategori &&
+                n.Nama_Mapel === c.mapel &&
+                (n.Topik || '') === c.topik
+              );
+              row.push(found ? found.Nilai : 0);
+            });
+            return row;
+          });
+
+          const ws = XLSX.utils.aoa_to_sheet([headerRow1, headerRow2, ...dataRows]);
+
+          // 4. Merges
+          ws['!merges'] = [
+            { s: { r: 0, c: 0 }, e: { r: 1, c: 0 } },
+            { s: { r: 0, c: 1 }, e: { r: 1, c: 1 } },
+            { s: { r: 0, c: 2 }, e: { r: 1, c: 2 } },
+            { s: { r: 0, c: 3 }, e: { r: 1, c: 3 } },
+            { s: { r: 0, c: 4 }, e: { r: 1, c: 4 } }
+          ];
+
+          let currentCol = 5;
+          const categories = Array.from(new Set(lvlCols.map(c => c.kategori)));
+          categories.forEach(kat => {
+            const katCols = lvlCols.filter(c => c.kategori === kat).length;
+            if (katCols > 1) {
+              ws['!merges'].push({ s: { r: 0, c: currentCol }, e: { r: 0, c: currentCol + katCols - 1 } });
+            }
+            currentCol += katCols;
+          });
+
+          XLSX.utils.book_append_sheet(wb, ws, `${lvl} ${sem}`);
         });
-
-        const ws = XLSX.utils.aoa_to_sheet([headerRow1, headerRow2, ...dataRows]);
-
-        // 4. Merges
-        ws['!merges'] = [
-          { s: { r: 0, c: 0 }, e: { r: 1, c: 0 } }, // No
-          { s: { r: 0, c: 1 }, e: { r: 1, c: 1 } }, // ID
-          { s: { r: 0, c: 2 }, e: { r: 1, c: 2 } }, // NISN
-          { s: { r: 0, c: 3 }, e: { r: 1, c: 3 } }, // NIS
-          { s: { r: 0, c: 4 }, e: { r: 1, c: 4 } }  // Nama
-        ];
-
-        let currentCol = 5;
-        const categories = Array.from(new Set(lvlCols.map(c => c.kategori)));
-        categories.forEach(kat => {
-          const katCols = lvlCols.filter(c => c.kategori === kat).length;
-          if (katCols > 1) {
-            ws['!merges'].push({ s: { r: 0, c: currentCol }, e: { r: 0, c: currentCol + katCols - 1 } });
-          }
-          currentCol += katCols;
-        });
-
-        XLSX.utils.book_append_sheet(wb, ws, `Kelas ${lvl}`);
       });
 
-      const fileName = `Leger_${new Date().getTime()}.xlsx`;
+      const fileName = `Siswa.Hub_Leger_Semua_Kelas_${new Date().getTime()}.xlsx`;
       XLSX.writeFile(wb, fileName);
-      showToast('Berhasil mengekspor Leger kelas X, XI, dan XII.', 'success');
+      showToast('Berhasil mengekspor Leger semua kelas dan semester.', 'success');
     } catch (error) {
       console.error('Export Excel Error:', error);
       showToast('Gagal mengekspor ke Excel.', 'error');
