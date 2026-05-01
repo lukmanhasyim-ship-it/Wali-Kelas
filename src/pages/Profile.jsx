@@ -690,8 +690,8 @@ export default function Profile() {
         <>
           {/* Safe Zone: Backup Database */}
           <div className="card p-6 border-emerald-200 bg-emerald-50/50">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-              <div className="space-y-2">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="space-y-1">
                 <h3 className="text-lg font-bold text-emerald-800 flex items-center gap-2">
                   <HardDrive className="w-5 h-5 text-emerald-600" />
                   Safe Zone: Backup Database
