@@ -1,4 +1,4 @@
-export const getCurrentVersion = () => "4.9.4";
+export const getCurrentVersion = () => "4.9.5";
 
 export const checkForUpdate = async () => {
   const current = getCurrentVersion();

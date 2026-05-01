@@ -1,7 +1,7 @@
-# Siswa.Hub v4.9.4 - Ekosistem Manajemen Kelas Digital Premium
+# Siswa.Hub v4.9.5 - Ekosistem Manajemen Kelas Digital Premium
 
 ![License](https://img.shields.io/badge/License-Private-red.svg)
-![Version](https://img.shields.io/badge/Version-4.9.4-emerald.svg)
+![Version](https://img.shields.io/badge/Version-4.9.5-emerald.svg)
 ![React](https://img.shields.io/badge/Frontend-React%2019-blue.svg)
 ![Backend](https://img.shields.io/badge/Backend-Google%20Apps%20Script-orange.svg)
 
@@ -35,6 +35,25 @@
 *   **Automated Notifications**: Kirim pesan motivasi dan pengingat resmi secara otomatis kepada siswa dan pengurus kelas.
 
 ---
+
+---
+
+### 🛡️ Backup & Recovery (v4.9.5)
+*   **Database Backup Premium**: Export seluruh database ke dua format sekaligus (XLSX + SQL) untuk keamanan maksimal.
+*   **Multi-Sheet Workbook**: File Excel dengan semua sheet terpisah, siap dibuka di Microsoft Excel atau Google Sheets.
+*   **MySQL Compatible**: File SQL dengan struktur `CREATE TABLE` dan `INSERT` yang langsung bisa di-import ke database MySQL/MariaDB.
+*   **Auto-Download**: Kedua file otomatis terdownload ke komputer tanpa perlu setup server tambahan.
+*   **Safe Zone UI**: Tombol backup yang jelas di halaman Edit Profil, ditempatkan sebelum zona bahaya reset database.
+
+### 📤 Export Leger Premium (v4.9.5)
+*   **6 Sheet dalam 1 File**: Export leger dengan sheet terorganisir per jenjang dan semester (X Ganjil, X Genap, XI Ganjil, XI Genap, XII Ganjil, XII Genap).
+*   **Semua Siswa Tampil**: Setiap sheet menampilkan seluruh siswa aktif, termasuk yang belum diinput nilainya (ditampilkan dengan nilai 0).
+*   **Format Profesional**: Header kategori dan mata pelajaran yang rapi dengan merge cells otomatis.
+
+### 💬 Feedback yang Lebih Handal (v4.9.5)
+*   **Fallback Modal**: Saat email client tidak tersedia, modal muncul dengan informasi email lengkap yang bisa di-copy manual.
+*   **Quick Links**: Tombol langsung ke Gmail Compose dan Outlook Web dengan subject dan body otomatis terisi.
+*   **One-Click Copy**: Tombol copy untuk email tujuan, subjek, dan pesan dengan notifikasi tersalin.
 
 ---
 
@@ -149,7 +168,7 @@ Aplikasi telah dikonfigurasi untuk mendukung rilis publik secara cepat (*Single-
 Siswa.Hub menggunakan autentikasi resmi Google. Data Anda tersimpan sepenuhnya di Google Drive Anda sendiri. Kami sangat menyarankan untuk:
 1.  Tidak membagikan file `.env` ke publik.
 2.  Memasukkan email Pengurus Kelas di sheet `Master_Siswa` untuk memberikan hak akses tertentu secara otomatis.
-3.  Secara berkala melakukan backup/ekspor data nilai ke format Excel melalui fitur yang disediakan di dalam aplikasi.
+3.  **Secara berkala melakukan backup database** melalui fitur "Backup Database" di halaman Edit Profil Wali Kelas. Fitur ini akan mengexport seluruh data ke format XLSX dan SQL yang bisa disimpan offline.
 
 ---
 
