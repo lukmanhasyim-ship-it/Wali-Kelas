@@ -114,37 +114,20 @@ Buat sebuah Google Spreadsheet baru. Tambahkan sheet-sheet berikut dengan nama d
 
 ### 5. Deployment Serverless (Firebase Hosting)
 Aplikasi telah dikonfigurasi untuk mendukung rilis publik secara cepat (*Single-Page Application routing*) ke layanan **Firebase Hosting**.
-
-**Prasyarat**: Pastikan [Node.js](https://nodejs.org/) sudah terinstall di komputer Anda.
-
-1.  **Install Firebase CLI**:
-    ```bash
-    npm install -g firebase-tools
-    ```
-    Atau gunakan `npx` tanpa install global (gunakan `npx firebase-tools` pada langkah berikutnya).
-2.  **Build File Produksi**:
+1.  **Build File Produksi**:
     ```bash
     npm run build
     ```
-3.  **Login & Sambungkan Project**:
+2.  **Akses via CLI & Sambungkan Project**:
     ```bash
-    firebase login
-    firebase use --add
+    npx firebase-tools login
+    npx firebase-tools use --add
     ```
-    Pilih project Firebase Anda atau buat project baru melalui [Firebase Console](https://console.firebase.google.com/).
-4.  **Inisialisasi Hosting** (Jika belum):
+3.  **Eksekusi Deploy**:
     ```bash
-    firebase init hosting
+    npx firebase-tools deploy --only hosting
     ```
-    - Pilih "Use an existing project"
-    - Set `dist` sebagai public directory
-    - Configure as single-page app: **Yes**
-    - Don't overwrite `index.html`: **No**
-5.  **Eksekusi Deploy**:
-    ```bash
-    firebase deploy --only hosting
-    ```
-    *Aplikasi Anda kini sudah mengudara dan URL rilis akan muncul di layar terminal (biasanya: `https://[project-id].web.app`).*
+    *Aplikasi Anda kini sudah mengudara dan URL rilis akan muncul di layar terminal.*
 
 ---
 
